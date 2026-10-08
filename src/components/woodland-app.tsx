@@ -1,4 +1,5 @@
 "use client";
+import Image from "next/image";
 import {
   useEffect,
   useState,
@@ -7,7 +8,6 @@ import {
   type FormEvent,
 } from "react";
 import {
-  Sprout,
   Home,
   Compass,
   MapPin,
@@ -552,10 +552,15 @@ export default function WoodlandApp() {
     >
       <header className="app-header">
         <button className="brand" aria-label={t("Home")} onClick={exitToMain}>
-          <Sprout size={25} />
-          <span>
-            root <small>helper</small>
-          </span>
+          <Image
+            src="/brand/root-helper-light.webp"
+            width={360}
+            height={120}
+            alt="Root Helper"
+            className="brand-logo"
+            priority
+            unoptimized
+          />
         </button>
         <div className="header-actions">
           <select

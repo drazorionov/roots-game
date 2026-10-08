@@ -4,7 +4,10 @@ const asset = (url) =>
   url.origin === self.location.origin &&
   (url.pathname.startsWith("/_next/static/") ||
     url.pathname.startsWith("/art/") ||
-    url.pathname === "/icon.svg");
+    url.pathname.startsWith("/brand/") ||
+    url.pathname === "/icon.png" ||
+    url.pathname === "/favicon.ico" ||
+    url.pathname === "/apple-icon.png");
 self.addEventListener("install", (event) => {
   event.waitUntil(self.skipWaiting());
 });

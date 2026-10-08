@@ -199,6 +199,17 @@ fieldset {
 .brand svg {
   color: var(--green);
 }
+.brand-logo {
+  display: block;
+  width: 168px;
+  height: 56px;
+}
+@media (max-width: 360px) {
+  .brand-logo {
+    width: 138px;
+    height: 46px;
+  }
+}
 .header-actions {
   display: flex;
   align-items: center;

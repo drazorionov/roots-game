@@ -14,6 +14,7 @@ export async function prepareQuickOffline(): Promise<boolean> {
       "/art/game-watchtower.webp",
       "/art/paper-grain.svg",
       "/art/welcome-forest.webp",
+      "/brand/root-helper-light.webp",
     );
     return await new Promise<boolean>((resolve) => {
       const channel = new MessageChannel();

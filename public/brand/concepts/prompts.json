@@ -1,0 +1,22 @@
+{
+  "method": "Built-in image_gen",
+  "reference": "User-provided original Root: The Roleplaying Game wordmark",
+  "concepts": [
+    {
+      "key": "01-illuminated-r",
+      "prompt": "Concept 1 of 4: THE ILLUMINATED R. Create one polished square app icon concept for Root Helper, an unofficial Root roleplaying companion. Use the attached official logo ONLY as a visual reference for carved black storybook lettering, cream paper, flat earthy colored woodland silhouettes and small botanical flourishes. Make an original bold decorative capital R as the dominant silhouette, with a compact fox head emerging subtly within its upper bowl, and one leaf flourish in the leg. Rust red background tile with cream margins; rich near-black letter, parchment negative space. A legible handsome letterform with expressive swooping serifs, restrained hand-cut irregularity. Original interpretation rather than a traced official letter. Flat 2D woodcut / linocut emblem, very limited palette, no gradients, no 3D, no mockup. Strong readable silhouette at favicon size, no tiny hatching or busy scenery. Icon fills ~78 percent of square, all essential content in centered safe area. Actual finished asset, not a presentation sheet. No text except the R. 1024x1024 square."
+    },
+    {
+      "key": "02-rabbit-o",
+      "prompt": "Concept 2 of 4: THE RABBIT O. Create one polished square app icon concept for Root Helper, an unofficial Root roleplaying companion. Use attached official Root RPG logo ONLY as reference for decorative black letterforms, warm cream paper, flat muted ochre and woodland animal silhouettes. Make an original thick, tall ornamental capital O forming a frame around a front-facing rabbit head silhouette with long ears and alert eyes. Animal and letter should read as a single compact emblem. An ochre-gold inner field, near-black O border with two restrained asymmetrical serif flourishes, cream rabbit and cream surrounding background. Rabbit clever and adventurous, not babyish. Flat 2D storybook woodcut, boldly simplified silhouette, avoid tiny detail and hatching. Distinct new composition, not tracing existing logo. Centered, essential artwork inside central 78 percent. Finished square icon only, no mockup, no labels, no text other than O. 1024x1024."
+    },
+    {
+      "key": "03-fox-face",
+      "prompt": "Concept 3 of 4: THE FOX SCOUT. Create one polished square app icon concept for Root Helper, an unofficial Root roleplaying companion. Attached official logo is ONLY a style reference for hand-cut woodland animal silhouettes, near-black ink, cream paper and faded earthy colors. Design a memorable close-up front-facing woodland fox scout face with tall pointed ears, angular cream cheeks, rust-orange fur, small black triangular nose, expressive clever dark eyes, and a subtle dark green neckerchief edge at bottom. Mature tabletop-storybook personality, friendly but slightly mischievous. No hat, no weapons, no text, no letters. Flat 2D linocut emblem with confident irregular ink outlines, 4 colors maximum, NO gradients, realistic fur, 3D, cute glossy mascot, or fine hatching. Deep muted forest green square background, fox face large but completely contained in centered safe region, ears not clipped. Extremely clear at small favicon size. Finished icon alone, not mockup or contact sheet. Original character, not a copy of an official game character. 1024x1024 square."
+    },
+    {
+      "key": "04-raccoon-face",
+      "prompt": "Concept 4 of 4: THE RACCOON WANDERER. Create one polished square app icon concept for Root Helper, an unofficial Root roleplaying companion. Attached official logo is ONLY visual reference for inky storybook silhouettes, warm paper, botanical flourishes and muted earthy accent colors. Make an original front-facing raccoon adventurer face: rounded triangular ears, cream and warm grey face, unmistakable near-black eye mask, alert gently mischievous eyes, small black nose. A tiny rust-colored scarf knot at neck gives adventurer character without clutter. Muted slate teal square background, cream negative space and bold black outlines. Flat 2D hand-cut woodblock style, strong iconic geometry, subtle organic irregularity. Friendly and resourceful, not babyish, no glossy digital mascot aesthetic, no 3D, gradients, realistic fur or fine hatching. Large centered face fully inside central 78 percent safe area. No text, letters, mockup or presentation labels. Actual square icon asset, 1024x1024. Do not reproduce an official character exactly."
+    }
+  ]
+}
