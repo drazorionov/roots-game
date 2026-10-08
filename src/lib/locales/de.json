@@ -517,5 +517,8 @@
   "This character changed or is not yours. Reopen it and try again.": "Dieser Charakter wurde geändert oder gehört dir nicht. Öffne ihn erneut.",
   "Could not delete character.": "Charakter konnte nicht gelöscht werden.",
   "Only the campaign creator can delete it.": "Nur der Ersteller kann die Kampagne löschen.",
-  "Could not delete campaign.": "Kampagne konnte nicht gelöscht werden."
+  "Could not delete campaign.": "Kampagne konnte nicht gelöscht werden.",
+  "Open character sheet": "Charakterbogen öffnen",
+  "Your campaign": "Deine Kampagne",
+  "Joined campaign": "Du spielst mit"
 }

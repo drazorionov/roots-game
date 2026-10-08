@@ -10,6 +10,7 @@ import {
   Sprout,
   Home,
   Compass,
+  MapPin,
   RotateCcw,
   MoreHorizontal,
   Trash2,
@@ -26,6 +27,7 @@ import {
 import { useTranslation, translate, type Locale } from "@/lib/i18n";
 import {
   sheetSchema,
+  stats,
   type Hero,
   type Campaign,
   type User,
@@ -37,6 +39,8 @@ import CharacterEditor from "./character-editor";
 import CharacterControls from "./character-controls";
 import CampaignPresence from "./campaign-presence";
 import { Portrait } from "./art";
+import AttributeIcon from "./attribute-icon";
+import { effectiveStats } from "@/lib/playbooks";
 function Modal({
   title,
   children,
@@ -838,7 +842,9 @@ export default function WoodlandApp() {
             )}
           </section>
         ) : tab === "characters" || tab === "play" ? (
-          <section className="journey-picker">
+          <section
+            className={`journey-picker ${tab === "characters" ? "collection-page characters-collection" : ""}`}
+          >
             {tab === "play" && (
               <div className="campaign-selection">
                 <p className="eyebrow">{t("2 · Choose your character")}</p>
@@ -911,7 +917,30 @@ export default function WoodlandApp() {
                               ?.name || t("No campaign yet")}
                       </small>
                     </span>
-                    <ChevronRight size={20} />
+                    {tab === "characters" && (
+                      <>
+                        <span className="character-attributes">
+                          {stats.map((stat) => {
+                            const value = effectiveStats(h.sheet)[stat];
+                            return (
+                              <span key={stat}>
+                                <AttributeIcon stat={stat} />
+                                <span>{t(stat)}</span>
+                                <strong>
+                                  {value > 0 ? "+" : ""}
+                                  {value}
+                                </strong>
+                              </span>
+                            );
+                          })}
+                        </span>
+                        <span className="character-open">
+                          {t("Open character sheet")}
+                          <ChevronRight size={17} />
+                        </span>
+                      </>
+                    )}
+                    <ChevronRight className="tile-arrow" size={20} />
                   </button>
                   {tab === "characters" && (
                     <button
@@ -940,34 +969,60 @@ export default function WoodlandApp() {
             )}
           </section>
         ) : (
-          <section className="journey-picker">
+          <section className="journey-picker collection-page campaigns-collection">
             <div className="page-heading">
               <div>
                 <h1>{t("My campaigns")}</h1>
                 <p>{t("Join your friends or start your own campaign.")}</p>
               </div>
-            </div>
-            <div className="campaign-actions">
-              <button
-                className="btn primary"
-                onClick={() => needsAccount("join")}
-              >
-                <Users size={18} />
-                {t("Join a campaign")}
-              </button>
-              <button className="btn" onClick={() => needsAccount("campaign")}>
-                <Plus size={18} />
-                {t("Create campaign")}
-              </button>
+              <div className="campaign-actions">
+                <button
+                  className="btn primary"
+                  onClick={() => needsAccount("join")}
+                >
+                  <Users size={18} />
+                  {t("Join a campaign")}
+                </button>
+                <button
+                  className="btn"
+                  onClick={() => needsAccount("campaign")}
+                >
+                  <Plus size={18} />
+                  {t("Create campaign")}
+                </button>
+              </div>
             </div>
             <div className="campaign-list">
               {campaigns.map((c) => (
                 <article className="campaign-card" key={c.id}>
+                  <div className="campaign-card-top">
+                    <span className="campaign-emblem" aria-hidden="true">
+                      <Compass size={28} />
+                    </span>
+                    <span className="campaign-role">
+                      {t(
+                        c.owner_id === user?.id
+                          ? "Your campaign"
+                          : "Joined campaign",
+                      )}
+                    </span>
+                  </div>
                   <h2>{c.name}</h2>
-                  <p>
-                    {players(c.members)}
-                    {c.clearing ? ` · ${c.clearing}` : ""}
-                  </p>
+                  <div className="campaign-facts">
+                    <span>
+                      <Users size={15} />
+                      {players(c.members)}
+                    </span>
+                    {c.clearing && (
+                      <span>
+                        <MapPin size={15} />
+                        {c.clearing}
+                      </span>
+                    )}
+                  </div>
+                  {c.description && (
+                    <p className="campaign-description">{c.description}</p>
+                  )}
                   <div className="campaign-card-actions">
                     <button
                       className="btn"

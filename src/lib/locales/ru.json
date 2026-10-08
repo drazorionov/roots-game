@@ -517,5 +517,8 @@
   "This character changed or is not yours. Reopen it and try again.": "Персонаж изменился или принадлежит другому игроку. Откройте его заново.",
   "Could not delete character.": "Не удалось удалить персонажа.",
   "Only the campaign creator can delete it.": "Удалить кампанию может только её создатель.",
-  "Could not delete campaign.": "Не удалось удалить кампанию."
+  "Could not delete campaign.": "Не удалось удалить кампанию.",
+  "Open character sheet": "Открыть лист персонажа",
+  "Your campaign": "Ваша кампания",
+  "Joined campaign": "Вы участник"
 }
