@@ -1,0 +1,6 @@
+{
+  "method": "Built-in image_gen",
+  "source": "concepts/03-fox-face.png",
+  "transparent_background": true,
+  "prompt": "Use case: background-extraction. Edit the provided fox scout icon. Remove ONLY the dark forest-green background surrounding the fox, leaving a genuinely transparent alpha background. Preserve the exact fox face, pointed ears, cream outline, rust fur, black facial lines, eyes, green neckerchief, original print texture, colors, expression, and composition. The green neckerchief must stay green and opaque. Retain all existing cream edging as part of the character, and the full ear tips and scarf tip. No redesign, no new details, no text, no frame, no added shadow. Center the unchanged complete fox head and scarf on a transparent square with a small clear margin. Deliver a clean alpha cutout suitable for an app header over photographic backgrounds."
+}

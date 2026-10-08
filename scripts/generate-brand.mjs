@@ -1,4 +1,4 @@
-// Selected raccoon artwork + serif helper lettering. Run `npm run brand:generate`.
+// Fox cutout + outlined Luminari lettering. Run `npm run brand:generate`.
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import sharp from "sharp";
 
@@ -11,16 +11,20 @@ const green = "#344b3b",
 const svg = (w, h, body) =>
   `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">${body}</svg>`;
 
-// Preserve the selected concept exactly; only resize for platform exports.
-const source = await readFile(new URL("concepts/04-raccoon-face.png", out));
+// Header uses the transparent cutout; device icons keep the original square art.
+const source = await readFile(new URL("fox-cutout.png", out));
+const tileSource = await readFile(new URL("concepts/03-fox-face.png", out));
 const markPng = await sharp(source).resize(512, 512).png().toBuffer();
 const mark = () =>
   `<image width="100" height="100" href="data:image/png;base64,${markPng.toString("base64")}"/>`;
 await writeFile(new URL("mark.png", out), markPng);
 
-// The selected lockup reads only “helper”; the app name remains Root Helper.
+// Checked-in glyph outlines keep the decorative type consistent on every device.
+const lettering = JSON.parse(
+  await readFile(new URL("helper-lettering.json", out), "utf8"),
+);
 const wordmark = (ink) =>
-  `<text x="0" y="83" fill="${ink}" font-family="Georgia, serif" font-size="72" font-weight="700" letter-spacing="-2.5">helper</text>`;
+  `<svg x="0" y="25" width="236" height="70" viewBox="${lettering.viewBox}" fill="${ink}"><path d="${lettering.path}"/></svg>`;
 const lockup = (ink) =>
   `<g transform="translate(0 10)">${mark()}</g><g transform="translate(116 0)">${wordmark(ink)}</g>`;
 const logo = svg(360, 120, lockup(green));
@@ -46,14 +50,14 @@ await sharp(source)
   .png()
   .toFile(new URL("icon.png", app).pathname);
 for (const size of [192, 512]) {
-  await sharp(source)
+  await sharp(tileSource)
     .resize(size, size)
     .png()
     .toFile(new URL(`icon-${size}.png`, out).pathname);
 }
 // Fit the entire artwork within Android's central 80%-diameter safe circle:
 // a 280px square has a corner radius of 198px, below the 204.8px limit.
-await sharp(source)
+await sharp(tileSource)
   .resize(280, 280)
   .extend({
     top: 116,
@@ -64,7 +68,7 @@ await sharp(source)
   })
   .png()
   .toFile(new URL("icon-maskable-512.png", out).pathname);
-await sharp(source)
+await sharp(tileSource)
   .resize(180, 180)
   .png()
   .toFile(new URL("apple-icon.png", app).pathname);
@@ -93,7 +97,7 @@ await writeFile(
   Buffer.concat([header, ...frames]),
 );
 
-// Self-contained social card with the selected raccoon and helper lettering.
+// Self-contained social card with the fox cutout and Helper lettering.
 const fern = `<path d="M0 200Q60 110 50 0M38 115Q-12 104 2 77Q38 79 38 115ZM48 75Q83 54 88 23Q55 28 48 75ZM25 153Q-15 145 -19 119Q13 120 25 153"/>`;
 const share = svg(
   1200,

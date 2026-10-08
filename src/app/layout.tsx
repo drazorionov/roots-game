@@ -22,7 +22,7 @@ export const metadata: Metadata = {
         url: "/brand/share-preview.png",
         width: 1200,
         height: 630,
-        alt: "Root Helper — a raccoon wanderer with a rust scarf and woodland lettering. Your next Woodland story starts here.",
+        alt: "Root Helper — a fox scout and decorative Helper lettering. Your next Woodland story starts here.",
       },
     ],
   },
