@@ -485,5 +485,15 @@
   "Join with an invite code, or create a campaign for your friends.": "Присоединитесь по коду приглашения или создайте кампанию для друзей.",
   "1 · Choose your character": "1 · Выберите героя",
   "Who will you be?": "Кем вы будете?",
-  "Pick a hero, then choose a campaign.": "Выберите героя, а затем — кампанию."
+  "Pick a hero, then choose a campaign.": "Выберите героя, а затем — кампанию.",
+  "Choose a campaign, then bring your character.": "Выберите кампанию, а затем героя.",
+  "Game controls": "Управление игрой",
+  "Exit to main": "На главную",
+  "Restart game": "Перезапустить игру",
+  "Start new game": "Начать новую",
+  "1 · Choose your campaign": "1 · Выберите кампанию",
+  "2 · Choose your character": "2 · Выберите героя",
+  "Change campaign": "Сменить кампанию",
+  "Choose an existing hero or create one for this campaign. Saved stats are kept.": "Выберите героя или создайте нового для этой кампании. Сохранённое состояние героя не изменится.",
+  "Move from {campaign}": "Перевести из «{campaign}»"
 }

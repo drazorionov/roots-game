@@ -485,5 +485,15 @@
   "Join with an invite code, or create a campaign for your friends.": "Tritt mit einem Einladungscode bei oder erstelle eine Kampagne für deine Freunde.",
   "1 · Choose your character": "1 · Charakter wählen",
   "Who will you be?": "Wer wirst du sein?",
-  "Pick a hero, then choose a campaign.": "Wähle einen Helden und dann eine Kampagne."
+  "Pick a hero, then choose a campaign.": "Wähle einen Helden und dann eine Kampagne.",
+  "Choose a campaign, then bring your character.": "Wähle eine Kampagne und dann deinen Charakter.",
+  "Game controls": "Spielsteuerung",
+  "Exit to main": "Zur Startseite",
+  "Restart game": "Spiel neu starten",
+  "Start new game": "Neues Spiel",
+  "1 · Choose your campaign": "1 · Kampagne wählen",
+  "2 · Choose your character": "2 · Charakter wählen",
+  "Change campaign": "Kampagne wechseln",
+  "Choose an existing hero or create one for this campaign. Saved stats are kept.": "Wähle einen Helden oder erstelle einen für diese Kampagne. Gespeicherte Werte bleiben erhalten.",
+  "Move from {campaign}": "Aus {campaign} übernehmen"
 }

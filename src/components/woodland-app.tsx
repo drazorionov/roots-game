@@ -10,6 +10,7 @@ import {
   Sprout,
   Home,
   Compass,
+  RotateCcw,
   Plus,
   Users,
   UserRound,
@@ -91,7 +92,10 @@ export default function WoodlandApp() {
     [error, setError] = useState(""),
     [notice, setNotice] = useState("");
   const [resumeId, setResumeId] = useState("");
-  const [choosingCampaign, setChoosingCampaign] = useState(false);
+  const [gameStep, setGameStep] = useState<"campaign" | "character" | "sheet">(
+    "campaign",
+  );
+  const [gameCampaignId, setGameCampaignId] = useState("");
   const [editorStep, setEditorStep] = useState(0);
   const [editorDirty, setEditorDirty] = useState(false);
   const [afterAuth, setAfterAuth] = useState<"campaign" | "join" | null>(null);
@@ -100,8 +104,16 @@ export default function WoodlandApp() {
   const shown = heroes.filter(
     (h) => !campaignFilter || h.campaign_id === campaignFilter,
   );
-  const resumable =
-    heroes.find((h) => h.id === resumeId) || heroes.find((h) => h.campaign_id);
+  const resumable = heroes.find(
+    (h) => h.id === resumeId && campaigns.some((c) => c.id === h.campaign_id),
+  );
+  const gameCampaign = campaigns.find((c) => c.id === gameCampaignId);
+  const activeGame =
+    tab === "play" &&
+    gameStep === "sheet" &&
+    !!hero &&
+    !!campaign &&
+    campaign.id === gameCampaignId;
   const scenic = !user || tab === "home";
   function remember(id: string, userId = user?.id) {
     setResumeId(id);
@@ -110,32 +122,53 @@ export default function WoodlandApp() {
         localStorage.setItem(`root-session-${userId}`, id);
       } catch {}
   }
-  function continueGame() {
-    setSelected(resumable?.id || "");
-    setChoosingCampaign(false);
+  function startNewGame() {
+    setSelected("");
+    setGameCampaignId("");
+    setGameStep("campaign");
     setTab("play");
     setError("");
   }
-  function pickCharacter(h: Hero) {
-    setSelected(h.id);
-    setChoosingCampaign(false);
-    remember(h.id);
+  function continueGame() {
+    if (!resumable) {
+      startNewGame();
+      return;
+    }
+    setSelected(resumable.id);
+    setGameCampaignId(resumable.campaign_id!);
+    setGameStep("sheet");
+    setTab("play");
+    setError("");
   }
-  async function enterCampaign(campaignId: string, fromCreation = false) {
-    if (!hero || (busy && !fromCreation)) return;
+  function chooseCampaign(id: string) {
+    setGameCampaignId(id);
+    setGameStep("character");
+    setSelected("");
+    setError("");
+  }
+  async function pickCharacter(h: Hero) {
+    if (tab !== "play") {
+      setSelected(h.id);
+      return;
+    }
+    if (!gameCampaign || busy) return;
     setBusy(true);
     setError("");
     try {
-      const data = await api("heroes", "POST", {
-        id: hero.id,
-        version: hero.version,
-        campaignId,
-        sheet: hero.sheet,
-      });
-      updated(data.hero);
-      remember(hero.id);
-      setChoosingCampaign(false);
-      setTab("play");
+      let chosen = h;
+      if (h.campaign_id !== gameCampaign.id) {
+        const data = await api("heroes", "POST", {
+          id: h.id,
+          version: h.version,
+          campaignId: gameCampaign.id,
+          sheet: h.sheet,
+        });
+        chosen = data.hero;
+        updated(chosen);
+      }
+      setSelected(chosen.id);
+      remember(chosen.id);
+      setGameStep("sheet");
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -144,7 +177,7 @@ export default function WoodlandApp() {
   }
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" });
-  }, [tab, selected, choosingCampaign]);
+  }, [tab, selected, gameStep]);
   useEffect(() => {
     document.documentElement.lang = locale;
     document.title = translate(locale, "Root Helper · Your characters");
@@ -230,7 +263,8 @@ export default function WoodlandApp() {
   }
   async function persist(
     sheet: Sheet,
-    campaignId: string | null = editing?.campaign_id || null,
+    campaignId: string | null = editing?.campaign_id ||
+      (tab === "play" ? gameCampaignId : null),
   ) {
     const data = await api("heroes", "POST", {
       id: editing?.id,
@@ -242,7 +276,10 @@ export default function WoodlandApp() {
     setSelected(data.hero.id);
     setCampaignFilter("");
     if (tab !== "play") setTab("characters");
-    remember(data.hero.id, data.hero.owner_id);
+    if (tab === "play" && data.hero.campaign_id) {
+      remember(data.hero.id, data.hero.owner_id);
+      setGameStep("sheet");
+    }
     setDraft(undefined);
     setModal(null);
     setNotice("Character sheet saved.");
@@ -326,7 +363,7 @@ export default function WoodlandApp() {
         modal === "join" ? "You joined the party." : "Campaign created.",
       );
       setCampaignFilter(data.id);
-      if (tab === "play" && hero) await enterCampaign(data.id, true);
+      if (tab === "play") chooseCampaign(data.id);
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -345,77 +382,80 @@ export default function WoodlandApp() {
   }
   return (
     <div
-      className={`simple-app ${scenic ? `scene-app ${user ? "camp-scene" : "welcome-scene"}` : "workspace-app"}`}
+      className={`simple-app scene-app ${user ? "camp-scene" : "welcome-scene"} ${!scenic ? "workspace-scene" : ""}`}
     >
-      <header className="app-header">
-        {scenic ? (
-          <div className="brand">
-            <Sprout size={25} />
-            <span>
-              root <small>helper</small>
-            </span>
-          </div>
-        ) : (
-          <button
-            className="icon-btn home-control"
-            aria-label={t("Home")}
-            title={t("Home")}
-            onClick={() => {
-              setTab("home");
-              setError("");
-            }}
-          >
-            <Home size={20} />
-          </button>
-        )}
-        <div className="header-actions">
-          <select
-            className="language-select"
-            value={locale}
-            aria-label={t("Language")}
-            onChange={(e) => setLocale(e.target.value as Locale)}
-          >
-            <option value="en">English</option>
-            <option value="ru">Русский</option>
-            <option value="de">Deutsch</option>
-          </select>
-          {user ? (
-            <button
-              className="icon-btn"
-              aria-label={t("Sign out")}
-              onClick={async () => {
-                try {
-                  await api("auth", "DELETE");
-                  setUser(null);
-                  setTab("home");
-                  setResumeId("");
-                  setChoosingCampaign(false);
-                  setHeroes([]);
-                  setCampaigns([]);
-                  setSelected("");
-                  setCampaignFilter("");
-                } catch (e) {
-                  setError((e as Error).message);
-                }
-              }}
-            >
-              <LogOut size={19} />
-            </button>
+      {!activeGame && (
+        <header className="app-header">
+          {scenic ? (
+            <div className="brand">
+              <Sprout size={25} />
+              <span>
+                root <small>helper</small>
+              </span>
+            </div>
           ) : (
             <button
-              className="btn small"
+              className="icon-btn home-control"
+              aria-label={t("Home")}
+              title={t("Home")}
               onClick={() => {
-                setAfterAuth(null);
-                setDraft(undefined);
-                setAuthMode("login");
-                open("auth");
+                setTab("home");
+                setError("");
               }}
             >
-              {t("Sign in")}
+              <Home size={20} />
             </button>
           )}
-        </div>
-      </header>
+          <div className="header-actions">
+            <select
+              className="language-select"
+              value={locale}
+              aria-label={t("Language")}
+              onChange={(e) => setLocale(e.target.value as Locale)}
+            >
+              <option value="en">English</option>
+              <option value="ru">Русский</option>
+              <option value="de">Deutsch</option>
+            </select>
+            {user ? (
+              <button
+                className="icon-btn"
+                aria-label={t("Sign out")}
+                onClick={async () => {
+                  try {
+                    await api("auth", "DELETE");
+                    setUser(null);
+                    setTab("home");
+                    setResumeId("");
+                    setGameStep("campaign");
+                    setGameCampaignId("");
+                    setHeroes([]);
+                    setCampaigns([]);
+                    setSelected("");
+                    setCampaignFilter("");
+                  } catch (e) {
+                    setError((e as Error).message);
+                  }
+                }}
+              >
+                <LogOut size={19} />
+              </button>
+            ) : (
+              <button
+                className="btn small"
+                onClick={() => {
+                  setAfterAuth(null);
+                  setDraft(undefined);
+                  setAuthMode("login");
+                  open("auth");
+                }}
+              >
+                {t("Sign in")}
+              </button>
+            )}
+          </div>
+        </header>
+      )}
       <main className="simple-main">
         {error && !modal && (
           <p className="error" role="alert">
@@ -466,7 +506,7 @@ export default function WoodlandApp() {
                   <small>
                     {resumable
                       ? `${resumable.sheet.name} · ${campaigns.find((c) => c.id === resumable.campaign_id)?.name || t("Choose campaign")}`
-                      : t("Choose a character and gather your party.")}
+                      : t("Choose a campaign, then bring your character.")}
                   </small>
                 </span>
                 <ChevronRight size={22} />
@@ -502,53 +542,64 @@ export default function WoodlandApp() {
               </button>
             </div>
           </section>
-        ) : (tab === "play" || tab === "characters") &&
-          hero &&
-          (tab === "characters" || (campaign && !choosingCampaign)) ? (
+        ) : activeGame || (tab === "characters" && hero) ? (
           <>
-            <div className="character-toolbar">
-              <button className="text-link" onClick={() => setSelected("")}>
-                <ArrowLeft size={16} />
-                {t(tab === "play" ? "Change character" : "All characters")}
-              </button>
-              <button
-                className="btn small"
-                onClick={() => {
-                  setTab("play");
-                  setChoosingCampaign(true);
-                }}
-              >
-                {campaign?.name || t("Choose campaign")}
-                <ChevronRight size={15} />
-              </button>
-            </div>
+            {activeGame ? (
+              <nav className="game-actions" aria-label={t("Game controls")}>
+                <button
+                  onClick={() => {
+                    setTab("home");
+                    setError("");
+                  }}
+                >
+                  <Home size={17} />
+                  {t("Exit to main")}
+                </button>
+                <button
+                  onClick={() => {
+                    setSelected("");
+                    setGameStep("character");
+                    setError("");
+                  }}
+                >
+                  <RotateCcw size={17} />
+                  {t("Restart game")}
+                </button>
+                <button onClick={startNewGame}>
+                  <Plus size={18} />
+                  {t("Start new game")}
+                </button>
+              </nav>
+            ) : (
+              <div className="character-toolbar">
+                <button className="text-link" onClick={() => setSelected("")}>
+                  <ArrowLeft size={16} />
+                  {t("All characters")}
+                </button>
+                <button className="btn small" onClick={startNewGame}>
+                  {t("Start / join a game")}
+                  <ChevronRight size={15} />
+                </button>
+              </div>
+            )}
             <CharacterControls
-              key={hero.id}
-              hero={hero}
+              key={hero!.id}
+              hero={hero!}
+              campaignName={activeGame ? campaign?.name : undefined}
               edit={(step = 0) => {
                 setEditorStep(step);
                 setEditorDirty(false);
-                setEditing(hero);
+                setEditing(hero!);
                 setDraft(undefined);
                 open("character");
               }}
               onSaved={updated}
             />
           </>
-        ) : tab === "play" && hero ? (
+        ) : tab === "play" && (gameStep === "campaign" || !gameCampaign) ? (
           <section className="journey-picker">
-            <p className="eyebrow">{t("2 · Choose your campaign")}</p>
+            <p className="eyebrow">{t("1 · Choose your campaign")}</p>
             <h1>{t("Where will you play?")}</h1>
-            <div className="chosen-character">
-              <Portrait species={hero.sheet.species} />
-              <span>
-                <strong>{hero.sheet.name}</strong>
-                <small>{t(hero.sheet.playbook)}</small>
-              </span>
-              <button className="text-link" onClick={() => setSelected("")}>
-                {t("Change")}
-              </button>
-            </div>
             <div className="campaign-actions">
               <button
                 className="btn primary"
@@ -573,7 +624,7 @@ export default function WoodlandApp() {
                   key={c.id}
                   className="campaign-choice"
                   disabled={busy}
-                  onClick={() => void enterCampaign(c.id)}
+                  onClick={() => chooseCampaign(c.id)}
                 >
                   <span>
                     <strong>{c.name}</strong>
@@ -597,7 +648,16 @@ export default function WoodlandApp() {
         ) : tab === "characters" || tab === "play" ? (
           <section className="journey-picker">
             {tab === "play" && (
-              <p className="eyebrow">{t("1 · Choose your character")}</p>
+              <div className="campaign-selection">
+                <p className="eyebrow">{t("2 · Choose your character")}</p>
+                <strong>{gameCampaign?.name}</strong>
+                <button
+                  className="text-link"
+                  onClick={() => setGameStep("campaign")}
+                >
+                  {t("Change campaign")}
+                </button>
+              </div>
             )}
             <div className="page-heading">
               <div>
@@ -607,7 +667,7 @@ export default function WoodlandApp() {
                 <p>
                   {t(
                     tab === "play"
-                      ? "Pick a hero, then choose a campaign."
+                      ? "Choose an existing hero or create one for this campaign. Saved stats are kept."
                       : "Create a character. Save it. Play.",
                   )}
                 </p>
@@ -635,7 +695,8 @@ export default function WoodlandApp() {
                 <button
                   key={h.id}
                   className="character-tile"
-                  onClick={() => pickCharacter(h)}
+                  disabled={busy}
+                  onClick={() => void pickCharacter(h)}
                 >
                   <span className="tile-portrait">
                     <Portrait species={h.sheet.species} />
@@ -646,8 +707,16 @@ export default function WoodlandApp() {
                       {t(h.sheet.species)} · {t(h.sheet.playbook)}
                     </span>
                     <small>
-                      {campaigns.find((c) => c.id === h.campaign_id)?.name ||
-                        t("No campaign yet")}
+                      {tab === "play" &&
+                      h.campaign_id &&
+                      h.campaign_id !== gameCampaignId
+                        ? t("Move from {campaign}", {
+                            campaign:
+                              campaigns.find((c) => c.id === h.campaign_id)
+                                ?.name || t("Campaign"),
+                          })
+                        : campaigns.find((c) => c.id === h.campaign_id)?.name ||
+                          t("No campaign yet")}
                     </small>
                   </span>
                   <ChevronRight size={20} />

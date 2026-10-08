@@ -1777,3 +1777,107 @@ form .inline-check {
 .journey-picker .eyebrow {
   display: block;
 }
+
+/* The same camp surrounds every signed-in screen. Paper keeps the sheet legible. */
+.workspace-scene::before,
+.workspace-scene::after {
+  position: fixed;
+}
+.workspace-scene .simple-main {
+  max-width: 1100px;
+  padding: 18px 24px max(32px, env(safe-area-inset-bottom));
+}
+.workspace-scene .app-header {
+  max-width: 1100px;
+  padding-bottom: 0;
+}
+.workspace-scene .home-control {
+  color: #fff6df;
+}
+.workspace-scene .journey-picker {
+  color: var(--ink);
+  padding: 28px;
+  background: var(--panel) url("/art/paper-grain.svg");
+  border: 1px solid #b4a582;
+  border-radius: 8px 13px 8px 11px;
+  box-shadow: 0 8px 28px #10271e66;
+}
+.workspace-scene .journey-picker h1 {
+  color: var(--ink);
+  font-size: clamp(28px, 4vw, 38px);
+  letter-spacing: -0.8px;
+}
+.workspace-scene .play-sheet {
+  color: var(--ink);
+}
+.workspace-scene .character-toolbar .text-link {
+  color: #fff6df;
+}
+.workspace-scene .character-toolbar .btn {
+  color: var(--ink);
+}
+.game-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0 0 16px;
+  padding-top: env(safe-area-inset-top);
+}
+.game-actions button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #fff6df;
+  background: #162e28cc;
+  border: 1px solid #d5ccb563;
+  border-radius: 6px;
+  padding: 10px 14px;
+  min-height: 46px;
+  font-size: 14px;
+}
+.game-actions button:hover {
+  background: #355143;
+}
+.campaign-selection {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  margin-bottom: 22px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 14px;
+}
+.campaign-selection .eyebrow {
+  flex-basis: 100%;
+  margin: 0;
+}
+.campaign-selection strong {
+  flex: 1;
+  overflow-wrap: anywhere;
+}
+.sheet-campaign {
+  font-size: 13px !important;
+  font-weight: 650;
+  margin-top: 7px !important;
+}
+@media (max-width: 600px) {
+  .workspace-scene .simple-main {
+    padding: 12px 12px max(24px, env(safe-area-inset-bottom));
+  }
+  .workspace-scene .journey-picker {
+    padding: 22px 18px;
+    margin-top: 12px;
+  }
+  .game-actions {
+    gap: 6px;
+  }
+  .game-actions button {
+    flex: 1;
+    flex-direction: column;
+    padding: 9px 5px;
+    gap: 5px;
+    font-size: 12px;
+    line-height: 1.25;
+  }
+}
