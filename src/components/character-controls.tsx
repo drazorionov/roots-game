@@ -1,26 +1,47 @@
 "use client";
-import { useState, type FormEvent } from "react";
-import { Backpack, Check, Edit3, Heart, Plus, Trash2 } from "lucide-react";
+import { useRef, useState } from "react";
+import { Check, Edit3, Heart, Dices } from "lucide-react";
 import { api } from "@/lib/client-api";
 import { useTranslation } from "@/lib/i18n";
-import { type Hero, type Sheet, stats } from "@/lib/sheet";
+import {
+  type Hero,
+  type Sheet,
+  stats,
+  harmTracks,
+  harmCapacity,
+} from "@/lib/sheet";
+import { effectiveStats, natureHints, setupRemaining } from "@/lib/playbooks";
 import { Portrait } from "./art";
+import SheetCounter from "./sheet-counter";
+import GearPanel from "./gear-panel";
+import { MovesPanel, BackgroundPanel, ReputationPanel } from "./sheet-panels";
 export default function CharacterControls({
   hero,
   edit,
   onSaved,
 }: {
   hero: Hero;
-  edit: () => void;
+  edit: (step?: number) => void;
   onSaved: (h: Hero) => void;
 }) {
   const { t } = useTranslation();
   const [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [saved, setSaved] = useState(false),
-    [adding, setAdding] = useState(false);
+    [tab, setTab] = useState("Equipment");
+  const locked = useRef(false);
+  const [roll, setRoll] = useState<{
+    stat: string;
+    dice: number[];
+    modifier: number;
+    total: number;
+  } | null>(null);
+  const sheet = hero.sheet,
+    attributes = effectiveStats(sheet),
+    remaining = setupRemaining(sheet);
   async function update(patch: Partial<Sheet>) {
-    if (busy) return false;
+    if (locked.current) return false;
+    locked.current = true;
     setBusy(true);
     setError("");
     setSaved(false);
@@ -29,7 +50,7 @@ export default function CharacterControls({
         id: hero.id,
         campaignId: hero.campaign_id,
         version: hero.version,
-        sheet: { ...hero.sheet, ...patch },
+        sheet: { ...sheet, ...patch },
       });
       onSaved(data.hero);
       setSaved(true);
@@ -38,209 +59,211 @@ export default function CharacterControls({
       setError((e as Error).message);
       return false;
     } finally {
+      locked.current = false;
       setBusy(false);
     }
   }
-  async function addGear(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const form = event.currentTarget;
-    const data = new FormData(form);
-    if (
-      await update({
-        equipment: [
-          ...hero.sheet.equipment,
-          {
-            name: String(data.get("name")),
-            details: String(data.get("details")),
-            load: Number(data.get("load")),
-            wear: 0,
-          },
-        ],
-      })
-    ) {
-      form.reset();
-      setAdding(false);
-    }
+  async function rollAttribute(stat: (typeof stats)[number]) {
+    if (locked.current) return;
+    const modifier = attributes[stat] + sheet.forward + sheet.ongoing;
+    if (sheet.forward && !(await update({ forward: 0 }))) return;
+    const d6 = () => {
+      const bytes = new Uint8Array(1);
+      do {
+        crypto.getRandomValues(bytes);
+      } while (bytes[0] >= 252);
+      return (bytes[0] % 6) + 1;
+    };
+    const dice = [d6(), d6()];
+    setRoll({ stat, dice, modifier, total: dice[0] + dice[1] + modifier });
   }
   return (
     <div className="play-sheet">
       <div className="play-identity">
         <div className="play-portrait">
-          <Portrait species={hero.sheet.species} />
+          <Portrait species={sheet.species} />
         </div>
         <div>
-          <div className="eyebrow">{t("YOUR VAGABOND")}</div>
-          <h3>{hero.sheet.name}</h3>
+          <h3>{sheet.name}</h3>
           <p>
-            {t(hero.sheet.species)} · {t(hero.sheet.playbook)}
+            {t(sheet.species)} · {t(sheet.playbook)}
           </p>
-          <small>{hero.sheet.pronouns}</small>
+          <small>{sheet.pronouns}</small>
         </div>
-        <button className="btn" disabled={busy} onClick={edit}>
+        <button className="btn" disabled={busy} onClick={() => edit()}>
           <Edit3 size={15} />
           {t("Edit character")}
         </button>
       </div>
+      {remaining.length > 0 && (
+        <details className="setup-checklist">
+          <summary>
+            {t("Finish setup")} · {remaining.length}
+          </summary>
+          <ul>
+            {remaining.map((message) => (
+              <li key={message}>{t(message)}</li>
+            ))}
+          </ul>
+          <button className="text-link" onClick={() => edit()}>
+            {t("Continue character setup")}
+          </button>
+        </details>
+      )}
       <div className="play-stats">
         {stats.map((stat) => (
-          <div key={stat}>
+          <button
+            type="button"
+            key={stat}
+            aria-label={t("Roll {stat}", { stat: t(stat) })}
+            disabled={busy}
+            onClick={() => void rollAttribute(stat)}
+          >
             <span>{t(stat)}</span>
             <strong>
-              {hero.sheet.stats[stat] > 0 ? "+" : ""}
-              {hero.sheet.stats[stat]}
+              {attributes[stat] > 0 ? "+" : ""}
+              {attributes[stat]}
             </strong>
-          </div>
+            <Dices size={13} />
+          </button>
         ))}
       </div>
-      <div className="play-columns">
-        <section className="play-panel">
+      {roll && (
+        <div className="roll-result" role="status">
+          <Dices size={20} />
+          <span>
+            <strong>
+              {t(roll.stat)}: {roll.total}
+            </strong>
+            <small>
+              {roll.dice.join(" + ")} {roll.modifier >= 0 ? "+" : "−"}{" "}
+              {Math.abs(roll.modifier)} ·{" "}
+              {t(
+                roll.total >= 10
+                  ? "10+: strong hit"
+                  : roll.total >= 7
+                    ? "7–9: mixed hit"
+                    : "6−: miss",
+              )}
+            </small>
+          </span>
+          <button className="text-link" onClick={() => setRoll(null)}>
+            {t("Dismiss")}
+          </button>
+        </div>
+      )}
+      <div className="play-columns working-columns">
+        <aside className="play-panel harm-panel">
           <h3>
             <Heart size={20} />
-            {t("The cost of adventure")}
+            {t("Harm")}
           </h3>
-          <p className="field-hint">
-            {t("Mark or clear a box. Each change saves immediately.")}
-          </p>
-          {(["injury", "exhaustion", "depletion"] as const).map((track) => (
+          <p className="field-hint">{t("Tap a box to mark or clear it.")}</p>
+          {harmTracks.map((track) => (
             <div className={`live-track ${track}`} key={track}>
               <div>
                 <strong>{t(track)}</strong>
-                <span>{hero.sheet[track]} / 4</span>
+                <span>
+                  {sheet[track]} / {harmCapacity(sheet, track)}
+                </span>
               </div>
               <div className="live-track-controls">
-                {[1, 2, 3, 4].map((n) => (
+                {Array.from(
+                  { length: harmCapacity(sheet, track) },
+                  (_, i) => i + 1,
+                ).map((n) => (
                   <button
-                    className={`live-pip ${hero.sheet[track] >= n ? "filled" : ""}`}
+                    className={`live-pip ${sheet[track] >= n ? "filled" : ""}`}
                     key={n}
                     aria-label={`${t(track)} ${n}`}
-                    aria-pressed={hero.sheet[track] >= n}
+                    aria-pressed={sheet[track] >= n}
                     disabled={busy}
                     onClick={() =>
-                      update({ [track]: hero.sheet[track] === n ? n - 1 : n })
+                      void update({ [track]: sheet[track] === n ? n - 1 : n })
                     }
                   >
-                    {hero.sheet[track] >= n && <Check size={17} />}
+                    {sheet[track] >= n && <Check size={17} />}
                   </button>
                 ))}
               </div>
+              {sheet[track] === harmCapacity(sheet, track) && (
+                <small className="track-full">{t("Track full")}</small>
+              )}
             </div>
           ))}
-        </section>
-        <section className="play-panel">
-          <div className="panel-heading">
-            <h3>
-              <Backpack size={20} />
-              {t("Equipment")}
-            </h3>
-            <span className="pill">
-              {t("Total load:")}{" "}
-              {hero.sheet.equipment.reduce((sum, item) => sum + item.load, 0)}
-            </span>
-          </div>
-          {!hero.sheet.equipment.length && (
+          <details className="session-resources">
+            <summary>{t("Hold & modifiers")}</summary>
+            {(["hold", "forward", "ongoing"] as const).map((key, i) => (
+              <SheetCounter
+                key={key}
+                label={t(["Hold", "Forward", "Ongoing"][i])}
+                value={sheet[key]}
+                min={key === "hold" ? 0 : -3}
+                max={key === "hold" ? 99 : 3}
+                busy={busy}
+                change={(value) => {
+                  void update({ [key]: value });
+                }}
+              />
+            ))}
             <p className="field-hint">
-              {t("Every traveler starts with a story and a few belongings.")}
+              {t(
+                "Attribute rolls include forward and ongoing. Forward is cleared after one roll; hold is spent manually.",
+              )}
             </p>
+          </details>
+          {sheet.nature && (
+            <details className="nature-card">
+              <summary>
+                {t("Nature")} · {t(sheet.nature)}
+              </summary>
+              <p>
+                {natureHints[sheet.nature]
+                  ? t(natureHints[sheet.nature])
+                  : sheet.nature}
+              </p>
+              <button
+                className="btn small"
+                disabled={busy || sheet.exhaustion === 0}
+                onClick={() => void update({ exhaustion: 0 })}
+              >
+                {t("Fulfill nature: clear exhaustion")}
+              </button>
+            </details>
           )}
-          {hero.sheet.equipment.map((item, i) => (
-            <div className="live-gear" key={i}>
-              <div>
-                <strong>{item.name || t("item")}</strong>
-                <span>
-                  {t("Load")}: {item.load}
-                </span>
-                <button
-                  className="icon-btn"
-                  disabled={busy}
-                  aria-label={t("Remove {item}", {
-                    item: item.name || t("item"),
-                  })}
-                  onClick={() => {
-                    if (window.confirm(t("Remove this piece of equipment?")))
-                      void update({
-                        equipment: hero.sheet.equipment.filter(
-                          (_, j) => j !== i,
-                        ),
-                      });
-                  }}
-                >
-                  <Trash2 size={14} />
-                </button>
-              </div>
-              {item.details && <p>{item.details}</p>}
-              <div className="gear-wear">
-                <span>{t("Wear")}</span>
-                {[1, 2, 3, 4].map((n) => (
-                  <button
-                    key={n}
-                    className={`pip ${item.wear >= n ? "filled" : ""}`}
-                    aria-label={t("{item}: wear {value}", {
-                      item: item.name,
-                      value: n,
-                    })}
-                    aria-pressed={item.wear >= n}
-                    disabled={busy}
-                    onClick={() =>
-                      update({
-                        equipment: hero.sheet.equipment.map((x, j) =>
-                          j === i
-                            ? { ...x, wear: x.wear === n ? n - 1 : n }
-                            : x,
-                        ),
-                      })
-                    }
-                  />
-                ))}
-                <small>{item.wear}/4</small>
-              </div>
-            </div>
-          ))}
-          {adding ? (
-            <form className="quick-gear-form" onSubmit={addGear}>
-              <label>
-                {t("Item name")}
-                <input name="name" required maxLength={100} />
-              </label>
-              <label>
-                {t("Details & tags")}
-                <input name="details" maxLength={500} />
-              </label>
-              <label>
-                {t("Load")}
-                <input
-                  name="load"
-                  type="number"
-                  min={0}
-                  max={10}
-                  defaultValue={1}
-                  required
-                />
-              </label>
-              <div className="form-actions">
-                <button
-                  className="btn"
-                  type="button"
-                  onClick={() => setAdding(false)}
-                  disabled={busy}
-                >
-                  {t("Cancel")}
-                </button>
-                <button className="btn primary" disabled={busy}>
-                  {t("Add equipment")}
-                </button>
-              </div>
-            </form>
-          ) : (
-            <button
-              className="btn"
-              disabled={busy || hero.sheet.equipment.length >= 30}
-              onClick={() => setAdding(true)}
-            >
-              <Plus size={16} />
-              {t("Add equipment")}
-            </button>
-          )}
-        </section>
+        </aside>
+        <div className="sheet-workspace">
+          <nav
+            className="sheet-tabs"
+            aria-label={t("Character sheet sections")}
+          >
+            {["Equipment", "Moves", "Background", "Reputation"].map((name) => (
+              <button
+                key={name}
+                aria-current={tab === name ? "page" : undefined}
+                onClick={() => setTab(name)}
+              >
+                {t(name)}
+              </button>
+            ))}
+          </nav>
+          <div className="sheet-tab-content">
+            {tab === "Equipment" ? (
+              <GearPanel sheet={sheet} busy={busy} update={update} />
+            ) : tab === "Moves" ? (
+              <MovesPanel sheet={sheet} />
+            ) : tab === "Background" ? (
+              <BackgroundPanel
+                sheet={sheet}
+                busy={busy}
+                update={update}
+                edit={() => edit(2)}
+              />
+            ) : (
+              <ReputationPanel sheet={sheet} busy={busy} update={update} />
+            )}
+          </div>
+        </div>
       </div>
       <div className="quick-save-status" role="status">
         {busy ? (

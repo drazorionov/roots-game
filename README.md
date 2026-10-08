@@ -6,10 +6,10 @@ A simple React + Next.js companion for Root: The Roleplaying Game, designed for 
 
 ## Use the app
 
-- Create a character with a name, species, playbook, and five attributes. Optional notes stay tucked away.
+- Create a character in three steps: identity, abilities, and background. Nine core playbooks supply starting attributes, nature, drives, moves, feats, and weapon choices. Save an unfinished draft at any step and finish it later.
 - Sign in to save. Your character draft is kept during sign-in, and a campaign is optional.
 - See your campaigns, join with an invite code, or create one and share its code.
-- Choose a campaign for your saved character. Tap harm boxes to track injury, exhaustion, and depletion; add equipment and track wear. Each change saves immediately.
+- Choose a campaign for your saved character. Tap harm boxes to track injury, exhaustion, and depletion; manage equipment, coins, load, and wear. Roll attributes with forward/ongoing modifiers, mark fulfilled drives, and track faction reputation. Each change saves immediately.
 - Switch between English, Russian, and German. Your device remembers the language; your written content remains unchanged.
 
 The interface has two tabs: Characters and Campaigns. Phone screens stack the controls; iPad screens put harm and equipment side by side. The visual theme uses textured parchment, ink borders, serif headings, and rust, sage, ochre, and slate accents inspired by the supplied character reference and [Root’s official digital site](https://www.direwolfdigital.com/root/). Portraits are original SVG artwork; the empty-state woodland illustration was generated with imagegen and optimized as a local WebP. Asset provenance and the generation prompt are recorded in [public/art/README.md](public/art/README.md). Existing character data is preserved when editing a sheet.
@@ -53,4 +53,4 @@ The application uses `users`, `sessions`, `campaigns`, `memberships`, `heroes`, 
 
 Translations live in `src/lib/locales/{ru,de}.json`. Character data retains stable identifiers regardless of language. Tests check translation coverage and placeholders.
 
-This is a manual character tracker: take starting attributes from your playbook. Password recovery and offline editing are not available. Root belongs to Leder Games; Root: The Roleplaying Game is published by Magpie Games. This is an unofficial fan companion.
+Playbook presets and short move reminders follow the supplied player handouts; [reference notes](docs/playbook-reference.md) explain automatic and manual effects. Password recovery and offline editing are not available. Root belongs to Leder Games; Root: The Roleplaying Game is published by Magpie Games. This is an unofficial fan companion.

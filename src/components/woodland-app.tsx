@@ -88,6 +88,7 @@ export default function WoodlandApp() {
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [notice, setNotice] = useState("");
+  const [editorStep, setEditorStep] = useState(0);
   const [editorDirty, setEditorDirty] = useState(false);
   const [afterAuth, setAfterAuth] = useState<"campaign" | "join" | null>(null);
   const hero = heroes.find((h) => h.id === selected);
@@ -154,6 +155,7 @@ export default function WoodlandApp() {
     setAfterAuth(null);
     setEditorDirty(false);
     setEditing(null);
+    setEditorStep(0);
     setDraft(undefined);
     open("character");
   }
@@ -404,7 +406,8 @@ export default function WoodlandApp() {
                 <CharacterControls
                   key={hero.id}
                   hero={hero}
-                  edit={() => {
+                  edit={(step = 0) => {
+                    setEditorStep(step);
                     setEditorDirty(false);
                     setEditing(hero);
                     setDraft(undefined);
@@ -582,6 +585,7 @@ export default function WoodlandApp() {
         >
           <CharacterEditor
             initial={draft || editing?.sheet}
+            initialStep={editorStep}
             save={saveCharacter}
             busy={busy}
             error={error}

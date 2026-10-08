@@ -181,8 +181,33 @@ test(
       await dialog
         .getByLabel("Playbook", { exact: true })
         .selectOption("Vagrant");
-      await dialog.getByLabel("Charm", { exact: true }).selectOption("2");
-      await dialog.locator("summary").click();
+      await expect(dialog.getByLabel("Charm", { exact: true })).toHaveValue(
+        "2",
+      );
+      await dialog
+        .getByLabel("Starting bonus", { exact: true })
+        .selectOption("Cunning");
+      await dialog
+        .locator(".wizard-steps")
+        .getByRole("button", { name: /Abilities/ })
+        .click();
+      await dialog.getByRole("button", { name: /^Glutton/ }).click();
+      await dialog.getByRole("button", { name: /^Chaos/ }).click();
+      await dialog.getByRole("button", { name: /^Thrills/ }).click();
+      for (const name of [
+        "Instigator",
+        "Pleasant Facade",
+        "Desperate Smile",
+        "Harry a Group",
+      ])
+        await dialog.getByRole("checkbox", { name, exact: true }).check();
+      await dialog
+        .locator(".wizard-steps")
+        .getByRole("button", { name: /Background/ })
+        .click();
+      await dialog
+        .getByLabel("Where do you call home?", { exact: true })
+        .fill("Moss Clearing");
       await dialog
         .getByLabel("Notes", { exact: true })
         .fill("Черновик bleibt erhalten");
@@ -206,6 +231,11 @@ test(
       assert.equal(saved.sheet.biography, "Черновик bleibt erhalten");
       assert.equal(saved.campaign_id, null);
       assert.equal(saved.sheet.stats.Charm, 2);
+      assert.equal(saved.sheet.stats.Cunning, 2);
+      assert.equal(saved.sheet.nature, "Glutton");
+      assert.equal(saved.sheet.background.home, "Moss Clearing");
+      assert.equal(saved.sheet.moveIds.length, 3);
+      assert.equal(saved.sheet.weaponSkillIds[0], "Harry a Group");
       async function mutate(click) {
         const response = page.waitForResponse(
           (r) =>
@@ -231,6 +261,9 @@ test(
         .click();
       await page.getByLabel("Item name", { exact: true }).fill("Travel cloak");
       await page.getByLabel("Details & tags", { exact: true }).fill("Warm");
+      await page.getByLabel("Value", {exact:true}).fill("2");
+      await page.getByLabel("Wear boxes", {exact:true}).fill("2");
+      await page.getByLabel("Pay from coin", {exact:true}).check();
       await mutate(() =>
         page
           .getByRole("button", { name: "Add equipment", exact: true })
@@ -253,6 +286,72 @@ test(
         ],
         [2, 3, 1, 2],
       );
+      assert.equal(saved.sheet.coin, 7);
+      await page.locator(".session-resources > summary").click();
+      await mutate(() =>
+        page
+          .getByRole("button", { name: "Increase Forward", exact: true })
+          .click(),
+      );
+      await mutate(() =>
+        page.getByRole("button", { name: "Roll Charm", exact: true }).click(),
+      );
+      await expect(page.locator(".roll-result")).toContainText("Charm");
+      assert.equal(
+        (
+          await request("heroes", "GET", undefined, owner.cookie)
+        ).data.heroes.find((h) => h.id === saved.id).sheet.forward,
+        0,
+      );
+      await page
+        .locator(".sheet-tabs")
+        .getByRole("button", { name: "Moves", exact: true })
+        .click();
+      await page
+        .locator(".move-reminder")
+        .filter({ hasText: "Pleasant Facade" })
+        .locator("summary")
+        .click();
+      await expect(page.locator(".move-reminder[open]")).toContainText(
+        "Flatter",
+      );
+      await page
+        .locator(".sheet-tabs")
+        .getByRole("button", { name: "Background", exact: true })
+        .click();
+      await mutate(() =>
+        page.locator(".drive-check").filter({hasText:"Chaos"}).click(),
+      );
+      await expect(
+        page.locator(".drive-check").filter({ hasText: "Chaos" }),
+      ).toBeDisabled();
+      await page
+        .locator(".sheet-tabs")
+        .getByRole("button", { name: "Reputation", exact: true })
+        .click();
+      await page
+        .locator(".faction-card")
+        .filter({ hasText: "Denizens" })
+        .locator("summary")
+        .click();
+      await mutate(() =>
+        page
+          .getByRole("button", { name: "Increase Prestige", exact: true })
+          .click(),
+      );
+      saved = (
+        await request("heroes", "GET", undefined, owner.cookie)
+      ).data.heroes.find((h) => h.id === saved.id);
+      assert.equal(saved.sheet.advancement, 1);
+      assert.deepEqual(saved.sheet.driveMarks, ["Chaos"]);
+      assert.equal(
+        saved.sheet.reputation.find((x) => x.faction === "Denizens").prestige,
+        1,
+      );
+      await page
+        .locator(".sheet-tabs")
+        .getByRole("button", { name: "Equipment", exact: true })
+        .click();
       await page
         .getByRole("button", { name: "Edit character", exact: true })
         .click();
@@ -391,6 +490,24 @@ test(
         await page.screenshot({
           path: `test-results/create-${locale}.png`,
           fullPage: true,
+        });
+        await dialog
+          .locator(".wizard-steps")
+          .getByRole("button", { name: new RegExp(d["Abilities"]) })
+          .click();
+        await expect(
+          dialog.getByRole("checkbox", {
+            name: d["Pleasant Facade"],
+            exact: true,
+          }),
+        ).toBeChecked();
+        assert.ok(
+          await dialog.evaluate((el) => el.scrollWidth <= el.clientWidth),
+          `${locale} ability form overflow`,
+        );
+        await page.screenshot({
+          path: `test-results/abilities-${locale}.png`,
+          fullPage: false,
         });
         await dialog
           .getByRole("button", { name: d["Close dialog"], exact: true })

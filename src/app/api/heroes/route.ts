@@ -13,7 +13,9 @@ export async function GET(req: Request) {
     const heroes = campaign
       ? await sql`SELECT h.*, u.name AS player FROM heroes h JOIN users u ON u.id = h.owner_id JOIN memberships m ON m.campaign_id = h.campaign_id AND m.user_id = ${user.id} WHERE h.campaign_id = ${z.string().uuid().parse(campaign)} ORDER BY h.updated_at`
       : await sql`SELECT h.*, u.name AS player FROM heroes h JOIN users u ON u.id = h.owner_id WHERE h.owner_id = ${user.id} ORDER BY h.updated_at`;
-    return NextResponse.json({ heroes });
+    return NextResponse.json({
+      heroes: heroes.map((h) => ({ ...h, sheet: sheetSchema.parse(h.sheet) })),
+    });
   } catch {
     return NextResponse.json(
       { error: "Could not load characters." },

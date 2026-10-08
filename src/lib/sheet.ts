@@ -25,51 +25,111 @@ export const species = [
   "Wolf",
 ];
 const note = z.string().max(6000);
-export const sheetSchema = z.object({
-  name: z.string().trim().min(1).max(80),
-  species: z.string().min(1).max(50),
-  playbook: z.string().min(1).max(50),
-  pronouns: z.string().max(40),
-  description: z.string().max(240),
-  stats: z.object({
-    Charm: z.number().int().min(-3).max(3),
-    Cunning: z.number().int().min(-3).max(3),
-    Finesse: z.number().int().min(-3).max(3),
-    Luck: z.number().int().min(-3).max(3),
-    Might: z.number().int().min(-3).max(3),
-  }),
-  injury: z.number().int().min(0).max(4),
-  exhaustion: z.number().int().min(0).max(4),
-  depletion: z.number().int().min(0).max(4),
-  nature: note,
-  drives: note,
-  bonds: note,
-  biography: note,
-  moves: note,
-  feats: note,
-  weaponSkills: note,
-  equipment: z
-    .array(
-      z.object({
-        name: z.string().max(100),
-        details: z.string().max(500),
-        wear: z.number().int().min(0).max(4),
-        load: z.number().int().min(0).max(10),
-      }),
-    )
-    .max(30),
-  reputation: z
-    .array(
-      z.object({
-        faction: z.string().max(80),
-        standing: z.number().int().min(-3).max(3),
-        prestige: z.number().int().min(0).max(15),
-        notoriety: z.number().int().min(0).max(15),
-      }),
-    )
-    .max(12),
-  advancement: z.number().int().min(0).max(20),
-});
+const selections = z.array(z.string().max(100)).max(30).default([]);
+export const harmTracks = ["injury", "exhaustion", "depletion"] as const;
+export function harmCapacity(
+  sheet: {
+    harmSlots: { injury: number; exhaustion: number; depletion: number };
+    moveIds: string[];
+  },
+  track: (typeof harmTracks)[number],
+) {
+  const extras =
+    track === "injury" && sheet.moveIds.includes("Hardy")
+      ? 1
+      : track === "exhaustion" && sheet.moveIds.includes("Cross Country")
+        ? 1
+        : track === "depletion" && sheet.moveIds.includes("Big Pockets")
+          ? 2
+          : 0;
+  return sheet.harmSlots[track] + extras;
+}
+export const sheetSchema = z
+  .object({
+    name: z.string().trim().min(1).max(80),
+    species: z.string().min(1).max(50),
+    playbook: z.string().min(1).max(50),
+    pronouns: z.string().max(40),
+    description: z.string().max(240),
+    stats: z.object({
+      Charm: z.number().int().min(-3).max(3),
+      Cunning: z.number().int().min(-3).max(3),
+      Finesse: z.number().int().min(-3).max(3),
+      Luck: z.number().int().min(-3).max(3),
+      Might: z.number().int().min(-3).max(3),
+    }),
+    injury: z.number().int().min(0).max(8),
+    exhaustion: z.number().int().min(0).max(8),
+    depletion: z.number().int().min(0).max(8),
+    nature: note,
+    drives: note,
+    bonds: note,
+    biography: note,
+    moves: note,
+    feats: note,
+    weaponSkills: note,
+    equipment: z
+      .array(
+        z.object({
+          name: z.string().max(100),
+          details: z.string().max(500),
+          wear: z.number().int().min(0).max(8),
+          maxWear: z.number().int().min(0).max(8).default(4),
+          value: z.number().int().min(0).max(100).default(0),
+          load: z.number().int().min(0).max(10),
+        }),
+      )
+      .max(30),
+    reputation: z
+      .array(
+        z.object({
+          faction: z.string().max(80),
+          standing: z.number().int().min(-3).max(3),
+          prestige: z.number().int().min(0).max(15),
+          notoriety: z.number().int().min(0).max(15),
+        }),
+      )
+      .max(12),
+    advancement: z.number().int().min(0).max(100),
+    moveIds: selections,
+    driveIds: selections,
+    featIds: selections,
+    weaponSkillIds: selections,
+    driveMarks: selections,
+    startingBonus: z.enum(["", ...stats]).default(""),
+    presetApplied: z.boolean().default(false),
+    hold: z.number().int().min(0).max(99).default(0),
+    forward: z.number().int().min(-3).max(3).default(0),
+    ongoing: z.number().int().min(-3).max(3).default(0),
+    coin: z.number().int().min(0).max(9999).default(0),
+    harmSlots: z
+      .object({
+        injury: z.number().int().min(4).max(6),
+        exhaustion: z.number().int().min(4).max(6),
+        depletion: z.number().int().min(4).max(6),
+      })
+      .default({ injury: 4, exhaustion: 4, depletion: 4 }),
+    background: z
+      .object({ home: note, motivation: note, leftBehind: note })
+      .default({ home: "", motivation: "", leftBehind: "" }),
+  })
+  .superRefine((s, ctx) => {
+    for (const track of harmTracks)
+      if (s[track] > harmCapacity(s, track))
+        ctx.addIssue({
+          code: "custom",
+          path: [track],
+          message: "Harm exceeds available boxes",
+        });
+    s.equipment.forEach((item, i) => {
+      if (item.wear > item.maxWear)
+        ctx.addIssue({
+          code: "custom",
+          path: ["equipment", i, "wear"],
+          message: "Wear exceeds available boxes",
+        });
+    });
+  });
 export type Sheet = z.infer<typeof sheetSchema>;
 export type Hero = {
   id: string;
@@ -91,6 +151,19 @@ export type Campaign = {
 export type User = { id: string; name: string; email: string };
 export function blankSheet(): Sheet {
   return {
+    moveIds: [],
+    driveIds: [],
+    featIds: [],
+    weaponSkillIds: [],
+    driveMarks: [],
+    startingBonus: "",
+    presetApplied: false,
+    hold: 0,
+    forward: 0,
+    ongoing: 0,
+    coin: 0,
+    harmSlots: { injury: 4, exhaustion: 4, depletion: 4 },
+    background: { home: "", motivation: "", leftBehind: "" },
     name: "",
     species: "Fox",
     playbook: "Ranger",
