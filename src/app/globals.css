@@ -1,18 +1,22 @@
 :root {
-  --paper: #f7f8f2;
-  --panel: #fffef9;
-  --ink: #28382a;
-  --muted: #64745d;
-  --green: #3f633f;
-  --line: #dce3d3;
-  --soft: #edf2e5;
+  --paper: #eee5cd;
+  --panel: #fbf3df;
+  --ink: #302b23;
+  --muted: #685e4b;
+  --green: #435a47;
+  --line: #c6b896;
+  --soft: #e5dec1;
+  --rust: #a95638;
+  --ochre: #d3ad56;
+  --blue: #64818d;
+  --heading-font: Georgia, "Times New Roman", serif;
 }
 * {
   box-sizing: border-box;
 }
 body {
   margin: 0;
-  background: var(--paper);
+  background: var(--paper) url("/art/paper-grain.svg");
   color: var(--ink);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-size: 16px;
@@ -59,7 +63,9 @@ p {
 h1,
 h2,
 h3 {
+  font-family: var(--heading-font);
   letter-spacing: -0.5px;
+  font-weight: 700;
 }
 svg {
   flex-shrink: 0;
@@ -70,8 +76,8 @@ textarea {
   width: 100%;
   min-height: 48px;
   background: var(--panel);
-  border: 1px solid #bdcbb2;
-  border-radius: 10px;
+  border: 1px solid #b4a582;
+  border-radius: 5px 8px 5px 7px;
   padding: 11px 12px;
   font-size: 16px;
 }
@@ -110,24 +116,26 @@ fieldset {
   justify-content: center;
   gap: 8px;
   padding: 11px 15px;
-  border: 1px solid #c4d0ba;
+  border: 1.5px solid #655b43;
+  box-shadow: 0 2px 0 #655b432b;
   background: var(--panel);
-  border-radius: 10px;
+  border-radius: 5px 8px 5px 7px;
   font-size: 14px;
   font-weight: 600;
   text-align: center;
   line-height: 1.4;
 }
 .btn:hover {
-  background: #e9efdf;
+  background: #e3dcc0;
 }
 .btn.primary {
   background: var(--green);
-  border-color: var(--green);
-  color: white;
+  border-color: #2e3e30;
+  color: #fff7e3;
+  box-shadow: 0 3px 0 #263628;
 }
 .btn.primary:hover {
-  background: #315332;
+  background: #304333;
 }
 .btn.small {
   min-height: 44px;
@@ -143,10 +151,10 @@ fieldset {
   justify-content: center;
   min-height: 44px;
   min-width: 44px;
-  border-radius: 10px;
+  border-radius: 5px 8px 5px 7px;
 }
 .icon-btn:hover {
-  background: #e7efdd;
+  background: #e3dcc0;
 }
 .text-link {
   display: inline-flex;
@@ -160,6 +168,7 @@ fieldset {
 .simple-app {
   max-width: 1100px;
   margin: 0 auto;
+  min-height: 100dvh;
 }
 .app-header {
   display: flex;
@@ -168,21 +177,24 @@ fieldset {
   gap: 10px;
   padding: 12px 16px;
   padding-top: max(12px, env(safe-area-inset-top));
-  background: var(--paper);
+  background: var(--paper) url("/art/paper-grain.svg");
+  border-top: 5px solid var(--rust);
 }
 .brand {
   display: flex;
   align-items: center;
   gap: 7px;
   font-family: Georgia, serif;
-  font-size: 27px;
+  font-size: 31px;
   font-weight: bold;
+  letter-spacing: -1.5px;
   white-space: nowrap;
 }
 .brand small {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
+  letter-spacing: 1px;
 }
 .brand svg {
   color: var(--green);
@@ -207,8 +219,9 @@ fieldset {
   display: grid;
   grid-template-columns: 1fr 1fr;
   background: var(--paper);
-  border-bottom: 1px solid var(--line);
+  border-bottom: 2px solid #80785c;
   padding: 0 16px;
+  background-image: url("/art/paper-grain.svg");
 }
 .main-tabs button {
   display: flex;
@@ -221,9 +234,10 @@ fieldset {
   color: var(--muted);
 }
 .main-tabs button[aria-current="page"] {
-  border-color: var(--green);
+  border-color: var(--rust);
+  background: #d6c99866;
   font-weight: 650;
-  color: var(--green);
+  color: var(--ink);
 }
 .simple-main {
   padding: 24px 16px max(30px, env(safe-area-inset-bottom));
@@ -252,14 +266,14 @@ fieldset {
 .empty-state {
   text-align: center;
   padding: 35px 18px;
-  border: 1px dashed #cbd6bf;
-  border-radius: 14px;
-  background: #f1f4e9;
+  border: 1px solid #b9aa88;
+  border-radius: 7px 12px 8px 5px;
+  background: #f5ecd6;
   color: var(--muted);
 }
 .empty-state > svg {
   margin-bottom: 16px;
-  color: #7d936b;
+  color: #7f8559;
 }
 .empty-state h2 {
   font-size: 21px;
@@ -282,8 +296,9 @@ fieldset {
   align-items: center;
   gap: 13px;
   background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: 13px;
+  border: 1.5px solid #938365;
+  box-shadow: 2px 3px 0 #84704b21;
+  border-radius: 6px 10px 5px 8px;
   text-align: left;
   padding: 12px;
   min-width: 0;
@@ -293,8 +308,8 @@ fieldset {
   width: 70px;
   flex-shrink: 0;
   overflow: hidden;
-  border-radius: 10px;
-  background: #e9efdf;
+  border-radius: 5px 8px 5px 7px;
+  background: #e3dcc0;
 }
 .portrait {
   height: 100%;
@@ -318,11 +333,11 @@ fieldset {
 }
 .tile-copy small {
   font-size: 12px;
-  color: #7f8e75;
+  color: #76694f;
   overflow-wrap: anywhere;
 }
 .character-tile > svg {
-  color: #7f9470;
+  color: #76694f;
 }
 .character-toolbar {
   display: flex;
@@ -341,8 +356,9 @@ fieldset {
   text-align: left;
 }
 .play-sheet {
-  border: 1px solid var(--line);
-  border-radius: 14px;
+  border: 1.5px solid #938365;
+  box-shadow: 3px 4px 0 #84704b25;
+  border-radius: 7px 12px 8px 5px;
   background: var(--panel);
   overflow: hidden;
 }
@@ -351,7 +367,8 @@ fieldset {
   align-items: center;
   gap: 12px;
   padding: 15px;
-  background: #eaf0df;
+  background: #e1d6b5 url("/art/paper-grain.svg");
+  border-bottom: 2px solid #91805d;
   flex-wrap: wrap;
 }
 .play-portrait {
@@ -426,7 +443,7 @@ fieldset {
   line-height: 1.4;
 }
 .play-panel h3 > svg {
-  color: #7c9368;
+  color: #72774c;
 }
 .field-hint {
   color: var(--muted);
@@ -465,25 +482,26 @@ fieldset {
   height: 44px;
   flex: 1;
   max-width: 48px;
-  border: 1px solid #c3cfb5;
-  border-radius: 8px;
-  background: #f1f5e8;
+  border: 1px solid #8c8268;
+  border-radius: 4px 6px 3px 5px;
+  background: #f8eed7;
+  box-shadow: inset 0 0 0 3px #fbf3df;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #fff;
 }
 .live-pip.filled {
-  background: #789963;
-  border-color: #789963;
+  background: #657647;
+  border-color: #657647;
 }
 .injury .live-pip.filled {
-  background: #b17d60;
-  border-color: #b17d60;
+  background: #b16444;
+  border-color: #b16444;
 }
 .live-track-controls > .icon-btn {
   border: 1px solid var(--line);
-  background: #f1f5e8;
+  background: #f8eed7;
   min-width: 36px;
   flex: 1;
   max-width: 44px;
@@ -504,9 +522,9 @@ fieldset {
   color: var(--muted);
 }
 .live-gear {
-  background: #f3f6ec;
+  background: #eee4c9;
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 5px 8px 5px 7px;
   padding: 13px;
   margin-bottom: 12px;
 }
@@ -543,16 +561,16 @@ fieldset {
   color: var(--muted);
 }
 .pip {
-  border: 1px solid #bcccae;
-  background: #fbfff6;
+  border: 1px solid #8c8268;
+  background: #fcf4df;
   border-radius: 7px;
   height: 44px;
   width: 44px;
   padding: 0;
 }
 .pip.filled {
-  background: #86a16f;
-  border-color: #86a16f;
+  background: #657647;
+  border-color: #657647;
 }
 .gear-wear small {
   font-size: 11px;
@@ -566,16 +584,16 @@ fieldset {
   display: flex;
   align-items: center;
   gap: 7px;
-  background: #edf3e4;
+  background: #e4dec0 url("/art/paper-grain.svg");
   border-top: 1px solid var(--line);
   padding: 13px 15px;
   font-size: 12px;
-  color: #587047;
+  color: #465335;
 }
 .quick-gear-form {
-  background: #edf3e4;
+  background: #e4dec0;
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 5px 8px 5px 7px;
   padding: 15px;
 }
 .form-actions {
@@ -610,8 +628,9 @@ fieldset {
 }
 .campaign-card {
   background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: 13px;
+  border: 1.5px solid #938365;
+  box-shadow: 2px 3px 0 #84704b21;
+  border-radius: 6px 10px 5px 8px;
   padding: 18px;
 }
 .campaign-card h2 {
@@ -639,7 +658,7 @@ fieldset {
   font-size: 14px;
   background: var(--soft);
   padding: 10px 14px;
-  border-radius: 10px;
+  border-radius: 5px 8px 5px 7px;
   margin-bottom: 18px;
 }
 .filter-bar > span {
@@ -651,9 +670,9 @@ fieldset {
   width: 540px;
   max-width: calc(100% - 20px);
   max-height: calc(100dvh - 24px);
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  background: var(--paper);
+  border: 2px solid #796a4e;
+  border-radius: 7px 12px 6px 10px;
+  background: var(--panel) url("/art/paper-grain.svg");
   color: var(--ink);
   box-shadow: 0 20px 80px #1e331c44;
   overscroll-behavior: contain;
@@ -726,7 +745,7 @@ fieldset {
   left: 50%;
   transform: translateX(-50%);
   z-index: 20;
-  background: #385a34;
+  background: #3d503d;
   color: #fff;
   padding: 14px 17px;
   border-radius: 12px;
@@ -904,5 +923,100 @@ fieldset {
 @media (prefers-reduced-motion: no-preference) {
   button {
     transition: background 0.12s ease;
+  }
+}
+
+/* Printed woodland cards: decoration stays clear of the play controls. */
+.character-tile,
+.campaign-card,
+.empty-state {
+  background-image: url("/art/paper-grain.svg");
+}
+.character-tile {
+  border-left: 5px solid var(--rust);
+}
+.character-tile:nth-child(3n + 2) {
+  border-left-color: var(--blue);
+}
+.character-tile:nth-child(3n + 3) {
+  border-left-color: #858950;
+}
+.campaign-card {
+  border-top: 5px solid var(--ochre);
+}
+.tile-copy strong {
+  font-family: var(--heading-font);
+  font-size: 22px;
+}
+.play-stats {
+  background: #efe3c3;
+}
+.play-stats strong {
+  font-family: var(--heading-font);
+  font-size: 27px;
+}
+.play-stats > div:nth-child(1) strong {
+  color: #954d36;
+}
+.play-stats > div:nth-child(2) strong {
+  color: #526748;
+}
+.play-stats > div:nth-child(3) strong {
+  color: #476976;
+}
+.play-stats > div:nth-child(4) strong {
+  color: #865e2f;
+}
+.exhaustion .live-pip.filled {
+  background: #64818d;
+  border-color: #506d79;
+}
+.depletion .live-pip.filled {
+  background: #a78037;
+  border-color: #8b6828;
+}
+.live-pip.filled {
+  box-shadow: inset 0 0 0 3px #ffffff20;
+}
+.illustrated-empty {
+  padding: 16px 20px 28px;
+}
+.woodland-illustration {
+  display: block;
+  width: min(100%, 360px);
+  height: auto;
+  margin: 0 auto 12px;
+}
+.illustrated-empty p {
+  max-width: 420px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.editor-identity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.editor-identity > label {
+  flex: 1;
+  min-width: 0;
+  margin-bottom: 0;
+}
+.editor-portrait {
+  width: 72px;
+  height: 86px;
+  flex-shrink: 0;
+  background: #e5d4aa;
+  border: 1px solid #ac946d;
+  border-radius: 50% 45% 8px 8px;
+  overflow: hidden;
+}
+@media (min-width: 760px) {
+  .illustrated-empty {
+    padding: 20px 32px 32px;
+  }
+  .woodland-illustration {
+    width: 380px;
   }
 }

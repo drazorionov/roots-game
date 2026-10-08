@@ -12,7 +12,7 @@ A simple React + Next.js companion for Root: The Roleplaying Game, designed for 
 - Choose a campaign for your saved character. Tap harm boxes to track injury, exhaustion, and depletion; add equipment and track wear. Each change saves immediately.
 - Switch between English, Russian, and German. Your device remembers the language; your written content remains unchanged.
 
-The interface has two tabs: Characters and Campaigns. Phone screens stack the controls; iPad screens put harm and equipment side by side. Portraits are original SVG artwork. Existing character data is preserved when editing a sheet.
+The interface has two tabs: Characters and Campaigns. Phone screens stack the controls; iPad screens put harm and equipment side by side. The visual theme uses textured parchment, ink borders, serif headings, and rust, sage, ochre, and slate accents inspired by the supplied character reference and [Root’s official digital site](https://www.direwolfdigital.com/root/). Portraits are original SVG artwork; the empty-state woodland illustration was generated with imagegen and optimized as a local WebP. Asset provenance and the generation prompt are recorded in [public/art/README.md](public/art/README.md). Existing character data is preserved when editing a sheet.
 
 ## Development
 

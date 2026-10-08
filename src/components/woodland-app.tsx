@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import Image from "next/image";
 import {
   useEffect,
   useState,
@@ -463,8 +464,15 @@ export default function WoodlandApp() {
                     ))}
                   </div>
                 ) : (
-                  <div className="empty-state">
-                    <UserRound size={32} />
+                  <div className="empty-state illustrated-empty">
+                    <Image
+                      className="woodland-illustration"
+                      src="/art/woodland-travelers.webp"
+                      alt=""
+                      width={960}
+                      height={640}
+                      sizes="(max-width: 760px) 300px, 420px"
+                    />
                     <h2>{t("Your first character starts here.")}</h2>
                     <p>
                       {t(
@@ -541,8 +549,15 @@ export default function WoodlandApp() {
                 ))}
               </div>
             ) : (
-              <div className="empty-state">
-                <Users size={32} />
+              <div className="empty-state illustrated-empty">
+                <Image
+                  className="woodland-illustration"
+                  src="/art/woodland-travelers.webp"
+                  alt=""
+                  width={960}
+                  height={640}
+                  sizes="(max-width: 760px) 300px, 420px"
+                />
                 <h2>{t("No campaigns yet")}</h2>
                 <p>
                   {t(

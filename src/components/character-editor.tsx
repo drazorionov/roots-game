@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { Portrait } from "./art";
 import { Check } from "lucide-react";
 import { useTranslation } from "@/lib/i18n";
 import { blankSheet, species, playbooks, stats, type Sheet } from "@/lib/sheet";
@@ -40,17 +41,22 @@ export default function CharacterEditor({
       }}
     >
       <fieldset disabled={busy}>
-        <label>
-          {t("Name")}
-          <input
-            aria-label={t("Name")}
-            required
-            maxLength={80}
-            value={sheet.name}
-            placeholder={t("Your character’s name")}
-            onChange={(e) => set("name", e.target.value)}
-          />
-        </label>
+        <div className="editor-identity">
+          <div className="editor-portrait">
+            <Portrait species={sheet.species} />
+          </div>
+          <label>
+            {t("Name")}
+            <input
+              aria-label={t("Name")}
+              required
+              maxLength={80}
+              value={sheet.name}
+              placeholder={t("Your character’s name")}
+              onChange={(e) => set("name", e.target.value)}
+            />
+          </label>
+        </div>
         <div className="form-grid">
           <label>
             {t("Species")}
