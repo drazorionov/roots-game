@@ -59,7 +59,7 @@ const sheet = {
   advancement: 0,
 };
 test(
-  "standalone characters, campaign permissions, saved drafts and mobile play",
+  "saved characters, campaign permissions, deletion and mobile play",
   { timeout: 240000 },
   async () => {
     let browser;
@@ -251,10 +251,17 @@ test(
       await page
         .getByRole("button", { name: "Close dialog", exact: true })
         .click();
+      await page.getByRole("button", { name: "Sign in", exact: true }).click();
+      const dialog = page.getByRole("dialog");
+      await dialog.getByLabel("Email", { exact: true }).fill(emails[0]);
+      await dialog.getByLabel("Password", { exact: true }).fill(password);
+      await dialog
+        .getByRole("button", { name: "Sign in", exact: true })
+        .click();
+      await page.getByRole("button", { name: /My characters/ }).click();
       await page
         .getByRole("button", { name: "Create a character", exact: true })
         .click();
-      const dialog = page.getByRole("dialog");
       await dialog.getByLabel("Name", { exact: true }).fill("Willow Browser");
       await dialog.getByLabel("Species", { exact: true }).selectOption("Otter");
       await dialog
@@ -292,14 +299,6 @@ test(
         .fill("Черновик bleibt erhalten");
       await dialog
         .getByRole("button", { name: "Save character", exact: true })
-        .click();
-      await dialog
-        .getByRole("button", { name: "Already have an account?", exact: true })
-        .click();
-      await dialog.getByLabel("Email", { exact: true }).fill(emails[0]);
-      await dialog.getByLabel("Password", { exact: true }).fill(password);
-      await dialog
-        .getByRole("button", { name: "Sign in", exact: true })
         .click();
       await expect(
         page.getByRole("heading", { name: "Willow Browser", exact: true }),
@@ -513,11 +512,17 @@ test(
       });
       await page.getByRole("button", { name: /^(Home|Exit to main)$/ }).click();
       await page.getByRole("button", { name: /Continue game/ }).click();
-      await expect(page.locator(".game-actions button")).toHaveCount(3);
-      await expect(page.getByLabel("Language", { exact: true })).toHaveCount(0);
+      await expect(page.locator(".game-menu")).toHaveCount(1);
+      await expect(page.locator(".language-select option")).toHaveText([
+        "EN",
+        "RU",
+        "DE",
+      ]);
+      await expect(page.getByLabel("Language", { exact: true })).toHaveCount(1);
       const beforeRestart = (
         await request("heroes", "GET", undefined, owner.cookie)
       ).data.heroes.find((h) => h.id === saved.id);
+      await page.locator(".game-menu summary").click();
       await page
         .getByRole("button", { name: "Restart game", exact: true })
         .click();
@@ -535,6 +540,7 @@ test(
         await request("heroes", "GET", undefined, owner.cookie)
       ).data.heroes.find((h) => h.id === saved.id);
       assert.deepEqual(afterRestart.sheet, beforeRestart.sheet);
+      await page.locator(".game-menu summary").click();
       await page
         .getByRole("button", { name: "Start new game", exact: true })
         .click();
@@ -569,12 +575,14 @@ test(
         "Online: 1",
       );
       await expect(page.locator(".simple-app")).toHaveClass(/game-scene/);
+      await page.locator(".game-menu summary").click();
       for (const label of ["Exit to main", "Restart game", "Start new game"]) {
         await expect(
           page.getByRole("button", { name: label, exact: true }),
-        ).toHaveAttribute("title", label);
+        ).toBeVisible();
       }
 
+      await page.locator(".game-menu summary").click();
       const guestContext = await browser.newContext();
       const [cookieName, cookieValue] = guest.cookie.split("=");
       await guestContext.addCookies([
@@ -691,11 +699,7 @@ test(
         const d = JSON.parse(
           await readFile(`src/lib/locales/${locale}.json`, "utf8"),
         );
-        await page
-          .getByRole("button", {
-            name: /^(Exit to main|На главную|Zur Startseite)$/,
-          })
-          .click();
+        await page.locator(".brand").click();
         await page.locator(".language-select").selectOption(locale);
         await page
           .getByRole("button", { name: new RegExp(d["Continue game"]) })
@@ -792,6 +796,147 @@ test(
           page.getByRole("button", { name: `${d.injury} 2`, exact: true }),
         ).toHaveAttribute("aria-pressed", "true");
       }
+      await page.locator(".language-select").selectOption("en");
+      for (const [width, height] of [
+        [320, 700],
+        [390, 844],
+        [820, 1180],
+        [1440, 1000],
+      ]) {
+        await page.setViewportSize({ width, height });
+        await page.locator(".brand").click();
+        const edge = (await page.locator(".home-content").boundingBox()).x;
+        for (const label of [
+          "My characters",
+          "My campaigns",
+          "Continue game",
+        ]) {
+          await page.getByRole("button", { name: new RegExp(label) }).click();
+          const target =
+            label === "Continue game" ? ".game-heading" : ".journey-picker";
+          assert.equal(
+            (await page.locator(target).boundingBox()).x,
+            edge,
+            `${width}px ${label} left edge`,
+          );
+          assert.ok(
+            await page.evaluate(
+              () => document.documentElement.scrollWidth <= innerWidth,
+            ),
+            `${width}px ${label} overflow`,
+          );
+          await page.locator(".brand").click();
+        }
+      }
+      await page.setViewportSize({ width: 390, height: 844 });
+      await page.getByRole("button", { name: /Continue game/ }).click();
+      await page.locator(".game-menu summary").click();
+      await page.screenshot({
+        path: "test-results/game-menu-iphone.png",
+        fullPage: false,
+      });
+      await page.locator(".game-menu summary").click();
+      // Owner-only deletion, stale versions, confirmation, and campaign preservation.
+      await page.locator(".language-select").selectOption("en");
+      assert.equal(
+        (
+          await request(
+            "campaigns",
+            "DELETE",
+            { id: uiCampaign.id },
+            guest.cookie,
+          )
+        ).status,
+        403,
+      );
+      assert.equal(
+        (await request("campaigns", "DELETE", { id: uiCampaign.id })).status,
+        401,
+      );
+      assert.equal(
+        (
+          await request(
+            "campaigns",
+            "DELETE",
+            { id: uiCampaign.id },
+            owner.cookie,
+            "https://evil.invalid",
+          )
+        ).status,
+        400,
+      );
+      const beforeDelete = (
+        await request("heroes", "GET", undefined, owner.cookie)
+      ).data.heroes.find((h) => h.id === saved.id);
+      assert.equal(
+        (
+          await request(
+            "heroes",
+            "DELETE",
+            { id: saved.id, version: beforeDelete.version },
+            guest.cookie,
+          )
+        ).status,
+        409,
+      );
+      assert.equal(
+        (
+          await request(
+            "heroes",
+            "DELETE",
+            { id: saved.id, version: beforeDelete.version - 1 },
+            owner.cookie,
+          )
+        ).status,
+        409,
+      );
+      await page.locator(".brand").click();
+      const left = (await page.locator(".home-content").boundingBox()).x;
+      await page.getByRole("button", { name: /My campaigns/ }).click();
+      assert.equal(
+        (await page.locator(".journey-picker").boundingBox()).x,
+        left,
+      );
+      await page
+        .getByRole("button", { name: "Delete Willow’s campaign", exact: true })
+        .click();
+      await expect(dialog).toContainText("Characters are kept");
+      await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
+      await expect(
+        page.locator(".campaign-card").filter({ hasText: "Willow’s campaign" }),
+      ).toBeVisible();
+      await page
+        .getByRole("button", { name: "Delete Willow’s campaign", exact: true })
+        .click();
+      await dialog.getByRole("button", { name: "Delete", exact: true }).click();
+      await expect(dialog).toHaveCount(0);
+      const afterDelete = (
+        await request("heroes", "GET", undefined, owner.cookie)
+      ).data.heroes.find((h) => h.id === saved.id);
+      assert.equal(afterDelete.campaign_id, null);
+      assert.equal(afterDelete.version, beforeDelete.version + 1);
+      assert.deepEqual(afterDelete.sheet, beforeDelete.sheet);
+      const guestHeroes = (
+        await request("heroes", "GET", undefined, guest.cookie)
+      ).data.heroes;
+      assert.ok(guestHeroes.length > 0);
+      assert.ok(guestHeroes.every((h) => h.campaign_id === null));
+      await page.locator(".brand").click();
+      await page.getByRole("button", { name: /My characters/ }).click();
+      assert.equal(
+        (await page.locator(".journey-picker").boundingBox()).x,
+        left,
+      );
+      await page
+        .getByRole("button", { name: "Delete Willow Browser", exact: true })
+        .click();
+      await dialog.getByRole("button", { name: "Delete", exact: true }).click();
+      await expect(dialog).toHaveCount(0);
+      assert.ok(
+        !(
+          await request("heroes", "GET", undefined, owner.cookie)
+        ).data.heroes.some((h) => h.id === saved.id),
+      );
       assert.deepEqual(errors, []);
     } finally {
       await browser?.close();

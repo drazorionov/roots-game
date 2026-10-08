@@ -500,5 +500,22 @@
   "Online status unavailable.": "Online-Status nicht verfügbar.",
   "Players viewing this campaign. Updates every 20 seconds.": "Spieler, die diese Kampagne ansehen. Aktualisierung alle 20 Sekunden.",
   "Online: {count}": "Online: {count}",
-  "Checking players…": "Spieler werden geprüft…"
+  "Checking players…": "Spieler werden geprüft…",
+  "Quick game": "Schnelles Spiel",
+  "Game menu": "Spielmenü",
+  "No account. No campaign. Saved only in this browser tab.": "Ohne Konto und Kampagne. Nur in diesem Browser-Tab gespeichert.",
+  "Saved only in this browser tab.": "Nur in diesem Browser-Tab gespeichert.",
+  "Ready for offline play.": "Bereit zum Offline-Spielen.",
+  "This browser cannot save the quick game. Check browser storage settings.": "Dieser Browser kann das schnelle Spiel nicht speichern. Prüfe die Speichereinstellungen.",
+  "Delete {name}": "{name} löschen",
+  "Delete character": "Charakter löschen",
+  "Delete campaign": "Kampagne löschen",
+  "Delete": "Löschen",
+  "Deleted.": "Gelöscht.",
+  "Delete {name}? This permanently removes the character.": "{name} löschen? Der Charakter wird endgültig entfernt.",
+  "Delete {name}? The campaign is removed for everyone. Characters are kept.": "{name} löschen? Die Kampagne wird für alle entfernt. Charaktere bleiben erhalten.",
+  "This character changed or is not yours. Reopen it and try again.": "Dieser Charakter wurde geändert oder gehört dir nicht. Öffne ihn erneut.",
+  "Could not delete character.": "Charakter konnte nicht gelöscht werden.",
+  "Only the campaign creator can delete it.": "Nur der Ersteller kann die Kampagne löschen.",
+  "Could not delete campaign.": "Kampagne konnte nicht gelöscht werden."
 }

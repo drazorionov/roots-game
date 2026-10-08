@@ -19,10 +19,12 @@ export default function CharacterControls({
   hero,
   edit,
   onSaved,
+  saveLocal,
 }: {
   hero: Hero;
   edit: (step?: number) => void;
   onSaved: (h: Hero) => void;
+  saveLocal?: (sheet: Sheet) => void;
 }) {
   const { t } = useTranslation();
   const [busy, setBusy] = useState(false),
@@ -46,13 +48,17 @@ export default function CharacterControls({
     setError("");
     setSaved(false);
     try {
-      const data = await api("heroes", "POST", {
-        id: hero.id,
-        campaignId: hero.campaign_id,
-        version: hero.version,
-        sheet: { ...sheet, ...patch },
-      });
-      onSaved(data.hero);
+      if (saveLocal) {
+        saveLocal({ ...sheet, ...patch });
+      } else {
+        const data = await api("heroes", "POST", {
+          id: hero.id,
+          campaignId: hero.campaign_id,
+          version: hero.version,
+          sheet: { ...sheet, ...patch },
+        });
+        onSaved(data.hero);
+      }
       setSaved(true);
       return true;
     } catch (e) {
@@ -271,10 +277,18 @@ export default function CharacterControls({
         ) : saved ? (
           <>
             <Check size={15} />
-            {t("Character sheet saved.")}
+            {t(
+              saveLocal
+                ? "Saved only in this browser tab."
+                : "Character sheet saved.",
+            )}
           </>
         ) : (
-          t("Changes save automatically.")
+          t(
+            saveLocal
+              ? "Saved only in this browser tab."
+              : "Changes save automatically.",
+          )
         )}
       </div>
       {error && (

@@ -11,6 +11,8 @@ import {
   Home,
   Compass,
   RotateCcw,
+  MoreHorizontal,
+  Trash2,
   Plus,
   Users,
   UserRound,
@@ -22,8 +24,15 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { useTranslation, translate, type Locale } from "@/lib/i18n";
-import { type Hero, type Campaign, type User, type Sheet } from "@/lib/sheet";
+import {
+  sheetSchema,
+  type Hero,
+  type Campaign,
+  type User,
+  type Sheet,
+} from "@/lib/sheet";
 import { api } from "@/lib/client-api";
+import { prepareQuickOffline } from "@/lib/quick-offline";
 import CharacterEditor from "./character-editor";
 import CharacterControls from "./character-controls";
 import CampaignPresence from "./campaign-presence";
@@ -92,6 +101,16 @@ export default function WoodlandApp() {
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [notice, setNotice] = useState("");
+  const [quickOfflineReady, setQuickOfflineReady] = useState(false);
+  const [quickMode, setQuickMode] = useState(false);
+  const [quickHero, setQuickHero] = useState<Hero | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{
+    type: "character" | "campaign";
+    id: string;
+    name: string;
+    version?: number;
+  } | null>(null);
+  const gameMenu = useRef<HTMLDetailsElement>(null);
   const [resumeId, setResumeId] = useState("");
   const [gameStep, setGameStep] = useState<"campaign" | "character" | "sheet">(
     "campaign",
@@ -100,7 +119,7 @@ export default function WoodlandApp() {
   const [editorStep, setEditorStep] = useState(0);
   const [editorDirty, setEditorDirty] = useState(false);
   const [afterAuth, setAfterAuth] = useState<"campaign" | "join" | null>(null);
-  const hero = heroes.find((h) => h.id === selected);
+  const hero = quickMode ? quickHero : heroes.find((h) => h.id === selected);
   const campaign = campaigns.find((c) => c.id === hero?.campaign_id);
   const shown = heroes.filter(
     (h) => !campaignFilter || h.campaign_id === campaignFilter,
@@ -109,23 +128,109 @@ export default function WoodlandApp() {
     (h) => h.id === resumeId && campaigns.some((c) => c.id === h.campaign_id),
   );
   const gameCampaign = campaigns.find((c) => c.id === gameCampaignId);
-  const activeGame =
-    tab === "play" &&
-    gameStep === "sheet" &&
-    !!hero &&
-    !!campaign &&
-    campaign.id === gameCampaignId;
-  const scenic = !user || tab === "home";
-  const scene = !user
-    ? "welcome-scene"
-    : tab === "home"
-      ? "camp-scene"
-      : activeGame
-        ? "game-scene"
-        : tab === "campaigns" ||
-            (tab === "play" && (gameStep === "campaign" || !gameCampaign))
-          ? "campaigns-scene"
-          : "characters-scene";
+  const activeGame = quickMode
+    ? !!quickHero
+    : tab === "play" &&
+      gameStep === "sheet" &&
+      !!hero &&
+      !!campaign &&
+      campaign.id === gameCampaignId;
+  const scenic = !quickMode && (!user || tab === "home");
+  const scene = quickMode
+    ? "game-scene"
+    : !user
+      ? "welcome-scene"
+      : tab === "home"
+        ? "camp-scene"
+        : activeGame
+          ? "game-scene"
+          : tab === "campaigns" ||
+              (tab === "play" && (gameStep === "campaign" || !gameCampaign))
+            ? "campaigns-scene"
+            : "characters-scene";
+  function exitToMain() {
+    setQuickMode(false);
+    try {
+      sessionStorage.removeItem("root-quick-active");
+    } catch {}
+    setTab("home");
+    setError("");
+    if (gameMenu.current) gameMenu.current.open = false;
+  }
+  function saveQuick(sheet: Sheet) {
+    const parsed = sheetSchema.parse(sheet);
+    try {
+      sessionStorage.setItem("root-quick-sheet", JSON.stringify(parsed));
+      sessionStorage.setItem("root-quick-active", "1");
+    } catch {
+      throw new Error(
+        "This browser cannot save the quick game. Check browser storage settings.",
+      );
+    }
+    setQuickHero({
+      id: "quick-game",
+      owner_id: "local",
+      player: "",
+      campaign_id: null,
+      version: 1,
+      sheet: parsed,
+    });
+  }
+  function startQuickGame() {
+    setQuickMode(true);
+    setTab("play");
+    setError("");
+    try {
+      sessionStorage.setItem("root-quick-active", "1");
+    } catch {}
+    if (!quickHero) newCharacter();
+  }
+  function restartGame() {
+    if (gameMenu.current) gameMenu.current.open = false;
+    setError("");
+    if (quickMode) {
+      newCharacter();
+      return;
+    }
+    setSelected("");
+    setGameStep("character");
+  }
+  async function deleteItem() {
+    if (!deleteTarget || busy) return;
+    setBusy(true);
+    setError("");
+    try {
+      await api(
+        deleteTarget.type === "character" ? "heroes" : "campaigns",
+        "DELETE",
+        {
+          id: deleteTarget.id,
+          ...(deleteTarget.version ? { version: deleteTarget.version } : {}),
+        },
+      );
+      if (deleteTarget.type === "character") {
+        setHeroes((current) => current.filter((h) => h.id !== deleteTarget.id));
+        if (selected === deleteTarget.id) setSelected("");
+        if (resumeId === deleteTarget.id) remember("");
+      } else {
+        setCampaigns((current) =>
+          current.filter((c) => c.id !== deleteTarget.id),
+        );
+        setCampaignFilter("");
+        setHeroes((await api("heroes")).heroes);
+        if (gameCampaignId === deleteTarget.id) {
+          setGameCampaignId("");
+          setGameStep("campaign");
+        }
+      }
+      setDeleteTarget(null);
+      setNotice("Deleted.");
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
   function remember(id: string, userId = user?.id) {
     setResumeId(id);
     if (userId)
@@ -134,6 +239,7 @@ export default function WoodlandApp() {
       } catch {}
   }
   function startNewGame() {
+    if (gameMenu.current) gameMenu.current.open = false;
     setSelected("");
     setGameCampaignId("");
     setGameStep("campaign");
@@ -187,6 +293,16 @@ export default function WoodlandApp() {
     }
   }
   useEffect(() => {
+    if (!quickMode) return;
+    let disposed = false;
+    void prepareQuickOffline().then((ready) => {
+      if (!disposed) setQuickOfflineReady(ready);
+    });
+    return () => {
+      disposed = true;
+    };
+  }, [quickMode]);
+  useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" });
   }, [tab, selected, gameStep]);
   useEffect(() => {
@@ -194,8 +310,28 @@ export default function WoodlandApp() {
     document.title = translate(locale, "Root Helper · Your characters");
   }, [locale]);
   useEffect(() => {
-    api("auth")
-      .then(async (data) => {
+    Promise.resolve()
+      .then(async () => {
+        try {
+          const raw = sessionStorage.getItem("root-quick-sheet");
+          const parsed = raw ? sheetSchema.safeParse(JSON.parse(raw)) : null;
+          if (parsed?.success) {
+            setQuickHero({
+              id: "quick-game",
+              owner_id: "local",
+              player: "",
+              campaign_id: null,
+              version: 1,
+              sheet: parsed.data,
+            });
+            if (sessionStorage.getItem("root-quick-active") === "1") {
+              setQuickMode(true);
+              setTab("play");
+              return;
+            }
+          }
+        } catch {}
+        const data = await api("auth");
         setUser(data.user);
         if (data.user) {
           const [h, c] = await Promise.all([api("heroes"), api("campaigns")]);
@@ -212,11 +348,15 @@ export default function WoodlandApp() {
       .finally(() => setLoading(false));
   }, []);
   useEffect(() => {
-    if (!user) return;
+    if (!user || quickMode) return;
     let cancelled = false;
     const timer = setInterval(async () => {
       try {
-        const data = await api("heroes");
+        const [data, campaignData] = await Promise.all([
+          api("heroes"),
+          api("campaigns"),
+        ]);
+        if (!cancelled) setCampaigns(campaignData.campaigns);
         if (!cancelled)
           setHeroes((current) =>
             data.heroes.map((h: Hero) => {
@@ -232,7 +372,7 @@ export default function WoodlandApp() {
       cancelled = true;
       clearInterval(timer);
     };
-  }, [user]);
+  }, [user, quickMode]);
   useEffect(() => {
     if (!notice) return;
     const timer = setTimeout(() => setNotice(""), 3500);
@@ -296,6 +436,17 @@ export default function WoodlandApp() {
     setNotice("Character sheet saved.");
   }
   async function saveCharacter(sheet: Sheet) {
+    if (quickMode) {
+      try {
+        saveQuick(sheet);
+        setModal(null);
+        setDraft(undefined);
+        setNotice("Saved only in this browser tab.");
+      } catch (e) {
+        setError((e as Error).message);
+      }
+      return;
+    }
     setDraft(sheet);
     if (!user) {
       setAuthMode("signup");
@@ -395,80 +546,103 @@ export default function WoodlandApp() {
     <div
       className={`simple-app scene-app ${scene} ${!scenic ? "workspace-scene" : ""}`}
     >
-      {!activeGame && (
-        <header className="app-header">
-          {scenic ? (
-            <div className="brand">
-              <Sprout size={25} />
-              <span>
-                root <small>helper</small>
-              </span>
-            </div>
-          ) : (
-            <button
-              className="icon-btn home-control"
-              aria-label={t("Home")}
-              title={t("Home")}
-              onClick={() => {
-                setTab("home");
-                setError("");
+      <header className="app-header">
+        <button className="brand" aria-label={t("Home")} onClick={exitToMain}>
+          <Sprout size={25} />
+          <span>
+            root <small>helper</small>
+          </span>
+        </button>
+        <div className="header-actions">
+          <select
+            className="language-select"
+            value={locale}
+            aria-label={t("Language")}
+            onChange={(e) => setLocale(e.target.value as Locale)}
+          >
+            <option value="en" aria-label="English">
+              EN
+            </option>
+            <option value="ru" aria-label="Русский">
+              RU
+            </option>
+            <option value="de" aria-label="Deutsch">
+              DE
+            </option>
+          </select>
+          {activeGame && (
+            <details
+              className="game-menu"
+              ref={gameMenu}
+              onKeyDown={(e) => {
+                if (e.key === "Escape") e.currentTarget.open = false;
+              }}
+              onBlur={(e) => {
+                if (!e.currentTarget.contains(e.relatedTarget))
+                  e.currentTarget.open = false;
               }}
             >
-              <Home size={20} />
+              <summary aria-label={t("Game menu")} title={t("Game menu")}>
+                <MoreHorizontal size={22} />
+              </summary>
+              <div className="game-menu-items">
+                <button onClick={exitToMain}>
+                  <Home size={17} />
+                  {t("Exit to main")}
+                </button>
+                <button onClick={restartGame}>
+                  <RotateCcw size={17} />
+                  {t("Restart game")}
+                </button>
+                {!quickMode && (
+                  <button onClick={startNewGame}>
+                    <Compass size={17} />
+                    {t("Start new game")}
+                  </button>
+                )}
+              </div>
+            </details>
+          )}
+          {user ? (
+            <button
+              className="icon-btn"
+              aria-label={t("Sign out")}
+              onClick={async () => {
+                try {
+                  await api("auth", "DELETE");
+                  exitToMain();
+                  setUser(null);
+                  setResumeId("");
+                  setGameStep("campaign");
+                  setGameCampaignId("");
+                  setHeroes([]);
+                  setCampaigns([]);
+                  setSelected("");
+                  setCampaignFilter("");
+                } catch (e) {
+                  setError((e as Error).message);
+                }
+              }}
+            >
+              <LogOut size={19} />
+            </button>
+          ) : (
+            <button
+              className="btn small"
+              onClick={() => {
+                setAfterAuth(null);
+                setDraft(undefined);
+                setAuthMode("login");
+                open("auth");
+              }}
+            >
+              {t("Sign in")}
             </button>
           )}
-          <div className="header-actions">
-            <select
-              className="language-select"
-              value={locale}
-              aria-label={t("Language")}
-              onChange={(e) => setLocale(e.target.value as Locale)}
-            >
-              <option value="en">English</option>
-              <option value="ru">Русский</option>
-              <option value="de">Deutsch</option>
-            </select>
-            {user ? (
-              <button
-                className="icon-btn"
-                aria-label={t("Sign out")}
-                onClick={async () => {
-                  try {
-                    await api("auth", "DELETE");
-                    setUser(null);
-                    setTab("home");
-                    setResumeId("");
-                    setGameStep("campaign");
-                    setGameCampaignId("");
-                    setHeroes([]);
-                    setCampaigns([]);
-                    setSelected("");
-                    setCampaignFilter("");
-                  } catch (e) {
-                    setError((e as Error).message);
-                  }
-                }}
-              >
-                <LogOut size={19} />
-              </button>
-            ) : (
-              <button
-                className="btn small"
-                onClick={() => {
-                  setAfterAuth(null);
-                  setDraft(undefined);
-                  setAuthMode("login");
-                  open("auth");
-                }}
-              >
-                {t("Sign in")}
-              </button>
-            )}
-          </div>
-        </header>
-      )}
+        </div>
+      </header>
       <main className="simple-main">
-        {error && !modal && (
+        {error && !modal && !deleteTarget && (
           <p className="error" role="alert">
             {t(error)}
           </p>
@@ -477,7 +651,7 @@ export default function WoodlandApp() {
           <p className="loading" role="status">
             {t("Loading…")}
           </p>
-        ) : !user ? (
+        ) : !user && !quickMode ? (
           <section className="welcome-content">
             <p className="eyebrow">{t("Your Root RPG companion")}</p>
             <h1>{t("The Woodland awaits.")}</h1>
@@ -496,8 +670,11 @@ export default function WoodlandApp() {
               {t("Start playing")}
               <ChevronRight size={21} />
             </button>
-            <button className="text-link welcome-draft" onClick={newCharacter}>
-              {t("Create a character")}
+            <button
+              className="text-link welcome-draft"
+              onClick={startQuickGame}
+            >
+              {t("Quick game")}
             </button>
           </section>
         ) : tab === "home" ? (
@@ -558,39 +735,22 @@ export default function WoodlandApp() {
             {activeGame ? (
               <header className="game-heading">
                 <div className="campaign-heading">
-                  <h1>{campaign?.name}</h1>
-                  <CampaignPresence campaignId={gameCampaignId} />
+                  <h1>{quickMode ? t("Quick game") : campaign?.name}</h1>
+                  {quickMode ? (
+                    <p className="quick-game-note">
+                      {t(
+                        "No account. No campaign. Saved only in this browser tab.",
+                      )}
+                      {quickOfflineReady && (
+                        <span className="offline-ready">
+                          {t("Ready for offline play.")}
+                        </span>
+                      )}
+                    </p>
+                  ) : (
+                    <CampaignPresence campaignId={gameCampaignId} />
+                  )}
                 </div>
-                <nav className="game-actions" aria-label={t("Game controls")}>
-                  <button
-                    aria-label={t("Exit to main")}
-                    title={t("Exit to main")}
-                    onClick={() => {
-                      setTab("home");
-                      setError("");
-                    }}
-                  >
-                    <Home size={18} />
-                  </button>
-                  <button
-                    aria-label={t("Restart game")}
-                    title={t("Restart game")}
-                    onClick={() => {
-                      setSelected("");
-                      setGameStep("character");
-                      setError("");
-                    }}
-                  >
-                    <RotateCcw size={18} />
-                  </button>
-                  <button
-                    onClick={startNewGame}
-                    aria-label={t("Start new game")}
-                    title={t("Start new game")}
-                  >
-                    <Plus size={19} />
-                  </button>
-                </nav>
               </header>
             ) : (
               <div className="character-toolbar">
@@ -615,8 +775,19 @@ export default function WoodlandApp() {
                 open("character");
               }}
               onSaved={updated}
+              saveLocal={quickMode ? saveQuick : undefined}
             />
           </>
+        ) : quickMode ? (
+          <section className="journey-picker">
+            <h1>{t("Quick game")}</h1>
+            <p>
+              {t("No account. No campaign. Saved only in this browser tab.")}
+            </p>
+            <button className="btn primary" onClick={newCharacter}>
+              {t("Create a character")}
+            </button>
+          </section>
         ) : tab === "play" && (gameStep === "campaign" || !gameCampaign) ? (
           <section className="journey-picker">
             <p className="eyebrow">{t("1 · Choose your campaign")}</p>
@@ -713,35 +884,53 @@ export default function WoodlandApp() {
             )}
             <div className="character-list">
               {(tab === "play" ? heroes : shown).map((h) => (
-                <button
-                  key={h.id}
-                  className="character-tile"
-                  disabled={busy}
-                  onClick={() => void pickCharacter(h)}
-                >
-                  <span className="tile-portrait">
-                    <Portrait species={h.sheet.species} />
-                  </span>
-                  <span className="tile-copy">
-                    <strong>{h.sheet.name}</strong>
-                    <span>
-                      {t(h.sheet.species)} · {t(h.sheet.playbook)}
+                <div className="character-row" key={h.id}>
+                  <button
+                    className="character-tile"
+                    disabled={busy}
+                    onClick={() => void pickCharacter(h)}
+                  >
+                    <span className="tile-portrait">
+                      <Portrait species={h.sheet.species} />
                     </span>
-                    <small>
-                      {tab === "play" &&
-                      h.campaign_id &&
-                      h.campaign_id !== gameCampaignId
-                        ? t("Move from {campaign}", {
-                            campaign:
-                              campaigns.find((c) => c.id === h.campaign_id)
-                                ?.name || t("Campaign"),
-                          })
-                        : campaigns.find((c) => c.id === h.campaign_id)?.name ||
-                          t("No campaign yet")}
-                    </small>
-                  </span>
-                  <ChevronRight size={20} />
-                </button>
+                    <span className="tile-copy">
+                      <strong>{h.sheet.name}</strong>
+                      <span>
+                        {t(h.sheet.species)} · {t(h.sheet.playbook)}
+                      </span>
+                      <small>
+                        {tab === "play" &&
+                        h.campaign_id &&
+                        h.campaign_id !== gameCampaignId
+                          ? t("Move from {campaign}", {
+                              campaign:
+                                campaigns.find((c) => c.id === h.campaign_id)
+                                  ?.name || t("Campaign"),
+                            })
+                          : campaigns.find((c) => c.id === h.campaign_id)
+                              ?.name || t("No campaign yet")}
+                      </small>
+                    </span>
+                    <ChevronRight size={20} />
+                  </button>
+                  {tab === "characters" && (
+                    <button
+                      className="icon-btn delete-control"
+                      aria-label={t("Delete {name}", { name: h.sheet.name })}
+                      onClick={() => {
+                        setError("");
+                        setDeleteTarget({
+                          type: "character",
+                          id: h.id,
+                          name: h.sheet.name,
+                          version: h.version,
+                        });
+                      }}
+                    >
+                      <Trash2 size={17} />
+                    </button>
+                  )}
+                </div>
               ))}
             </div>
             {!(tab === "play" ? heroes : shown).length && (
@@ -809,6 +998,22 @@ export default function WoodlandApp() {
                     >
                       <Copy size={19} />
                     </button>
+                    {c.owner_id === user?.id && (
+                      <button
+                        className="icon-btn delete-control"
+                        aria-label={t("Delete {name}", { name: c.name })}
+                        onClick={() => {
+                          setError("");
+                          setDeleteTarget({
+                            type: "campaign",
+                            id: c.id,
+                            name: c.name,
+                          });
+                        }}
+                      >
+                        <Trash2 size={17} />
+                      </button>
+                    )}
                   </div>
                 </article>
               ))}
@@ -824,6 +1029,54 @@ export default function WoodlandApp() {
           <Check size={18} />
           {t(notice)}
         </div>
+      )}
+      {deleteTarget && (
+        <Modal
+          title={t(
+            deleteTarget.type === "character"
+              ? "Delete character"
+              : "Delete campaign",
+          )}
+          close={() => {
+            if (!busy) {
+              setDeleteTarget(null);
+              setError("");
+            }
+          }}
+        >
+          <p className="delete-explanation">
+            {t(
+              deleteTarget.type === "character"
+                ? "Delete {name}? This permanently removes the character."
+                : "Delete {name}? The campaign is removed for everyone. Characters are kept.",
+              { name: deleteTarget.name },
+            )}
+          </p>
+          {error && (
+            <p className="error" role="alert">
+              {t(error)}
+            </p>
+          )}
+          <div className="form-actions">
+            <button
+              className="btn"
+              disabled={busy}
+              onClick={() => {
+                setDeleteTarget(null);
+                setError("");
+              }}
+            >
+              {t("Cancel")}
+            </button>
+            <button
+              className="btn danger"
+              disabled={busy}
+              onClick={() => void deleteItem()}
+            >
+              {t("Delete")}
+            </button>
+          </div>
+        </Modal>
       )}
       {modal === "character" && (
         <Modal

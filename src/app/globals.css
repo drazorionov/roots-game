@@ -1968,3 +1968,142 @@ form .inline-check {
   background: #142920b3;
   border-radius: 7px;
 }
+
+/* Keep the main page's left edge on every route. */
+.workspace-scene .simple-main {
+  max-width: 1224px;
+  padding-left: 28px;
+  padding-right: 28px;
+}
+.workspace-scene .app-header {
+  max-width: 1280px;
+  padding-bottom: 14px;
+}
+.workspace-scene .journey-picker {
+  margin-left: 0;
+  margin-right: 0;
+}
+.scene-app .language-select {
+  width: 60px;
+  padding-left: 8px;
+  padding-right: 4px;
+}
+.scene-app .app-header .brand {
+  color: #fff6df;
+  min-height: 44px;
+}
+.game-menu {
+  position: relative;
+}
+.game-menu > summary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  list-style: none;
+  cursor: pointer;
+  color: #fff6df;
+  border-radius: 6px;
+}
+.game-menu > summary::-webkit-details-marker {
+  display: none;
+}
+.game-menu[open] > summary {
+  background: #435a47;
+}
+.game-menu-items {
+  position: absolute;
+  right: 0;
+  top: 50px;
+  z-index: 10;
+  width: 225px;
+  padding: 7px;
+  border: 1px solid #b4a582;
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--ink);
+  box-shadow: 0 8px 25px #0005;
+}
+.game-menu-items button {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 10px;
+  text-align: left;
+}
+.game-menu-items button:hover {
+  background: var(--soft);
+  border-radius: 4px;
+}
+.quick-game-note {
+  max-width: 530px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #eee5cf;
+}
+.offline-ready {
+  display: block;
+  margin-top: 5px;
+  color: #c9deb1;
+}
+.character-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+.character-row .character-tile {
+  flex: 1;
+  min-width: 0;
+  width: auto;
+}
+.delete-control {
+  color: var(--rust);
+  flex-shrink: 0;
+}
+.btn.danger {
+  background: #93452e;
+  border-color: #93452e;
+  color: #fff6df;
+}
+.delete-explanation {
+  margin-bottom: 24px;
+  line-height: 1.6;
+}
+@media (max-width: 600px) {
+  .workspace-scene .simple-main {
+    padding-left: 22px;
+    padding-right: 22px;
+  }
+  .workspace-scene .app-header {
+    padding-bottom: 12px;
+  }
+  .scene-app .header-actions {
+    gap: 1px;
+  }
+  .character-row {
+    position: relative;
+    display: block;
+  }
+  .character-row .character-tile {
+    width: 100%;
+    padding-right: 40px;
+  }
+  .character-row .delete-control {
+    position: absolute;
+    right: 3px;
+    top: 3px;
+  }
+  .character-row .character-tile > svg:last-child {
+    display: none;
+  }
+}
+@media (max-width: 360px) {
+  .workspace-scene .simple-main {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}

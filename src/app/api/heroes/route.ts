@@ -62,3 +62,31 @@ export async function POST(req: Request) {
     );
   }
 }
+
+export async function DELETE(req: Request) {
+  try {
+    sameOrigin(req);
+    const user = await getUser();
+    if (!user)
+      return NextResponse.json({ error: "Sign in first." }, { status: 401 });
+    const { id, version } = z
+      .object({ id: z.string().uuid(), version: z.number().int().positive() })
+      .parse(await req.json());
+    const rows =
+      await db()`DELETE FROM heroes WHERE id = ${id} AND owner_id = ${user.id} AND version = ${version} RETURNING id`;
+    if (!rows.length)
+      return NextResponse.json(
+        {
+          error:
+            "This character changed or is not yours. Reopen it and try again.",
+        },
+        { status: 409 },
+      );
+    return NextResponse.json({ id });
+  } catch {
+    return NextResponse.json(
+      { error: "Could not delete character." },
+      { status: 400 },
+    );
+  }
+}

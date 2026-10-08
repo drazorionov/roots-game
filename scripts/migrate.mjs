@@ -12,6 +12,8 @@ await sql.transaction([
   sql`CREATE TABLE IF NOT EXISTS campaign_presence (campaign_id uuid NOT NULL, user_id uuid NOT NULL, last_seen timestamptz NOT NULL DEFAULT now(), PRIMARY KEY(campaign_id, user_id), FOREIGN KEY(campaign_id, user_id) REFERENCES memberships(campaign_id, user_id) ON DELETE CASCADE)`,
   sql`CREATE TABLE IF NOT EXISTS heroes (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), campaign_id uuid NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE, owner_id uuid NOT NULL REFERENCES users(id), sheet jsonb NOT NULL, version integer NOT NULL DEFAULT 1, updated_at timestamptz NOT NULL DEFAULT now())`,
   sql`ALTER TABLE heroes ALTER COLUMN campaign_id DROP NOT NULL`,
+  sql`ALTER TABLE heroes DROP CONSTRAINT IF EXISTS heroes_campaign_id_fkey`,
+  sql`ALTER TABLE heroes ADD CONSTRAINT heroes_campaign_id_fkey FOREIGN KEY(campaign_id) REFERENCES campaigns(id) ON DELETE SET NULL`,
   sql`CREATE INDEX IF NOT EXISTS heroes_campaign_idx ON heroes(campaign_id)`,
   sql`CREATE INDEX IF NOT EXISTS memberships_user_idx ON memberships(user_id)`,
   sql`CREATE TABLE IF NOT EXISTS rate_limits (key text PRIMARY KEY, attempts integer NOT NULL, reset_at timestamptz NOT NULL)`,

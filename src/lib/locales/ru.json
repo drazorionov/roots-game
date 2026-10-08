@@ -500,5 +500,22 @@
   "Online status unavailable.": "Статус игроков недоступен.",
   "Players viewing this campaign. Updates every 20 seconds.": "Игроки, открывшие эту кампанию. Обновляется каждые 20 секунд.",
   "Online: {count}": "В сети: {count}",
-  "Checking players…": "Проверяем игроков…"
+  "Checking players…": "Проверяем игроков…",
+  "Quick game": "Быстрая игра",
+  "Game menu": "Меню игры",
+  "No account. No campaign. Saved only in this browser tab.": "Без аккаунта и кампании. Сохраняется только в этой вкладке.",
+  "Saved only in this browser tab.": "Сохранено только в этой вкладке.",
+  "Ready for offline play.": "Готово к игре без интернета.",
+  "This browser cannot save the quick game. Check browser storage settings.": "Браузер не может сохранить быструю игру. Проверьте настройки хранилища.",
+  "Delete {name}": "Удалить {name}",
+  "Delete character": "Удалить персонажа",
+  "Delete campaign": "Удалить кампанию",
+  "Delete": "Удалить",
+  "Deleted.": "Удалено.",
+  "Delete {name}? This permanently removes the character.": "Удалить {name}? Персонаж будет удалён безвозвратно.",
+  "Delete {name}? The campaign is removed for everyone. Characters are kept.": "Удалить {name}? Кампания будет удалена для всех участников. Персонажи сохранятся.",
+  "This character changed or is not yours. Reopen it and try again.": "Персонаж изменился или принадлежит другому игроку. Откройте его заново.",
+  "Could not delete character.": "Не удалось удалить персонажа.",
+  "Only the campaign creator can delete it.": "Удалить кампанию может только её создатель.",
+  "Could not delete campaign.": "Не удалось удалить кампанию."
 }
