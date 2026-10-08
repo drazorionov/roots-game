@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import "./globals.css";
 export const metadata: Metadata = {
-  title: "Root Helper · Your woodland, together",
+  title: "Root Helper · Your characters",
   description:
-    "A cozy companion for Root: The Roleplaying Game. Gather your party, create vagabonds, and keep your character sheets close.",
+    "Create and save Root RPG characters, join campaigns, and track injury, exhaustion, depletion, and gear.",
 };
 export default function RootLayout({
   children,

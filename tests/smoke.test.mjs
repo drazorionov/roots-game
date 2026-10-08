@@ -1,22 +1,17 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { chromium } from "@playwright/test";
+import { chromium, expect } from "@playwright/test";
 import { neon } from "@neondatabase/serverless";
 import nextEnv from "@next/env";
-import { mkdir } from "node:fs/promises";
+import { mkdir, readFile } from "node:fs/promises";
 nextEnv.loadEnvConfig(process.cwd());
 const base = process.env.TEST_BASE_URL || "http://127.0.0.1:3000";
 const sql = neon(process.env.DATABASE_URL);
 const suffix = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-const emails = [
-  `owner-${suffix}@example.invalid`,
-  `guest-${suffix}@example.invalid`,
-];
+const emails = ["owner", "guest"].map((x) => `${x}-${suffix}@example.invalid`);
 const password = `Root-test-${suffix}`;
-const accounts = [];
-let campaignId;
 async function request(path, method = "GET", data, cookie, origin = base) {
-  const response = await fetch(`${base}/api/${path}`, {
+  const res = await fetch(`${base}/api/${path}`, {
     method,
     headers: {
       "Content-Type": "application/json",
@@ -26,99 +21,102 @@ async function request(path, method = "GET", data, cookie, origin = base) {
     body: data ? JSON.stringify(data) : undefined,
   });
   return {
-    status: response.status,
-    data: await response.json(),
-    cookie: response.headers.get("set-cookie")?.split(";")[0],
+    status: res.status,
+    data: await res.json(),
+    cookie: res.headers.get("set-cookie")?.split(";")[0],
   };
 }
+const sheet = {
+  name: "Test Otter",
+  species: "Otter",
+  playbook: "Vagrant",
+  pronouns: "",
+  description: "",
+  stats: { Charm: 2, Cunning: 1, Finesse: 0, Luck: -1, Might: 0 },
+  injury: 0,
+  exhaustion: 0,
+  depletion: 0,
+  nature: "Curious",
+  drives: "Explore",
+  bonds: "",
+  biography: "",
+  moves: "Keep existing moves",
+  feats: "",
+  weaponSkills: "",
+  equipment: [],
+  reputation: [],
+  advancement: 0,
+};
 test(
-  "campaign sharing, ownership, persistence, validation, and browser workflow",
-  { timeout: 180000 },
+  "standalone characters, campaign permissions, saved drafts and mobile play",
+  { timeout: 240000 },
   async () => {
     let browser;
     try {
-      assert.equal((await request("campaigns")).status, 401);
-      for (let i = 0; i < 2; i++) {
+      assert.equal((await request("heroes")).status, 401);
+      const accounts = [];
+      for (const email of emails) {
         const a = await request("auth", "POST", {
           action: "signup",
-          name: i ? "Guest Tester" : "Owner Tester",
-          email: emails[i],
+          name: "Smoke Tester",
+          email,
           password,
         });
         assert.equal(a.status, 200, JSON.stringify(a.data));
         accounts.push(a);
       }
-      const owner = accounts[0],
-        guest = accounts[1];
-      assert.equal(
-        (
-          await request("auth", "POST", {
-            action: "login",
-            email: emails[0],
-            password: "wrong-password",
-          })
-        ).status,
-        401,
+      const [owner, guest] = accounts;
+      let a = await request(
+        "heroes",
+        "POST",
+        { campaignId: null, sheet },
+        owner.cookie,
       );
-      const create = await request(
+      assert.equal(a.status, 200, JSON.stringify(a.data));
+      let hero = a.data.hero;
+      assert.equal(hero.campaign_id, null);
+      assert.equal(
+        (await request("heroes", "GET", undefined, guest.cookie)).data.heroes
+          .length,
+        0,
+      );
+      const created = await request(
         "campaigns",
         "POST",
         {
           action: "create",
-          name: "Smoke Test Woodland",
-          description: "Temporary test campaign",
-          clearing: "Test Glade",
+          name: "API Test Campaign",
+          description: "",
+          clearing: "",
         },
         owner.cookie,
       );
-      assert.equal(create.status, 200, JSON.stringify(create.data));
-      campaignId = create.data.id;
-      const list = await request("campaigns", "GET", undefined, owner.cookie);
-      const campaign = list.data.campaigns.find((c) => c.id === campaignId);
-      assert.ok(campaign.invite_code);
+      assert.equal(created.status, 200);
+      const campaignId = created.data.id;
       assert.equal(
-        (await request("campaigns", "GET", undefined, guest.cookie)).data
-          .campaigns.length,
-        0,
+        (await request("heroes", "POST", { campaignId, sheet }, guest.cookie))
+          .status,
+        409,
       );
-      const sheet = {
-        name: "Test Otter",
-        species: "Otter",
-        playbook: "Vagrant",
-        pronouns: "they / them",
-        description: "Testing every woodland path.",
-        stats: { Charm: 2, Cunning: 2, Finesse: -1, Luck: 0, Might: 0 },
-        injury: 1,
-        exhaustion: 2,
-        depletion: 0,
-        nature: "Curious",
-        drives: "Explore",
-        bonds: "A trusted friend",
-        biography: "Born by the river.",
-        moves: "A custom move",
-        feats: "Lockpicking",
-        weaponSkills: "Trick shot",
-        equipment: [
-          { name: "Longbow", details: "Far range", wear: 1, load: 2 },
-        ],
-        reputation: [
-          {
-            faction: "Woodland Alliance",
-            standing: 1,
-            prestige: 2,
-            notoriety: 0,
-          },
-        ],
-        advancement: 1,
-      };
-      const created = await request(
+      assert.equal(
+        (
+          await request(
+            "heroes",
+            "POST",
+            { id: hero.id, version: hero.version, campaignId: null, sheet },
+            guest.cookie,
+          )
+        ).status,
+        409,
+      );
+      a = await request(
         "heroes",
         "POST",
-        { campaignId, sheet },
+        { id: hero.id, version: hero.version, campaignId, sheet },
         owner.cookie,
       );
-      assert.equal(created.status, 200, JSON.stringify(created.data));
-      const hero = created.data.hero;
+      assert.equal(a.status, 200);
+      hero = a.data.hero;
       assert.equal(
         (
           await request(
@@ -131,70 +129,11 @@ test(
         0,
       );
       assert.equal(
-        (await request("heroes", "POST", { campaignId, sheet }, guest.cookie))
-          .status,
-        409,
-      );
-      assert.equal(
-        (
-          await request(
-            "campaigns",
-            "POST",
-            { action: "join", code: campaign.invite_code },
-            guest.cookie,
-          )
-        ).status,
-        200,
-      );
-      assert.equal(
-        (
-          await request(
-            `heroes?campaign=${campaignId}`,
-            "GET",
-            undefined,
-            guest.cookie,
-          )
-        ).data.heroes[0].sheet.name,
-        "Test Otter",
-      );
-      assert.equal(
         (
           await request(
             "heroes",
             "POST",
-            {
-              id: hero.id,
-              campaignId,
-              version: 1,
-              sheet: { ...sheet, name: "Stolen" },
-            },
-            guest.cookie,
-          )
-        ).status,
-        409,
-      );
-      assert.equal(
-        (
-          await request(
-            "heroes",
-            "POST",
-            {
-              id: hero.id,
-              campaignId,
-              version: 1,
-              sheet: { ...sheet, injury: 3 },
-            },
-            owner.cookie,
-          )
-        ).status,
-        200,
-      );
-      assert.equal(
-        (
-          await request(
-            "heroes",
-            "POST",
-            { id: hero.id, campaignId, version: 1, sheet },
+            { id: hero.id, version: 1, campaignId, sheet },
             owner.cookie,
           )
         ).status,
@@ -205,7 +144,7 @@ test(
           await request(
             "heroes",
             "POST",
-            { campaignId, sheet: { ...sheet, injury: 99 } },
+            { campaignId: null, sheet: { ...sheet, injury: 5 } },
             owner.cookie,
           )
         ).status,
@@ -214,149 +153,266 @@ test(
       assert.equal(
         (
           await request(
-            "campaigns",
+            "heroes",
             "POST",
-            { action: "join", code: campaign.invite_code },
+            { campaignId: null, sheet },
             owner.cookie,
-            "https://untrusted.example",
+            "https://evil.invalid",
           )
         ).status,
         400,
       );
       browser = await chromium.launch({ channel: "chrome", headless: true });
       const context = await browser.newContext({
-        viewport: { width: 1440, height: 1050 },
+        viewport: { width: 390, height: 844 },
+        isMobile: true,
+        hasTouch: true,
       });
       const page = await context.newPage();
       const errors = [];
       page.on("pageerror", (e) => errors.push(e.message));
       await page.goto(base);
-      await page.getByText("A peek into the woodland.").waitFor();
-      await mkdir("test-results", { recursive: true });
-      await page.screenshot({
-        path: "test-results/desktop.png",
-        fullPage: true,
-      });
-      await page.getByLabel("Find a vagabond").fill("Rowan");
-      assert.equal(await page.locator(".hero-card").count(), 1);
-      await page.getByLabel("Find a vagabond").fill("");
-      await page
-        .getByRole("button", { name: "Sign in", exact: true })
-        .first()
-        .click();
-      await page.getByLabel("Email", { exact: true }).fill(emails[0]);
-      await page.getByLabel("Password", { exact: true }).fill(password);
-      await page
-        .locator("dialog")
-        .getByRole("button", { name: "Sign in", exact: true })
-        .click();
-      await page
-        .getByRole("heading", { name: "Smoke Test Woodland" })
-        .waitFor();
       await page
         .getByRole("button", { name: "Create a character", exact: true })
         .click();
-      await page.getByLabel("Name", { exact: true }).fill("Browser Fox");
-      await page.getByLabel("Pronouns", { exact: true }).fill("she / her");
-      await page.getByLabel("Charm", { exact: true }).selectOption("2");
-      await page.getByRole("button", { name: "injury 2", exact: true }).click();
-      await page
-        .getByRole("button", { name: "Story & moves", exact: true })
+      let dialog = page.getByRole("dialog");
+      await dialog.getByLabel("Name", { exact: true }).fill("Willow Browser");
+      await dialog.getByLabel("Species", { exact: true }).selectOption("Otter");
+      await dialog
+        .getByLabel("Playbook", { exact: true })
+        .selectOption("Vagrant");
+      await dialog.getByLabel("Charm", { exact: true }).selectOption("2");
+      await dialog.locator("summary").click();
+      await dialog
+        .getByLabel("Notes", { exact: true })
+        .fill("Черновик bleibt erhalten");
+      await dialog
+        .getByRole("button", { name: "Save character", exact: true })
         .click();
-      await page
-        .getByLabel("Biography", { exact: true })
-        .fill("A biography saved from the browser.");
-      await page
-        .getByRole("button", { name: "Equipment", exact: true })
+      await dialog
+        .getByRole("button", { name: "Already have an account?", exact: true })
         .click();
+      await dialog.getByLabel("Email", { exact: true }).fill(emails[0]);
+      await dialog.getByLabel("Password", { exact: true }).fill(password);
+      await dialog
+        .getByRole("button", { name: "Sign in", exact: true })
+        .click();
+      await expect(
+        page.getByRole("heading", { name: "Willow Browser", exact: true }),
+      ).toBeVisible();
+      let saved = (
+        await request("heroes", "GET", undefined, owner.cookie)
+      ).data.heroes.find((h) => h.sheet.name === "Willow Browser");
+      assert.equal(saved.sheet.biography, "Черновик bleibt erhalten");
+      assert.equal(saved.campaign_id, null);
+      assert.equal(saved.sheet.stats.Charm, 2);
+      async function mutate(click) {
+        const response = page.waitForResponse(
+          (r) =>
+            r.url().endsWith("/api/heroes") && r.request().method() === "POST",
+        );
+        await click();
+        assert.equal((await response).status(), 200);
+        await expect(page.locator(".quick-save-status")).toContainText(
+          "Character sheet saved.",
+        );
+      }
+      await mutate(() =>
+        page.getByRole("button", { name: "injury 2", exact: true }).click(),
+      );
+      await mutate(() =>
+        page.getByRole("button", { name: "exhaustion 3", exact: true }).click(),
+      );
+      await mutate(() =>
+        page.getByRole("button", { name: "depletion 1", exact: true }).click(),
+      );
       await page
         .getByRole("button", { name: "Add equipment", exact: true })
         .click();
-      await page
-        .getByLabel("Item name", { exact: true })
-        .fill("Woodland staff");
-      await page
-        .getByRole("button", { name: "Save character", exact: true })
-        .click();
-      await page.locator("dialog").waitFor({ state: "hidden" });
-      await page
-        .getByRole("heading", { name: "Browser Fox", exact: true })
-        .waitFor();
-      await page.reload();
-      await page
-        .getByRole("heading", { name: "Browser Fox", exact: true })
-        .waitFor();
-      await page
-        .locator(".hero-card")
-        .filter({ hasText: "Browser Fox" })
-        .click();
-      assert.equal(
-        await page.getByLabel("Charm", { exact: true }).inputValue(),
-        "2",
+      await page.getByLabel("Item name", { exact: true }).fill("Travel cloak");
+      await page.getByLabel("Details & tags", { exact: true }).fill("Warm");
+      await mutate(() =>
+        page
+          .getByRole("button", { name: "Add equipment", exact: true })
+          .click(),
       );
-      assert.equal(
-        await page
-          .getByRole("button", { name: "injury 2", exact: true })
-          .getAttribute("aria-pressed"),
-        "true",
+      await mutate(() =>
+        page
+          .getByRole("button", { name: "Travel cloak: wear 2", exact: true })
+          .click(),
+      );
+      saved = (
+        await request("heroes", "GET", undefined, owner.cookie)
+      ).data.heroes.find((h) => h.id === saved.id);
+      assert.deepEqual(
+        [
+          saved.sheet.injury,
+          saved.sheet.exhaustion,
+          saved.sheet.depletion,
+          saved.sheet.equipment[0].wear,
+        ],
+        [2, 3, 1, 2],
       );
       await page
-        .getByRole("button", { name: "Story & moves", exact: true })
+        .getByRole("button", { name: "Edit character", exact: true })
         .click();
-      assert.equal(
-        await page.getByLabel("Biography", { exact: true }).inputValue(),
-        "A biography saved from the browser.",
-      );
-      await page
-        .getByRole("button", { name: "Equipment", exact: true })
+      await dialog
+        .getByRole("button", { name: "Close dialog", exact: true })
         .click();
-      assert.equal(
-        await page.getByLabel("Item name", { exact: true }).inputValue(),
-        "Woodland staff",
-      );
-      await page.screenshot({ path: "test-results/sheet.png", fullPage: true });
-      await page.getByRole("button", { name: "Close", exact: true }).click();
-      await context.clearCookies();
-      await page.setViewportSize({ width: 390, height: 844 });
-      await page.goto(base);
-      await page.getByText("A peek into the woodland.").waitFor();
-      assert.equal(
-        await page.evaluate(
-          () => document.documentElement.scrollWidth <= window.innerWidth,
-        ),
-        true,
-        "mobile horizontal overflow",
-      );
-      await page.screenshot({
-        path: "test-results/mobile.png",
-        fullPage: true,
-      });
-      await page
-        .getByRole("button", { name: "Toggle navigation", exact: true })
-        .click();
+      await expect(dialog).toHaveCount(0);
       await page
         .getByRole("button", { name: "Campaigns", exact: true })
         .click();
       await page
-        .getByRole("heading", { name: "Your campaigns", exact: true })
-        .waitFor();
+        .getByRole("button", { name: "Create campaign", exact: true })
+        .click();
+      await dialog
+        .getByLabel("Campaign name", { exact: true })
+        .fill("Willow’s campaign");
+      await dialog
+        .getByRole("button", { name: "Create campaign", exact: true })
+        .click();
+      await expect(
+        page.getByRole("heading", { name: "Willow’s campaign", exact: true }),
+      ).toBeVisible();
+      const uiCampaign = (
+        await request("campaigns", "GET", undefined, owner.cookie)
+      ).data.campaigns.find((c) => c.name === "Willow’s campaign");
+      await page
+        .getByRole("button", { name: "Characters", exact: true })
+        .click();
+      await page
+        .getByRole("button", { name: "Choose campaign", exact: true })
+        .click();
+      await dialog
+        .getByLabel("Campaign", { exact: true })
+        .selectOption(uiCampaign.id);
+      await dialog.getByRole("button", { name: "Save", exact: true }).click();
+      await expect(dialog).toHaveCount(0);
+      saved = (
+        await request("heroes", "GET", undefined, owner.cookie)
+      ).data.heroes.find((h) => h.id === saved.id);
+      assert.equal(saved.campaign_id, uiCampaign.id);
+      const guestContext = await browser.newContext();
+      const [cookieName, cookieValue] = guest.cookie.split("=");
+      await guestContext.addCookies([
+        { name: cookieName, value: cookieValue, url: base },
+      ]);
+      const guestPage = await guestContext.newPage();
+      await guestPage.goto(base);
+      await guestPage
+        .getByRole("button", { name: "Campaigns", exact: true })
+        .click();
+      await guestPage
+        .getByRole("button", { name: "Join a campaign", exact: true })
+        .click();
+      await guestPage
+        .getByLabel("Campaign invite code")
+        .fill(uiCampaign.invite_code);
+      await guestPage
+        .getByRole("button", { name: "Join the campaign", exact: true })
+        .click();
+      await expect(
+        guestPage.getByRole("heading", {
+          name: "Willow’s campaign",
+          exact: true,
+        }),
+      ).toBeVisible();
+      assert.equal(
+        (await request("heroes", "GET", undefined, guest.cookie)).data.heroes
+          .length,
+        0,
+      );
+      assert.equal(
+        (
+          await request(
+            `heroes?campaign=${uiCampaign.id}`,
+            "GET",
+            undefined,
+            guest.cookie,
+          )
+        ).data.heroes[0].id,
+        saved.id,
+      );
+      assert.equal(
+        (
+          await request(
+            "heroes",
+            "POST",
+            {
+              id: saved.id,
+              version: saved.version,
+              campaignId: uiCampaign.id,
+              sheet: saved.sheet,
+            },
+            guest.cookie,
+          )
+        ).status,
+        409,
+      );
+      await mkdir("test-results", { recursive: true });
+      for (const locale of ["ru", "de"]) {
+        const d = JSON.parse(
+          await readFile(`src/lib/locales/${locale}.json`, "utf8"),
+        );
+        await page.locator(".language-select").selectOption(locale);
+        await expect(page.locator("html")).toHaveAttribute("lang", locale);
+        await expect(
+          page.getByRole("button", { name: d["Edit character"], exact: true }),
+        ).toBeVisible();
+        for (const [device, width, height] of [
+          ["iphone", 390, 844],
+          ["small-phone", 320, 700],
+          ["ipad", 820, 1180],
+          ["ipad-landscape", 1180, 820],
+        ]) {
+          await page.setViewportSize({ width, height });
+          assert.ok(
+            await page.evaluate(
+              () => document.documentElement.scrollWidth <= innerWidth,
+            ),
+            `${locale} ${device} overflow`,
+          );
+          await page.screenshot({
+            path: `test-results/${device}-${locale}.png`,
+            fullPage: true,
+          });
+        }
+        await page.setViewportSize({ width: 390, height: 844 });
+        await page
+          .getByRole("button", { name: d["Edit character"], exact: true })
+          .click();
+        await expect(
+          dialog.getByLabel(d["Species"], { exact: true }),
+        ).toHaveValue("Otter");
+        await expect(
+          dialog.getByLabel(d["Playbook"], { exact: true }),
+        ).toHaveValue("Vagrant");
+        await page.screenshot({
+          path: `test-results/create-${locale}.png`,
+          fullPage: true,
+        });
+        await dialog
+          .getByRole("button", { name: d["Close dialog"], exact: true })
+          .click();
+        await page.reload();
+        await expect(page.locator("html")).toHaveAttribute("lang", locale);
+        await page
+          .locator(".character-tile")
+          .filter({ hasText: "Willow Browser" })
+          .click();
+        await expect(
+          page.getByRole("button", { name: `${d.injury} 2`, exact: true }),
+        ).toHaveAttribute("aria-pressed", "true");
+      }
       assert.deepEqual(errors, []);
-      assert.equal(
-        (await request("auth", "DELETE", undefined, owner.cookie)).status,
-        200,
-      );
-      assert.equal(
-        (await request("campaigns", "GET", undefined, owner.cookie)).status,
-        401,
-      );
-      console.log(
-        "Verified auth, campaign invites, cross-user visibility, edit isolation, conflict protection, validation, CSRF, browser creation, reload persistence, mobile layout, and logout.",
-      );
     } finally {
-      if (browser) await browser.close();
-      if (campaignId) await sql`DELETE FROM campaigns WHERE id=${campaignId}`;
-      for (const email of emails)
-        await sql`DELETE FROM users WHERE email=${email}`;
+      await browser?.close();
+      for (const email of emails) {
+        await sql`DELETE FROM campaigns WHERE owner_id IN (SELECT id FROM users WHERE email = ${email})`;
+        await sql`DELETE FROM heroes WHERE owner_id IN (SELECT id FROM users WHERE email = ${email})`;
+        await sql`DELETE FROM users WHERE email = ${email}`;
+      }
     }
   },
 );

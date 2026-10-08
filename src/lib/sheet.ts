@@ -73,7 +73,7 @@ export const sheetSchema = z.object({
 export type Sheet = z.infer<typeof sheetSchema>;
 export type Hero = {
   id: string;
-  campaign_id: string;
+  campaign_id: string | null;
   owner_id: string;
   player: string;
   sheet: Sheet;
@@ -117,80 +117,3 @@ export function blankSheet(): Sheet {
     advancement: 0,
   };
 }
-export const demoCampaign: Campaign = {
-  id: "demo",
-  name: "Whispers of the Woodland",
-  description: "Old paths. Unlikely friends. A woodland on the edge of change.",
-  clearing: "Pellenicky Glade",
-  invite_code: "",
-  owner_id: "demo",
-  members: 3,
-};
-export const demoHeroes: Hero[] = [
-  {
-    name: "Rowan",
-    species: "Fox",
-    playbook: "Ranger",
-    pronouns: "she / her",
-    description: "A quiet pathfinder with a debt to the forest.",
-    stats: { Charm: 0, Cunning: 1, Finesse: 2, Luck: 0, Might: -1 },
-    player: "Ellie",
-    nature: "Protector — no friend gets left behind.",
-    drives: "Discover what lies beyond the old woodland road.",
-    injury: 1,
-    exhaustion: 2,
-  },
-  {
-    name: "Bramble",
-    species: "Rabbit",
-    playbook: "Tinker",
-    pronouns: "he / him",
-    description: "A pocket full of possibilities. And loose screws.",
-    stats: { Charm: -1, Cunning: 2, Finesse: 1, Luck: 0, Might: 0 },
-    player: "Sam",
-    nature: "Curious — every broken thing has a story.",
-    drives: "Build something that makes the woodland a better place.",
-    injury: 0,
-    exhaustion: 1,
-  },
-  {
-    name: "Moss",
-    species: "Raccoon",
-    playbook: "Vagrant",
-    pronouns: "they / them",
-    description: "Silver tongue. Sticky fingers. Heart of gold.",
-    stats: { Charm: 2, Cunning: 1, Finesse: -1, Luck: 1, Might: 0 },
-    player: "Alex",
-    nature: "Sociable — a stranger is just a friend you haven’t met.",
-    drives: "Find a place to finally call home.",
-    injury: 0,
-    exhaustion: 0,
-  },
-].map((h, i) => ({
-  id: `demo-${i}`,
-  campaign_id: "demo",
-  owner_id: "demo",
-  player: h.player,
-  version: 1,
-  sheet: {
-    ...blankSheet(),
-    ...h,
-    biography:
-      "The woodland is full of stories. This one is still being written.",
-    bonds: "I trust my companions to watch my back on the road.",
-    equipment: [
-      {
-        name: i === 1 ? "Well-loved toolkit" : "Travel-worn bow",
-        details: "A trusted companion on the woodland paths.",
-        wear: 1,
-        load: 1,
-      },
-      {
-        name: "Traveler’s pack",
-        details: "The small comforts of a life on the road.",
-        wear: 0,
-        load: 1,
-      },
-    ],
-  },
-}));

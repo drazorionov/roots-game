@@ -1,3 +1,5 @@
+"use client";
+import { useTranslation } from "@/lib/i18n";
 export function Portrait({
   species,
   variant = 0,
@@ -5,6 +7,7 @@ export function Portrait({
   species: string;
   variant?: number;
 }) {
+  const { t } = useTranslation();
   const rabbit = species === "Rabbit",
     owl = species === "Owl",
     mouse = species === "Mouse",
@@ -24,7 +27,7 @@ export function Portrait({
     <svg
       viewBox="0 0 300 240"
       role="img"
-      aria-label={`${species} woodland adventurer`}
+      aria-label={t("{species} woodland adventurer", { species: t(species) })}
       className={`portrait portrait-${variant % 3}`}
     >
       <circle cx="150" cy="105" r="79" fill="#e5d8b8" opacity=".65" />
@@ -134,32 +137,6 @@ export function Portrait({
         strokeWidth="6"
         strokeLinecap="round"
       />
-    </svg>
-  );
-}
-export function Forest() {
-  return (
-    <svg viewBox="0 0 580 240" className="forest" aria-hidden="true">
-      <circle cx="370" cy="76" r="49" fill="#d6c48d" />
-      <path d="M0 220Q130 101 271 175T580 118V240H0Z" fill="#9fAA86" />
-      <path d="M0 241Q172 168 295 215Q460 150 580 181V240Z" fill="#7f906c" />
-      {[30, 94, 155, 438, 497, 554].map((x, i) => (
-        <g key={x} transform={`translate(${x} ${(i % 2) * 25})`}>
-          <path d="M0 215V40" stroke="#4f654e" strokeWidth="6" />
-          <path
-            d="M0 0L-38 92H-24L-51 143H-35L-64 198H64L36 143H51L24 92H38Z"
-            fill={i % 2 ? "#526d55" : "#668060"}
-          />
-          <path d="M0 52V224" stroke="#415b48" strokeWidth="3" />
-        </g>
-      ))}
-      <path
-        d="M300 240Q255 203 322 173Q350 157 326 143Q378 157 350 182Q317 211 367 240"
-        fill="#d8c69e"
-      />
-      <g fill="#536b50">
-        <path d="M260 110q8-9 16 0q-8-3-8 1q0-4-8-1M297 84q9-9 18 0q-9-4-9 1q0-5-9-1" />
-      </g>
     </svg>
   );
 }
