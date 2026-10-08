@@ -1,6 +1,4 @@
 "use client";
-import Link from "next/link";
-import Image from "next/image";
 import {
   useEffect,
   useState,
@@ -10,6 +8,8 @@ import {
 } from "react";
 import {
   Sprout,
+  Home,
+  Compass,
   Plus,
   Users,
   UserRound,
@@ -76,11 +76,13 @@ export default function WoodlandApp() {
     [loading, setLoading] = useState(true),
     [heroes, setHeroes] = useState<Hero[]>([]),
     [campaigns, setCampaigns] = useState<Campaign[]>([]),
-    [tab, setTab] = useState<"characters" | "campaigns">("characters"),
+    [tab, setTab] = useState<"home" | "characters" | "campaigns" | "play">(
+      "home",
+    ),
     [selected, setSelected] = useState(""),
     [campaignFilter, setCampaignFilter] = useState("");
   const [modal, setModal] = useState<
-      "character" | "auth" | "join" | "campaign" | "assign" | null
+      "character" | "auth" | "join" | "campaign" | null
     >(null),
     [editing, setEditing] = useState<Hero | null>(null),
     [draft, setDraft] = useState<Sheet | undefined>(),
@@ -88,6 +90,8 @@ export default function WoodlandApp() {
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [notice, setNotice] = useState("");
+  const [resumeId, setResumeId] = useState("");
+  const [choosingCampaign, setChoosingCampaign] = useState(false);
   const [editorStep, setEditorStep] = useState(0);
   const [editorDirty, setEditorDirty] = useState(false);
   const [afterAuth, setAfterAuth] = useState<"campaign" | "join" | null>(null);
@@ -96,6 +100,51 @@ export default function WoodlandApp() {
   const shown = heroes.filter(
     (h) => !campaignFilter || h.campaign_id === campaignFilter,
   );
+  const resumable =
+    heroes.find((h) => h.id === resumeId) || heroes.find((h) => h.campaign_id);
+  const scenic = !user || tab === "home";
+  function remember(id: string, userId = user?.id) {
+    setResumeId(id);
+    if (userId)
+      try {
+        localStorage.setItem(`root-session-${userId}`, id);
+      } catch {}
+  }
+  function continueGame() {
+    setSelected(resumable?.id || "");
+    setChoosingCampaign(false);
+    setTab("play");
+    setError("");
+  }
+  function pickCharacter(h: Hero) {
+    setSelected(h.id);
+    setChoosingCampaign(false);
+    remember(h.id);
+  }
+  async function enterCampaign(campaignId: string, fromCreation = false) {
+    if (!hero || (busy && !fromCreation)) return;
+    setBusy(true);
+    setError("");
+    try {
+      const data = await api("heroes", "POST", {
+        id: hero.id,
+        version: hero.version,
+        campaignId,
+        sheet: hero.sheet,
+      });
+      updated(data.hero);
+      remember(hero.id);
+      setChoosingCampaign(false);
+      setTab("play");
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, [tab, selected, choosingCampaign]);
   useEffect(() => {
     document.documentElement.lang = locale;
     document.title = translate(locale, "Root Helper · Your characters");
@@ -108,6 +157,11 @@ export default function WoodlandApp() {
           const [h, c] = await Promise.all([api("heroes"), api("campaigns")]);
           setHeroes(h.heroes);
           setCampaigns(c.campaigns);
+          try {
+            setResumeId(
+              localStorage.getItem(`root-session-${data.user.id}`) || "",
+            );
+          } catch {}
         }
       })
       .catch((e) => setError(e.message))
@@ -187,7 +241,8 @@ export default function WoodlandApp() {
     updated(data.hero);
     setSelected(data.hero.id);
     setCampaignFilter("");
-    setTab("characters");
+    if (tab !== "play") setTab("characters");
+    remember(data.hero.id, data.hero.owner_id);
     setDraft(undefined);
     setModal(null);
     setNotice("Character sheet saved.");
@@ -222,6 +277,9 @@ export default function WoodlandApp() {
         password: data.get("password"),
       });
       setUser(auth.user);
+      try {
+        setResumeId(localStorage.getItem(`root-session-${auth.user.id}`) || "");
+      } catch {}
       const [h, c] = await Promise.all([api("heroes"), api("campaigns")]);
       setHeroes(h.heroes);
       setCampaigns(c.campaigns);
@@ -263,33 +321,12 @@ export default function WoodlandApp() {
       const campaigns = await api("campaigns");
       setCampaigns(campaigns.campaigns);
       setModal(null);
-      setTab("campaigns");
+      if (tab !== "play") setTab("campaigns");
       setNotice(
         modal === "join" ? "You joined the party." : "Campaign created.",
       );
       setCampaignFilter(data.id);
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setBusy(false);
-    }
-  }
-  async function assign(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!hero) return;
-    setBusy(true);
-    setError("");
-    const form = new FormData(event.currentTarget);
-    try {
-      const data = await api("heroes", "POST", {
-        id: hero.id,
-        version: hero.version,
-        campaignId: form.get("campaign") || null,
-        sheet: hero.sheet,
-      });
-      updated(data.hero);
-      setModal(null);
-      setNotice("Character sheet saved.");
+      if (tab === "play" && hero) await enterCampaign(data.id, true);
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -307,14 +344,30 @@ export default function WoodlandApp() {
     open(next);
   }
   return (
-    <div className="simple-app">
+    <div
+      className={`simple-app ${scenic ? `scene-app ${user ? "camp-scene" : "welcome-scene"}` : "workspace-app"}`}
+    >
       <header className="app-header">
-        <Link className="brand" href="/" aria-label="Root Helper">
-          <Sprout size={25} />
-          <span>
-            root <small>helper</small>
-          </span>
-        </Link>
+        {scenic ? (
+          <div className="brand">
+            <Sprout size={25} />
+            <span>
+              root <small>helper</small>
+            </span>
+          </div>
+        ) : (
+          <button
+            className="icon-btn home-control"
+            aria-label={t("Home")}
+            title={t("Home")}
+            onClick={() => {
+              setTab("home");
+              setError("");
+            }}
+          >
+            <Home size={20} />
+          </button>
+        )}
         <div className="header-actions">
           <select
             className="language-select"
@@ -334,6 +387,9 @@ export default function WoodlandApp() {
                 try {
                   await api("auth", "DELETE");
                   setUser(null);
+                  setTab("home");
+                  setResumeId("");
+                  setChoosingCampaign(false);
                   setHeroes([]);
                   setCampaigns([]);
                   setSelected("");
@@ -360,25 +416,6 @@ export default function WoodlandApp() {
           )}
         </div>
       </header>
-      <nav className="main-tabs" aria-label={t("Navigation")}>
-        <button
-          aria-current={tab === "characters" ? "page" : undefined}
-          onClick={() => {
-            setTab("characters");
-            setCampaignFilter("");
-          }}
-        >
-          <UserRound size={19} />
-          {t("Characters")}
-        </button>
-        <button
-          aria-current={tab === "campaigns" ? "page" : undefined}
-          onClick={() => setTab("campaigns")}
-        >
-          <Users size={19} />
-          {t("Campaigns")}
-        </button>
-      </nav>
       <main className="simple-main">
         {error && !modal && (
           <p className="error" role="alert">
@@ -389,109 +426,245 @@ export default function WoodlandApp() {
           <p className="loading" role="status">
             {t("Loading…")}
           </p>
-        ) : tab === "characters" ? (
+        ) : !user ? (
+          <section className="welcome-content">
+            <p className="eyebrow">{t("Your Root RPG companion")}</p>
+            <h1>{t("The Woodland awaits.")}</h1>
+            <p className="welcome-copy">
+              {t("Your character. Your friends. Your next adventure.")}
+            </p>
+            <button
+              className="btn primary welcome-start"
+              onClick={() => {
+                setAuthMode("signup");
+                setDraft(undefined);
+                setAfterAuth(null);
+                open("auth");
+              }}
+            >
+              {t("Start playing")}
+              <ChevronRight size={21} />
+            </button>
+            <button className="text-link welcome-draft" onClick={newCharacter}>
+              {t("Create a character")}
+            </button>
+          </section>
+        ) : tab === "home" ? (
+          <section className="home-content">
+            <p className="eyebrow">{t("Your clearing")}</p>
+            <h1>{t("Ready for adventure?")}</h1>
+            <div className="home-actions">
+              <button
+                className="home-action continue-action"
+                onClick={continueGame}
+              >
+                <Compass size={30} />
+                <span>
+                  <strong>
+                    {t(resumable ? "Continue game" : "Start / join a game")}
+                  </strong>
+                  <small>
+                    {resumable
+                      ? `${resumable.sheet.name} · ${campaigns.find((c) => c.id === resumable.campaign_id)?.name || t("Choose campaign")}`
+                      : t("Choose a character and gather your party.")}
+                  </small>
+                </span>
+                <ChevronRight size={22} />
+              </button>
+              <button
+                className="home-action"
+                onClick={() => {
+                  setTab("characters");
+                  setSelected("");
+                  setCampaignFilter("");
+                }}
+              >
+                <UserRound size={25} />
+                <span>
+                  <strong>{t("My characters")}</strong>
+                  <small>{t("Create, edit, and keep your heroes.")}</small>
+                </span>
+                <ChevronRight size={20} />
+              </button>
+              <button
+                className="home-action"
+                onClick={() => {
+                  setTab("campaigns");
+                  setCampaignFilter("");
+                }}
+              >
+                <Users size={25} />
+                <span>
+                  <strong>{t("My campaigns")}</strong>
+                  <small>{t("Find your party or bring one together.")}</small>
+                </span>
+                <ChevronRight size={20} />
+              </button>
+            </div>
+          </section>
+        ) : (tab === "play" || tab === "characters") &&
+          hero &&
+          (tab === "characters" || (campaign && !choosingCampaign)) ? (
           <>
-            {hero ? (
-              <>
-                <div className="character-toolbar">
-                  <button className="text-link" onClick={() => setSelected("")}>
-                    <ArrowLeft size={17} />
-                    {t("All characters")}
-                  </button>
-                  <button className="btn small" onClick={() => open("assign")}>
-                    {campaign?.name || t("Choose campaign")}
-                    <ChevronRight size={15} />
-                  </button>
-                </div>
-                <CharacterControls
-                  key={hero.id}
-                  hero={hero}
-                  edit={(step = 0) => {
-                    setEditorStep(step);
-                    setEditorDirty(false);
-                    setEditing(hero);
-                    setDraft(undefined);
-                    open("character");
-                  }}
-                  onSaved={updated}
-                />
-              </>
-            ) : (
-              <>
-                <div className="page-heading">
-                  <div>
-                    <h1>{t("My characters")}</h1>
-                    <p>{t("Create a character. Save it. Play.")}</p>
-                  </div>
-                  <button className="btn primary" onClick={newCharacter}>
-                    <Plus size={18} />
-                    {t("Create a character")}
-                  </button>
-                </div>
-                {campaignFilter && (
-                  <div className="filter-bar">
-                    <span>
-                      {campaigns.find((c) => c.id === campaignFilter)?.name}
-                    </span>
-                    <button
-                      className="text-link"
-                      onClick={() => setCampaignFilter("")}
-                    >
-                      {t("All characters")}
-                    </button>
-                  </div>
-                )}
-                {shown.length ? (
-                  <div className="character-list">
-                    {shown.map((h) => (
-                      <button
-                        key={h.id}
-                        className="character-tile"
-                        onClick={() => setSelected(h.id)}
-                      >
-                        <span className="tile-portrait">
-                          <Portrait species={h.sheet.species} />
-                        </span>
-                        <span className="tile-copy">
-                          <strong>{h.sheet.name}</strong>
-                          <span>
-                            {t(h.sheet.species)} · {t(h.sheet.playbook)}
-                          </span>
-                          <small>
-                            {campaigns.find((c) => c.id === h.campaign_id)
-                              ?.name || t("No campaign yet")}
-                          </small>
-                        </span>
-                        <ChevronRight size={20} />
-                      </button>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="empty-state illustrated-empty">
-                    <Image
-                      className="woodland-illustration"
-                      src="/art/woodland-travelers.webp"
-                      alt=""
-                      width={960}
-                      height={640}
-                      sizes="(max-width: 760px) 300px, 420px"
-                    />
-                    <h2>{t("Your first character starts here.")}</h2>
-                    <p>
-                      {t(
-                        "Pick a name, species, and playbook. You can choose a campaign later.",
-                      )}
-                    </p>
-                  </div>
-                )}
-              </>
-            )}
+            <div className="character-toolbar">
+              <button className="text-link" onClick={() => setSelected("")}>
+                <ArrowLeft size={16} />
+                {t(tab === "play" ? "Change character" : "All characters")}
+              </button>
+              <button
+                className="btn small"
+                onClick={() => {
+                  setTab("play");
+                  setChoosingCampaign(true);
+                }}
+              >
+                {campaign?.name || t("Choose campaign")}
+                <ChevronRight size={15} />
+              </button>
+            </div>
+            <CharacterControls
+              key={hero.id}
+              hero={hero}
+              edit={(step = 0) => {
+                setEditorStep(step);
+                setEditorDirty(false);
+                setEditing(hero);
+                setDraft(undefined);
+                open("character");
+              }}
+              onSaved={updated}
+            />
           </>
-        ) : (
-          <>
+        ) : tab === "play" && hero ? (
+          <section className="journey-picker">
+            <p className="eyebrow">{t("2 · Choose your campaign")}</p>
+            <h1>{t("Where will you play?")}</h1>
+            <div className="chosen-character">
+              <Portrait species={hero.sheet.species} />
+              <span>
+                <strong>{hero.sheet.name}</strong>
+                <small>{t(hero.sheet.playbook)}</small>
+              </span>
+              <button className="text-link" onClick={() => setSelected("")}>
+                {t("Change")}
+              </button>
+            </div>
+            <div className="campaign-actions">
+              <button
+                className="btn primary"
+                disabled={busy}
+                onClick={() => open("join")}
+              >
+                <Users size={18} />
+                {t("Join a campaign")}
+              </button>
+              <button
+                className="btn"
+                disabled={busy}
+                onClick={() => open("campaign")}
+              >
+                <Plus size={18} />
+                {t("Create campaign")}
+              </button>
+            </div>
+            <div className="campaign-list">
+              {campaigns.map((c) => (
+                <button
+                  key={c.id}
+                  className="campaign-choice"
+                  disabled={busy}
+                  onClick={() => void enterCampaign(c.id)}
+                >
+                  <span>
+                    <strong>{c.name}</strong>
+                    <small>
+                      {players(c.members)}
+                      {c.clearing ? ` · ${c.clearing}` : ""}
+                    </small>
+                  </span>
+                  <ChevronRight size={20} />
+                </button>
+              ))}
+            </div>
+            {!campaigns.length && (
+              <p className="field-hint">
+                {t(
+                  "Join with an invite code, or create a campaign for your friends.",
+                )}
+              </p>
+            )}
+          </section>
+        ) : tab === "characters" || tab === "play" ? (
+          <section className="journey-picker">
+            {tab === "play" && (
+              <p className="eyebrow">{t("1 · Choose your character")}</p>
+            )}
             <div className="page-heading">
               <div>
-                <h1>{t("Campaigns")}</h1>
+                <h1>
+                  {t(tab === "play" ? "Who will you be?" : "My characters")}
+                </h1>
+                <p>
+                  {t(
+                    tab === "play"
+                      ? "Pick a hero, then choose a campaign."
+                      : "Create a character. Save it. Play.",
+                  )}
+                </p>
+              </div>
+              <button className="btn primary" onClick={newCharacter}>
+                <Plus size={18} />
+                {t("Create a character")}
+              </button>
+            </div>
+            {campaignFilter && tab === "characters" && (
+              <div className="filter-bar">
+                <span>
+                  {campaigns.find((c) => c.id === campaignFilter)?.name}
+                </span>
+                <button
+                  className="text-link"
+                  onClick={() => setCampaignFilter("")}
+                >
+                  {t("All characters")}
+                </button>
+              </div>
+            )}
+            <div className="character-list">
+              {(tab === "play" ? heroes : shown).map((h) => (
+                <button
+                  key={h.id}
+                  className="character-tile"
+                  onClick={() => pickCharacter(h)}
+                >
+                  <span className="tile-portrait">
+                    <Portrait species={h.sheet.species} />
+                  </span>
+                  <span className="tile-copy">
+                    <strong>{h.sheet.name}</strong>
+                    <span>
+                      {t(h.sheet.species)} · {t(h.sheet.playbook)}
+                    </span>
+                    <small>
+                      {campaigns.find((c) => c.id === h.campaign_id)?.name ||
+                        t("No campaign yet")}
+                    </small>
+                  </span>
+                  <ChevronRight size={20} />
+                </button>
+              ))}
+            </div>
+            {!(tab === "play" ? heroes : shown).length && (
+              <p className="empty-note">
+                {t("Your first character starts here.")}
+              </p>
+            )}
+          </section>
+        ) : (
+          <section className="journey-picker">
+            <div className="page-heading">
+              <div>
+                <h1>{t("My campaigns")}</h1>
                 <p>{t("Join your friends or start your own campaign.")}</p>
               </div>
             </div>
@@ -508,68 +681,52 @@ export default function WoodlandApp() {
                 {t("Create campaign")}
               </button>
             </div>
-            {campaigns.length ? (
-              <div className="campaign-list">
-                {campaigns.map((c) => (
-                  <article className="campaign-card" key={c.id}>
-                    <h2>{c.name}</h2>
-                    <p>
-                      {players(c.members)}
-                      {c.clearing ? ` · ${c.clearing}` : ""}
-                    </p>
-                    <div className="campaign-card-actions">
-                      <button
-                        className="btn"
-                        onClick={() => {
-                          setSelected("");
-                          setCampaignFilter(c.id);
-                          setTab("characters");
-                        }}
-                      >
-                        {t("My characters")}
-                        <ChevronRight size={16} />
-                      </button>
-                      <button
-                        className="icon-btn"
-                        aria-label={t("Copy invite code")}
-                        onClick={async () => {
-                          try {
-                            await navigator.clipboard.writeText(c.invite_code);
-                            setNotice(
-                              "Invite code copied. Share it with your party.",
-                            );
-                          } catch {
-                            setNotice(
-                              t("Invite code: {code}", { code: c.invite_code }),
-                            );
-                          }
-                        }}
-                      >
-                        <Copy size={19} />
-                      </button>
-                    </div>
-                  </article>
-                ))}
-              </div>
-            ) : (
-              <div className="empty-state illustrated-empty">
-                <Image
-                  className="woodland-illustration"
-                  src="/art/woodland-travelers.webp"
-                  alt=""
-                  width={960}
-                  height={640}
-                  sizes="(max-width: 760px) 300px, 420px"
-                />
-                <h2>{t("No campaigns yet")}</h2>
-                <p>
-                  {t(
-                    "Use an invite code to join, or create a campaign and invite your friends.",
-                  )}
-                </p>
-              </div>
+            <div className="campaign-list">
+              {campaigns.map((c) => (
+                <article className="campaign-card" key={c.id}>
+                  <h2>{c.name}</h2>
+                  <p>
+                    {players(c.members)}
+                    {c.clearing ? ` · ${c.clearing}` : ""}
+                  </p>
+                  <div className="campaign-card-actions">
+                    <button
+                      className="btn"
+                      onClick={() => {
+                        setSelected("");
+                        setCampaignFilter(c.id);
+                        setTab("characters");
+                      }}
+                    >
+                      {t("My characters")}
+                      <ChevronRight size={16} />
+                    </button>
+                    <button
+                      className="icon-btn"
+                      aria-label={t("Copy invite code")}
+                      onClick={async () => {
+                        try {
+                          await navigator.clipboard.writeText(c.invite_code);
+                          setNotice(
+                            "Invite code copied. Share it with your party.",
+                          );
+                        } catch {
+                          setNotice(
+                            t("Invite code: {code}", { code: c.invite_code }),
+                          );
+                        }
+                      }}
+                    >
+                      <Copy size={19} />
+                    </button>
+                  </div>
+                </article>
+              ))}
+            </div>
+            {!campaigns.length && (
+              <p className="empty-note">{t("No campaigns yet")}</p>
             )}
-          </>
+          </section>
         )}
       </main>
       {notice && (
@@ -713,40 +870,6 @@ export default function WoodlandApp() {
                     ? "Join the campaign"
                     : "Create campaign",
               )}
-            </button>
-          </form>
-        </Modal>
-      )}
-      {modal === "assign" && hero && (
-        <Modal title={t("Choose campaign")} close={closeModal}>
-          <form onSubmit={assign}>
-            <label>
-              {t("Campaign")}
-              <select
-                name="campaign"
-                aria-label={t("Campaign")}
-                defaultValue={hero.campaign_id || ""}
-              >
-                <option value="">{t("No campaign yet")}</option>
-                {campaigns.map((c) => (
-                  <option value={c.id} key={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            {!campaigns.length && (
-              <p className="field-hint">
-                {t("Join or create a campaign from the Campaigns tab first.")}
-              </p>
-            )}
-            {error && (
-              <p className="error" role="alert">
-                {t(error)}
-              </p>
-            )}
-            <button className="btn primary full" disabled={busy}>
-              {t(busy ? "Saving…" : "Save")}
             </button>
           </form>
         </Modal>

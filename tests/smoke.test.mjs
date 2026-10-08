@@ -172,10 +172,37 @@ test(
       const errors = [];
       page.on("pageerror", (e) => errors.push(e.message));
       await page.goto(base);
+      await expect(
+        page.getByRole("heading", {
+          name: "The Woodland awaits.",
+          exact: true,
+        }),
+      ).toBeVisible();
+      await mkdir("test-results", { recursive: true });
+      for (const [device, width, height] of [
+        ["iphone", 390, 844],
+        ["ipad", 820, 1180],
+      ]) {
+        await page.setViewportSize({ width, height });
+        await page.screenshot({
+          path: `test-results/welcome-${device}.png`,
+          fullPage: true,
+        });
+      }
+      await page.setViewportSize({ width: 390, height: 844 });
+      await page
+        .getByRole("button", { name: "Start playing", exact: true })
+        .click();
+      await expect(
+        page.getByRole("dialog", { name: "Create an account", exact: true }),
+      ).toBeVisible();
+      await page
+        .getByRole("button", { name: "Close dialog", exact: true })
+        .click();
       await page
         .getByRole("button", { name: "Create a character", exact: true })
         .click();
-      let dialog = page.getByRole("dialog");
+      const dialog = page.getByRole("dialog");
       await dialog.getByLabel("Name", { exact: true }).fill("Willow Browser");
       await dialog.getByLabel("Species", { exact: true }).selectOption("Otter");
       await dialog
@@ -261,9 +288,9 @@ test(
         .click();
       await page.getByLabel("Item name", { exact: true }).fill("Travel cloak");
       await page.getByLabel("Details & tags", { exact: true }).fill("Warm");
-      await page.getByLabel("Value", {exact:true}).fill("2");
-      await page.getByLabel("Wear boxes", {exact:true}).fill("2");
-      await page.getByLabel("Pay from coin", {exact:true}).check();
+      await page.getByLabel("Value", { exact: true }).fill("2");
+      await page.getByLabel("Wear boxes", { exact: true }).fill("2");
+      await page.getByLabel("Pay from coin", { exact: true }).check();
       await mutate(() =>
         page
           .getByRole("button", { name: "Add equipment", exact: true })
@@ -320,7 +347,7 @@ test(
         .getByRole("button", { name: "Background", exact: true })
         .click();
       await mutate(() =>
-        page.locator(".drive-check").filter({hasText:"Chaos"}).click(),
+        page.locator(".drive-check").filter({ hasText: "Chaos" }).click(),
       );
       await expect(
         page.locator(".drive-check").filter({ hasText: "Chaos" }),
@@ -359,9 +386,27 @@ test(
         .getByRole("button", { name: "Close dialog", exact: true })
         .click();
       await expect(dialog).toHaveCount(0);
-      await page
-        .getByRole("button", { name: "Campaigns", exact: true })
-        .click();
+      // Continue guides an unassigned character into campaign creation inline.
+      await page.getByRole("button", { name: "Home", exact: true }).click();
+      await expect(page.locator(".home-actions > button")).toHaveCount(3);
+      for (const [device, width, height] of [
+        ["iphone", 390, 844],
+        ["ipad", 820, 1180],
+      ]) {
+        await page.setViewportSize({ width, height });
+        await page.screenshot({
+          path: `test-results/home-${device}.png`,
+          fullPage: true,
+        });
+      }
+      await page.setViewportSize({ width: 390, height: 844 });
+      await page.getByRole("button", { name: /Continue game/ }).click();
+      await expect(
+        page.getByRole("heading", {
+          name: "Where will you play?",
+          exact: true,
+        }),
+      ).toBeVisible();
       await page
         .getByRole("button", { name: "Create campaign", exact: true })
         .click();
@@ -372,22 +417,32 @@ test(
         .getByRole("button", { name: "Create campaign", exact: true })
         .click();
       await expect(
-        page.getByRole("heading", { name: "Willow’s campaign", exact: true }),
+        page.getByRole("heading", { name: "Willow Browser", exact: true }),
+      ).toBeVisible();
+      await expect(
+        page.getByRole("button", { name: "Willow’s campaign", exact: true }),
       ).toBeVisible();
       const uiCampaign = (
         await request("campaigns", "GET", undefined, owner.cookie)
       ).data.campaigns.find((c) => c.name === "Willow’s campaign");
-      await page
-        .getByRole("button", { name: "Characters", exact: true })
-        .click();
-      await page
-        .getByRole("button", { name: "Choose campaign", exact: true })
-        .click();
-      await dialog
-        .getByLabel("Campaign", { exact: true })
-        .selectOption(uiCampaign.id);
-      await dialog.getByRole("button", { name: "Save", exact: true }).click();
-      await expect(dialog).toHaveCount(0);
+      await page.reload();
+      await page.getByRole("button", { name: /Continue game/ }).click();
+      await expect(
+        page.getByRole("heading", { name: "Willow Browser", exact: true }),
+      ).toBeVisible();
+      // Management screens remain accessible, and Continue returns to this hero.
+      await page.getByRole("button", { name: "Home", exact: true }).click();
+      await page.getByRole("button", { name: /My campaigns/ }).click();
+      await expect(
+        page.getByRole("heading", { name: "Willow’s campaign", exact: true }),
+      ).toBeVisible();
+      await page.getByRole("button", { name: "Home", exact: true }).click();
+      await page.getByRole("button", { name: /My characters/ }).click();
+      await expect(
+        page.locator(".character-tile").filter({ hasText: "Willow Browser" }),
+      ).toBeVisible();
+      await page.getByRole("button", { name: "Home", exact: true }).click();
+      await page.getByRole("button", { name: /Continue game/ }).click();
       saved = (
         await request("heroes", "GET", undefined, owner.cookie)
       ).data.heroes.find((h) => h.id === saved.id);
@@ -400,8 +455,29 @@ test(
       const guestPage = await guestContext.newPage();
       await guestPage.goto(base);
       await guestPage
-        .getByRole("button", { name: "Campaigns", exact: true })
+        .getByRole("button", { name: /Start \/ join a game/ })
         .click();
+      await expect(
+        guestPage.getByRole("heading", {
+          name: "Who will you be?",
+          exact: true,
+        }),
+      ).toBeVisible();
+      await guestPage
+        .getByRole("button", { name: "Create a character", exact: true })
+        .click();
+      await guestPage
+        .getByLabel("Name", { exact: true })
+        .fill("Guest Vagabond");
+      await guestPage
+        .getByRole("button", { name: "Save character", exact: true })
+        .click();
+      await expect(
+        guestPage.getByRole("heading", {
+          name: "Where will you play?",
+          exact: true,
+        }),
+      ).toBeVisible();
       await guestPage
         .getByRole("button", { name: "Join a campaign", exact: true })
         .click();
@@ -412,7 +488,10 @@ test(
         .getByRole("button", { name: "Join the campaign", exact: true })
         .click();
       await expect(
-        guestPage.getByRole("heading", {
+        guestPage.getByRole("heading", { name: "Guest Vagabond", exact: true }),
+      ).toBeVisible();
+      await expect(
+        guestPage.getByRole("button", {
           name: "Willow’s campaign",
           exact: true,
         }),
@@ -420,7 +499,7 @@ test(
       assert.equal(
         (await request("heroes", "GET", undefined, guest.cookie)).data.heroes
           .length,
-        0,
+        1,
       );
       assert.equal(
         (
@@ -514,9 +593,27 @@ test(
           .click();
         await page.reload();
         await expect(page.locator("html")).toHaveAttribute("lang", locale);
+        await expect(page.locator(".home-actions > button")).toHaveCount(3);
+        for (const [device, width, height] of [
+          ["small-phone", 320, 700],
+          ["iphone", 390, 844],
+          ["ipad", 820, 1180],
+        ]) {
+          await page.setViewportSize({ width, height });
+          assert.ok(
+            await page.evaluate(
+              () => document.documentElement.scrollWidth <= innerWidth,
+            ),
+            `${locale} ${device} home overflow`,
+          );
+          await page.screenshot({
+            path: `test-results/home-${locale}-${device}.png`,
+            fullPage: false,
+          });
+        }
+        await page.setViewportSize({ width: 390, height: 844 });
         await page
-          .locator(".character-tile")
-          .filter({ hasText: "Willow Browser" })
+          .getByRole("button", { name: new RegExp(d["Continue game"]) })
           .click();
         await expect(
           page.getByRole("button", { name: `${d.injury} 2`, exact: true }),
