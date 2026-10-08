@@ -1,6 +1,14 @@
 "use client";
 import { useState, type FormEvent } from "react";
-import { Plus, Trash2, Edit3 } from "lucide-react";
+import {
+  Plus,
+  Trash2,
+  Edit3,
+  Swords,
+  Shield,
+  Package,
+  Dices,
+} from "lucide-react";
 import { type Sheet } from "@/lib/sheet";
 import { effectiveStats, playbookData } from "@/lib/playbooks";
 import { useTranslation } from "@/lib/i18n";
@@ -10,7 +18,11 @@ export default function GearPanel({
   sheet,
   busy,
   update,
+  starting = false,
+  roll,
 }: {
+  starting?: boolean;
+  roll?: (stat: "Might" | "Finesse") => void;
   sheet: Sheet;
   busy: boolean;
   update: UpdateSheet;
@@ -18,6 +30,7 @@ export default function GearPanel({
   const { t } = useTranslation();
   const [editing, setEditing] = useState<number | null>(null),
     [error, setError] = useState("");
+  const [kind, setKind] = useState("gear");
   const [itemSnapshot, setItemSnapshot] = useState("");
   const load = sheet.equipment.reduce((n, x) => n + x.load, 0),
     burdened = 4 + effectiveStats(sheet).Might;
@@ -42,6 +55,9 @@ export default function GearPanel({
     }
     const maxWear = Number(data.get("maxWear"));
     const next = {
+      kind: data.get("kind") as "gear" | "weapon" | "armor",
+      range: String(data.get("range") || ""),
+      harm: Number(data.get("harm") ?? 1),
       name: String(data.get("name")),
       details: String(data.get("details")),
       load: Number(data.get("load")),
@@ -99,8 +115,17 @@ export default function GearPanel({
         </p>
       )}
       {sheet.equipment.map((item, i) => (
-        <div className="live-gear" key={i}>
+        <div className={`live-gear gear-${item.kind}`} key={i}>
           <div>
+            <span className="gear-kind-icon" aria-hidden="true">
+              {item.kind === "weapon" ? (
+                <Swords size={20} />
+              ) : item.kind === "armor" ? (
+                <Shield size={20} />
+              ) : (
+                <Package size={20} />
+              )}
+            </span>
             <strong>{item.name || t("item")}</strong>
             <span>
               {t("Load")}: {item.load}
@@ -110,6 +135,7 @@ export default function GearPanel({
               aria-label={t("Edit {item}", { item: item.name })}
               disabled={busy}
               onClick={() => {
+                setKind(item.kind);
                 setItemSnapshot(JSON.stringify(item));
                 setEditing(i);
                 setError("");
@@ -133,7 +159,39 @@ export default function GearPanel({
               <Trash2 size={16} />
             </button>
           </div>
+          {item.kind === "weapon" && (
+            <div className="weapon-facts">
+              <span>
+                {t("Weapon harm")}: {item.harm}
+              </span>
+              {item.range && (
+                <span>
+                  {t("Range")}: {item.range}
+                </span>
+              )}
+            </div>
+          )}
           {item.details && <p>{item.details}</p>}
+          {item.kind === "weapon" && roll && (
+            <div className="weapon-rolls">
+              <button
+                className="text-link"
+                disabled={busy}
+                onClick={() => roll("Might")}
+              >
+                <Dices size={15} />
+                {t("Melee · Might")}
+              </button>
+              <button
+                className="text-link"
+                disabled={busy}
+                onClick={() => roll("Finesse")}
+              >
+                <Dices size={15} />
+                {t("Ranged · Finesse")}
+              </button>
+            </div>
+          )}
           <div className="gear-wear">
             <span>{t("Wear")}</span>
             {Array.from({ length: item.maxWear }, (_, j) => j + 1).map((n) => (
@@ -164,6 +222,42 @@ export default function GearPanel({
       {editing !== null ? (
         <form className="quick-gear-form" key={editing} onSubmit={save}>
           <fieldset disabled={busy}>
+            <label>
+              {t("Equipment type")}
+              <select
+                name="kind"
+                aria-label={t("Equipment type")}
+                value={kind}
+                onChange={(e) => setKind(e.target.value)}
+              >
+                <option value="gear">{t("Gear")}</option>
+                <option value="weapon">{t("Weapon")}</option>
+                <option value="armor">{t("Armor")}</option>
+              </select>
+            </label>
+            {kind === "weapon" && (
+              <div className="form-grid">
+                <label>
+                  {t("Range")}
+                  <input
+                    name="range"
+                    maxLength={80}
+                    defaultValue={item?.range || ""}
+                    placeholder={t("Close, far, or another range")}
+                  />
+                </label>
+                <label>
+                  {t("Weapon harm")}
+                  <input
+                    name="harm"
+                    type="number"
+                    min={0}
+                    max={4}
+                    defaultValue={item?.harm ?? 1}
+                  />
+                </label>
+              </div>
+            )}
             <label>
               {t("Item name")}
               <input
@@ -218,7 +312,7 @@ export default function GearPanel({
             </div>
             {!item && (
               <label className="inline-check">
-                <input type="checkbox" name="pay" />
+                <input type="checkbox" name="pay" defaultChecked={starting} />
                 {t("Pay from coin")}
               </label>
             )}
@@ -249,6 +343,7 @@ export default function GearPanel({
           className="btn"
           disabled={busy || sheet.equipment.length >= 30}
           onClick={() => {
+            setKind("gear");
             setEditing(-1);
             setError("");
           }}

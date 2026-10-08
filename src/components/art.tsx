@@ -5,6 +5,7 @@ export function Portrait({
   variant = 0,
 }: {
   species: string;
+  playbook?: string;
   variant?: number;
 }) {
   const { t } = useTranslation();

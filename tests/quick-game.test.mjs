@@ -27,9 +27,11 @@ test(
       page.on("request", (r) => {
         if (r.url().includes("/api/")) requests.push(r.url());
       });
-      const dialog = page.getByRole("dialog");
-      await dialog.getByLabel("Name", { exact: true }).fill("Offline Otter");
-      await dialog
+      const creation = page.locator(".creation-page");
+      await expect(page).toHaveURL(/\/characters\/new\?mode=quick$/);
+      await expect(page.getByRole("dialog")).toHaveCount(0);
+      await creation.getByLabel("Name", { exact: true }).fill("Offline Otter");
+      await creation
         .getByRole("button", { name: "Save character", exact: true })
         .click();
       await expect(
@@ -81,13 +83,25 @@ test(
       await page
         .getByRole("button", { name: "Restart game", exact: true })
         .click();
-      await expect(dialog).toBeVisible();
-      await dialog
-        .getByRole("button", { name: "Close dialog", exact: true })
-        .click();
+      await expect(creation).toBeVisible();
+      if (process.env.TEST_OFFLINE_RELOAD) {
+        await page.reload();
+        await expect(creation).toBeVisible();
+        await expect(page.getByRole("dialog")).toHaveCount(0);
+      }
+      await creation.locator(".creation-back").click();
       await expect(
         page.getByRole("heading", { name: "Offline Otter", exact: true }),
       ).toBeVisible();
+      await page
+        .getByRole("button", { name: "Edit character", exact: true })
+        .click();
+      await expect(page).toHaveURL(/\/characters\/edit/);
+      if (process.env.TEST_OFFLINE_RELOAD) await page.reload();
+      await expect(page.getByLabel("Name", { exact: true })).toHaveValue(
+        "Offline Otter",
+      );
+      await creation.locator(".creation-back").click();
       assert.deepEqual(requests, []);
       assert.deepEqual(errors, []);
       await context.setOffline(false);

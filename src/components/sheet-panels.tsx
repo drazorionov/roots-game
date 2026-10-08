@@ -1,7 +1,8 @@
 "use client";
 import { useState } from "react";
 import { useTranslation } from "@/lib/i18n";
-import { type Sheet } from "@/lib/sheet";
+import { Dices } from "lucide-react";
+import { type Sheet, stats } from "@/lib/sheet";
 import {
   allMoves,
   driveHints,
@@ -10,7 +11,19 @@ import {
 } from "@/lib/playbooks";
 import SheetCounter from "./sheet-counter";
 import { type UpdateSheet } from "./gear-panel";
-export function MovesPanel({ sheet }: { sheet: Sheet }) {
+export function MovesPanel({
+  sheet,
+  roll,
+  busy = false,
+  expanded = false,
+  setupLocked = false,
+}: {
+  sheet: Sheet;
+  roll?: (stat: (typeof stats)[number]) => void;
+  busy?: boolean;
+  expanded?: boolean;
+  setupLocked?: boolean;
+}) {
   const { t } = useTranslation();
   return (
     <section className="play-panel">
@@ -22,18 +35,37 @@ export function MovesPanel({ sheet }: { sheet: Sheet }) {
       </p>
       {!sheet.moveIds.length && (
         <p className="field-hint">
-          {t("Choose moves in Edit character → Abilities.")}
+          {t(
+            setupLocked
+              ? "No playbook moves selected."
+              : "Choose moves in Edit character → Abilities.",
+          )}
         </p>
       )}
       {sheet.moveIds.map((name) => {
         const move = allMoves.find((x) => x.name === name);
         return (
-          <details className="move-reminder" key={name}>
+          <details
+            className="move-reminder"
+            key={name}
+            open={expanded || undefined}
+          >
             <summary>
               {t(name)}
               {move?.stat && <span className="pill">{t(move.stat)}</span>}
             </summary>
             <p>{move ? t(move.summary) : name}</p>
+            {move?.stat && roll && (
+              <button
+                className="btn small move-roll"
+                aria-label={t("Roll {move}", { move: t(name) })}
+                disabled={busy}
+                onClick={() => roll(move.stat!)}
+              >
+                <Dices size={15} />
+                {t("Roll {stat}", { stat: t(move.stat) })}
+              </button>
+            )}
           </details>
         );
       })}
@@ -71,16 +103,18 @@ export function BackgroundPanel({
   sheet: Sheet;
   busy: boolean;
   update: UpdateSheet;
-  edit: () => void;
+  edit?: () => void;
 }) {
   const { t } = useTranslation();
   return (
     <section className="play-panel">
       <div className="panel-heading">
         <h3>{t("Background")}</h3>
-        <button className="btn small" disabled={busy} onClick={edit}>
-          {t("Edit background")}
-        </button>
+        {edit && (
+          <button className="btn small" disabled={busy} onClick={edit}>
+            {t("Edit background")}
+          </button>
+        )}
       </div>
       <h4>{t("Drives")}</h4>
       <p className="field-hint">

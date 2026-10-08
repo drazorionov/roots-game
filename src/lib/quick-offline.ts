@@ -7,11 +7,15 @@ export async function prepareQuickOffline(): Promise<boolean> {
     const urls = [
       ...document.querySelectorAll<HTMLScriptElement>("script[src]"),
     ].map((s) => s.src);
+    const images = [...document.querySelectorAll<HTMLImageElement>("img")].map(
+      (img) => img.currentSrc || img.src,
+    );
     urls.push(
       ...[
         ...document.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]'),
       ].map((l) => l.href),
       "/art/game-watchtower.webp",
+      "/art/characters-armory.webp",
       "/art/paper-grain.svg",
       "/art/welcome-forest.webp",
       "/brand/root-helper-light.webp",
@@ -27,9 +31,10 @@ export async function prepareQuickOffline(): Promise<boolean> {
         channel.port1.close();
         resolve(event.data?.ready === true);
       };
-      registration.active?.postMessage({ type: "CACHE_QUICK_ASSETS", urls }, [
-        channel.port2,
-      ]);
+      registration.active?.postMessage(
+        { type: "CACHE_QUICK_ASSETS", urls, images },
+        [channel.port2],
+      );
     });
   } catch {
     return false;

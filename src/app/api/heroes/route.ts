@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { getUser, sameOrigin } from "@/lib/auth";
-import { sheetSchema } from "@/lib/sheet";
+import { sheetSchema, sameCharacterSetup } from "@/lib/sheet";
 export async function GET(req: Request) {
   try {
     const user = await getUser();
@@ -38,6 +38,30 @@ export async function POST(req: Request) {
       })
       .parse(await req.json());
     const sql = db();
+    if (data.id) {
+      const existing =
+        await sql`SELECT sheet, campaign_id FROM heroes WHERE id = ${data.id} AND owner_id = ${user.id} AND version = ${data.version ?? 0}`;
+      if (!existing[0])
+        return NextResponse.json(
+          {
+            error:
+              "This sheet changed elsewhere, or you don’t have access. Reopen it to load the latest version.",
+          },
+          { status: 409 },
+        );
+      if (
+        existing[0].campaign_id &&
+        (!data.campaignId ||
+          !sameCharacterSetup(sheetSchema.parse(existing[0].sheet), data.sheet))
+      )
+        return NextResponse.json(
+          {
+            error:
+              "Character setup is locked while assigned to a campaign. You can still track harm, rolls, equipment, and session progress.",
+          },
+          { status: 403 },
+        );
+    }
     const rows = data.id
       ? await sql`UPDATE heroes SET sheet = ${JSON.stringify(data.sheet)}::jsonb, campaign_id = ${data.campaignId}, version = version + 1, updated_at = now() WHERE id = ${data.id} AND owner_id = ${user.id} AND version = ${data.version ?? 0} AND (${data.campaignId}::uuid IS NULL OR EXISTS (SELECT 1 FROM memberships WHERE campaign_id = ${data.campaignId} AND user_id = ${user.id})) RETURNING *`
       : await sql`INSERT INTO heroes (campaign_id, owner_id, sheet) SELECT ${data.campaignId}, ${user.id}, ${JSON.stringify(data.sheet)}::jsonb WHERE ${data.campaignId}::uuid IS NULL OR EXISTS (SELECT 1 FROM memberships WHERE campaign_id = ${data.campaignId} AND user_id = ${user.id}) RETURNING *`;

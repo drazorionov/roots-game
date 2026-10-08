@@ -168,6 +168,55 @@ test(
       );
       assert.equal(a.status, 200);
       hero = a.data.hero;
+      for (const patch of [
+        { name: "Forbidden rename" },
+        { stats: { ...hero.sheet.stats, Might: 3 } },
+        { moveIds: ["Hardy"] },
+      ]) {
+        const blocked = await request(
+          "heroes",
+          "POST",
+          {
+            id: hero.id,
+            version: hero.version,
+            campaignId,
+            sheet: { ...hero.sheet, ...patch },
+          },
+          owner.cookie,
+        );
+        assert.equal(blocked.status, 403, JSON.stringify(blocked.data));
+      }
+      assert.equal(
+        (
+          await request(
+            "heroes",
+            "POST",
+            {
+              id: hero.id,
+              version: hero.version,
+              campaignId: null,
+              sheet: hero.sheet,
+            },
+            owner.cookie,
+          )
+        ).status,
+        403,
+      );
+      const tracked = await request(
+        "heroes",
+        "POST",
+        {
+          id: hero.id,
+          version: hero.version,
+          campaignId,
+          sheet: { ...hero.sheet, injury: 1, forward: 1 },
+        },
+        owner.cookie,
+      );
+      assert.equal(tracked.status, 200, JSON.stringify(tracked.data));
+      hero = tracked.data.hero;
+      assert.equal(hero.sheet.injury, 1);
+      assert.equal(hero.sheet.name, "Test Otter");
       assert.equal(
         (
           await request(
@@ -262,42 +311,70 @@ test(
       await page
         .getByRole("button", { name: "Create a character", exact: true })
         .click();
-      await dialog.getByLabel("Name", { exact: true }).fill("Willow Browser");
-      await dialog.getByLabel("Species", { exact: true }).selectOption("Otter");
-      await dialog
-        .getByLabel("Playbook", { exact: true })
-        .selectOption("Vagrant");
-      await expect(dialog.getByLabel("Charm", { exact: true })).toHaveValue(
+      const creation = page.locator(".creation-page");
+      await expect(page).toHaveURL(/\/characters\/new$/);
+      await expect(dialog).toHaveCount(0);
+      await page.goBack();
+      await expect(
+        page.getByRole("heading", { name: "My characters", exact: true }),
+      ).toBeVisible();
+      await page.goForward();
+      await expect(creation).toBeVisible();
+      await creation.getByLabel("Name", { exact: true }).fill("Willow Browser");
+      page.once("dialog", (confirmation) => confirmation.dismiss());
+      await creation.locator(".creation-back").click();
+      await expect(creation.getByLabel("Name", { exact: true })).toHaveValue(
+        "Willow Browser",
+      );
+      await page.screenshot({
+        path: "test-results/character-creation-page.png",
+        fullPage: true,
+      });
+      await creation
+        .getByLabel("Species", { exact: true })
+        .selectOption("Otter");
+      await creation
+        .getByRole("button", { name: "Vagrant", exact: true })
+        .click();
+      await expect(creation.getByLabel("Charm", { exact: true })).toHaveValue(
         "2",
       );
-      await dialog
+      await creation
         .getByLabel("Starting bonus", { exact: true })
         .selectOption("Cunning");
-      await dialog
+      await creation
+        .locator(".wizard-steps")
+        .getByRole("button", { name: /Nature & drives/ })
+        .click();
+      await creation.getByRole("button", { name: /^Glutton/ }).click();
+      await creation.getByRole("button", { name: /^Chaos/ }).click();
+      await creation.getByRole("button", { name: /^Thrills/ }).click();
+      await creation
         .locator(".wizard-steps")
         .getByRole("button", { name: /Abilities/ })
         .click();
-      await dialog.getByRole("button", { name: /^Glutton/ }).click();
-      await dialog.getByRole("button", { name: /^Chaos/ }).click();
-      await dialog.getByRole("button", { name: /^Thrills/ }).click();
       for (const name of [
         "Instigator",
         "Pleasant Facade",
         "Desperate Smile",
         "Harry a Group",
       ])
-        await dialog.getByRole("checkbox", { name, exact: true }).check();
-      await dialog
+        await creation.getByRole("checkbox", { name, exact: true }).check();
+      await creation
         .locator(".wizard-steps")
         .getByRole("button", { name: /Background/ })
         .click();
-      await dialog
+      await creation
         .getByLabel("Where do you call home?", { exact: true })
         .fill("Moss Clearing");
-      await dialog
+      await creation
+        .locator(".wizard-steps")
+        .getByRole("button", { name: /Review & connections/ })
+        .click();
+      await creation
         .getByLabel("Notes", { exact: true })
         .fill("Черновик bleibt erhalten");
-      await dialog
+      await creation
         .getByRole("button", { name: "Save character", exact: true })
         .click();
       await expect(
@@ -315,12 +392,15 @@ test(
       assert.equal(saved.sheet.moveIds.length, 3);
       assert.equal(saved.sheet.weaponSkillIds[0], "Harry a Group");
       async function mutate(click) {
-        const response = page.waitForResponse(
-          (r) =>
-            r.url().endsWith("/api/heroes") && r.request().method() === "POST",
-        );
-        await click();
-        assert.equal((await response).status(), 200);
+        const [response] = await Promise.all([
+          page.waitForResponse(
+            (r) =>
+              r.url().endsWith("/api/heroes") &&
+              r.request().method() === "POST",
+          ),
+          click(),
+        ]);
+        assert.equal(response.status(), 200);
         await expect(page.locator(".quick-save-status")).toContainText(
           "Character sheet saved.",
         );
@@ -372,7 +452,10 @@ test(
           .click(),
       );
       await mutate(() =>
-        page.getByRole("button", { name: "Roll Charm", exact: true }).click(),
+        page
+          .locator(".play-stats")
+          .getByRole("button", { name: "Roll Charm", exact: true })
+          .click(),
       );
       await expect(page.locator(".roll-result")).toContainText("Charm");
       assert.equal(
@@ -433,9 +516,9 @@ test(
       await page
         .getByRole("button", { name: "Edit character", exact: true })
         .click();
-      await dialog
-        .getByRole("button", { name: "Close dialog", exact: true })
-        .click();
+      await expect(page).toHaveURL(/\/characters\/edit/);
+      await expect(creation).toBeVisible();
+      await creation.locator(".creation-back").click();
       await expect(dialog).toHaveCount(0);
       // With no active game, campaign selection comes before character selection.
       await page.getByRole("button", { name: /^(Home|Exit to main)$/ }).click();
@@ -455,21 +538,29 @@ test(
       await page.getByRole("button", { name: /Start \/ join a game/ }).click();
       await expect(
         page.getByRole("heading", {
-          name: "Where will you play?",
+          name: "My campaigns",
           exact: true,
         }),
       ).toBeVisible();
       await page
         .getByRole("button", { name: "Create campaign", exact: true })
         .click();
-      await dialog
+      await expect(page).toHaveURL(/\/campaigns\/new\?from=play$/);
+      await page.reload();
+      await expect(creation).toBeVisible();
+      await expect(dialog).toHaveCount(0);
+      await creation
         .getByLabel("Campaign name", { exact: true })
         .fill("Willow’s campaign");
-      await dialog
+      await page.screenshot({
+        path: "test-results/campaign-creation-page.png",
+        fullPage: true,
+      });
+      await creation
         .getByRole("button", { name: "Create campaign", exact: true })
         .click();
       await expect(
-        page.getByRole("heading", { name: "Who will you be?", exact: true }),
+        page.getByRole("heading", { name: "My characters", exact: true }),
       ).toBeVisible();
       await page
         .locator(".character-tile")
@@ -527,7 +618,7 @@ test(
         .getByRole("button", { name: "Restart game", exact: true })
         .click();
       await expect(
-        page.getByRole("heading", { name: "Who will you be?", exact: true }),
+        page.getByRole("heading", { name: "My characters", exact: true }),
       ).toBeVisible();
       await expect(page.locator(".campaign-selection")).toContainText(
         "Willow’s campaign",
@@ -546,7 +637,7 @@ test(
         .click();
       await expect(
         page.getByRole("heading", {
-          name: "Where will you play?",
+          name: "My campaigns",
           exact: true,
         }),
       ).toBeVisible();
@@ -554,11 +645,12 @@ test(
         page.getByRole("button", { name: "Create a character", exact: true }),
       ).toHaveCount(0);
       await page
-        .locator(".campaign-choice")
+        .locator(".campaign-card")
         .filter({ hasText: "Willow’s campaign" })
+        .getByRole("button", { name: "Choose campaign", exact: true })
         .click();
       await expect(
-        page.getByRole("heading", { name: "Who will you be?", exact: true }),
+        page.getByRole("heading", { name: "My characters", exact: true }),
       ).toBeVisible();
       await page
         .locator(".character-tile")
@@ -595,7 +687,7 @@ test(
         .click();
       await expect(
         guestPage.getByRole("heading", {
-          name: "Where will you play?",
+          name: "My campaigns",
           exact: true,
         }),
       ).toBeVisible();
@@ -616,18 +708,27 @@ test(
         .click();
       await expect(
         guestPage.getByRole("heading", {
-          name: "Who will you be?",
+          name: "My characters",
           exact: true,
         }),
       ).toBeVisible();
       await guestPage
         .getByRole("button", { name: "Create a character", exact: true })
         .click();
+      await expect(guestPage).toHaveURL(
+        /\/characters\/new\?from=play&campaign=/,
+      );
+      await guestPage.reload();
+      await expect(guestPage.getByRole("dialog")).toHaveCount(0);
       await guestPage
         .getByLabel("Name", { exact: true })
         .fill("Guest Vagabond");
       await guestPage
-        .getByRole("button", { name: "Save character", exact: true })
+        .locator(".wizard-steps")
+        .getByRole("button", { name: /Review & connections/ })
+        .click();
+      await guestPage
+        .getByRole("button", { name: "Save & join campaign", exact: true })
         .click();
       await expect(
         guestPage.getByRole("heading", { name: "Guest Vagabond", exact: true }),
@@ -667,6 +768,13 @@ test(
         ).status,
         409,
       );
+      const lockedPage = await context.newPage();
+      await lockedPage.goto(`${base}/characters/edit?id=${saved.id}`);
+      await expect(lockedPage.locator(".locked-editor")).toContainText(
+        "Character setup is locked",
+      );
+      await expect(lockedPage.locator(".character-builder")).toHaveCount(0);
+      await lockedPage.close();
       const ownerPresence = await request(
         "presence",
         "POST",
@@ -710,7 +818,10 @@ test(
         );
         await expect(
           page.getByRole("button", { name: d["Edit character"], exact: true }),
-        ).toBeVisible();
+        ).toHaveCount(0);
+        await expect(page.locator(".setup-locked-note")).toContainText(
+          d["Setup locked"],
+        );
         for (const [device, width, height] of [
           ["iphone", 390, 844],
           ["small-phone", 320, 700],
@@ -730,43 +841,6 @@ test(
             fullPage: true,
           });
         }
-        await page.setViewportSize({ width: 390, height: 844 });
-        await page
-          .getByRole("button", { name: d["Edit character"], exact: true })
-          .click();
-        await expect(
-          dialog.getByLabel(d["Species"], { exact: true }),
-        ).toHaveValue("Otter");
-        await expect(
-          dialog.getByLabel(d["Playbook"], { exact: true }),
-        ).toHaveValue("Vagrant");
-        await waitForScene(page);
-        await page.screenshot({
-          path: `test-results/create-${locale}.png`,
-          fullPage: true,
-        });
-        await dialog
-          .locator(".wizard-steps")
-          .getByRole("button", { name: new RegExp(d["Abilities"]) })
-          .click();
-        await expect(
-          dialog.getByRole("checkbox", {
-            name: d["Pleasant Facade"],
-            exact: true,
-          }),
-        ).toBeChecked();
-        assert.ok(
-          await dialog.evaluate((el) => el.scrollWidth <= el.clientWidth),
-          `${locale} ability form overflow`,
-        );
-        await waitForScene(page);
-        await page.screenshot({
-          path: `test-results/abilities-${locale}.png`,
-          fullPage: false,
-        });
-        await dialog
-          .getByRole("button", { name: d["Close dialog"], exact: true })
-          .click();
         await page.reload();
         await expect(page.locator("html")).toHaveAttribute("lang", locale);
         await expect(page.locator(".home-actions > button")).toHaveCount(3);

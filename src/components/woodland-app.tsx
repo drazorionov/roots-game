@@ -1,6 +1,8 @@
 "use client";
 import Image from "next/image";
+import { usePathname, useSearchParams } from "next/navigation";
 import {
+  Suspense,
   useEffect,
   useState,
   useRef,
@@ -10,15 +12,11 @@ import {
 import {
   Home,
   Compass,
-  MapPin,
   RotateCcw,
   MoreHorizontal,
-  Trash2,
-  Plus,
   Users,
   UserRound,
   X,
-  Copy,
   Check,
   LogOut,
   ArrowLeft,
@@ -27,7 +25,6 @@ import {
 import { useTranslation, translate, type Locale } from "@/lib/i18n";
 import {
   sheetSchema,
-  stats,
   type Hero,
   type Campaign,
   type User,
@@ -38,9 +35,7 @@ import { prepareQuickOffline } from "@/lib/quick-offline";
 import CharacterEditor from "./character-editor";
 import CharacterControls from "./character-controls";
 import CampaignPresence from "./campaign-presence";
-import { Portrait } from "./art";
-import AttributeIcon from "./attribute-icon";
-import { effectiveStats } from "@/lib/playbooks";
+import { CampaignCollection, CharacterCollection } from "./collections";
 function Modal({
   title,
   children,
@@ -86,27 +81,49 @@ function Modal({
   );
 }
 export default function WoodlandApp() {
-  const { locale, t, players, setLocale } = useTranslation();
+  return (
+    <Suspense>
+      <WoodlandWorkspace />
+    </Suspense>
+  );
+}
+function WoodlandWorkspace() {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const creatingCharacter = pathname === "/characters/new";
+  const creatingCampaign = pathname === "/campaigns/new";
+  const editingCharacter = pathname === "/characters/edit";
+  const characterForm = creatingCharacter || editingCharacter;
+  const creating = characterForm || creatingCampaign;
+  const { locale, t, setLocale } = useTranslation();
   const [user, setUser] = useState<User | null>(null),
     [loading, setLoading] = useState(true),
     [heroes, setHeroes] = useState<Hero[]>([]),
     [campaigns, setCampaigns] = useState<Campaign[]>([]),
     [tab, setTab] = useState<"home" | "characters" | "campaigns" | "play">(
-      "home",
+      searchParams.get("from") === "play"
+        ? "play"
+        : characterForm
+          ? "characters"
+          : creatingCampaign
+            ? "campaigns"
+            : "home",
     ),
-    [selected, setSelected] = useState(""),
+    [selected, setSelected] = useState(
+      editingCharacter ? searchParams.get("id") || "" : "",
+    ),
     [campaignFilter, setCampaignFilter] = useState("");
-  const [modal, setModal] = useState<
-      "character" | "auth" | "join" | "campaign" | null
-    >(null),
-    [editing, setEditing] = useState<Hero | null>(null),
+  const [modal, setModal] = useState<"auth" | "join" | null>(null),
+    [editingSnapshot, setEditing] = useState<Hero | null>(null),
     [draft, setDraft] = useState<Sheet | undefined>(),
     [authMode, setAuthMode] = useState<"signup" | "login">("signup"),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [notice, setNotice] = useState("");
   const [quickOfflineReady, setQuickOfflineReady] = useState(false);
-  const [quickMode, setQuickMode] = useState(false);
+  const [quickMode, setQuickMode] = useState(
+    searchParams.get("mode") === "quick",
+  );
   const [quickHero, setQuickHero] = useState<Hero | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<{
     type: "character" | "campaign";
@@ -117,12 +134,26 @@ export default function WoodlandApp() {
   const gameMenu = useRef<HTMLDetailsElement>(null);
   const [resumeId, setResumeId] = useState("");
   const [gameStep, setGameStep] = useState<"campaign" | "character" | "sheet">(
-    "campaign",
+    searchParams.get("campaign") ? "character" : "campaign",
   );
-  const [gameCampaignId, setGameCampaignId] = useState("");
+  const [gameCampaignId, setGameCampaignId] = useState(
+    searchParams.get("campaign") || "",
+  );
   const [editorStep, setEditorStep] = useState(0);
   const [editorDirty, setEditorDirty] = useState(false);
   const [afterAuth, setAfterAuth] = useState<"campaign" | "join" | null>(null);
+  const editing = editingCharacter
+    ? editingSnapshot ||
+      (quickMode
+        ? quickHero
+        : heroes.find((h) => h.id === searchParams.get("id"))) ||
+      null
+    : null;
+  const editingAssigned = !!(
+    editing?.campaign_id ||
+    heroes.find((h) => h.id === editing?.id)?.campaign_id
+  );
+  const draftCampaign = useRef<string | null>(null);
   const hero = quickMode ? quickHero : heroes.find((h) => h.id === selected);
   const campaign = campaigns.find((c) => c.id === hero?.campaign_id);
   const shown = heroes.filter(
@@ -132,27 +163,34 @@ export default function WoodlandApp() {
     (h) => h.id === resumeId && campaigns.some((c) => c.id === h.campaign_id),
   );
   const gameCampaign = campaigns.find((c) => c.id === gameCampaignId);
-  const activeGame = quickMode
-    ? !!quickHero
-    : tab === "play" &&
-      gameStep === "sheet" &&
-      !!hero &&
-      !!campaign &&
-      campaign.id === gameCampaignId;
-  const scenic = !quickMode && (!user || tab === "home");
-  const scene = quickMode
-    ? "game-scene"
-    : !user
-      ? "welcome-scene"
-      : tab === "home"
-        ? "camp-scene"
-        : activeGame
-          ? "game-scene"
-          : tab === "campaigns" ||
-              (tab === "play" && (gameStep === "campaign" || !gameCampaign))
-            ? "campaigns-scene"
-            : "characters-scene";
+  const activeGame =
+    !creating &&
+    (quickMode
+      ? !!quickHero
+      : tab === "play" &&
+        gameStep === "sheet" &&
+        !!hero &&
+        !!campaign &&
+        campaign.id === gameCampaignId);
+  const scenic = !creating && !quickMode && (!user || tab === "home");
+  const scene = creatingCampaign
+    ? "campaigns-scene"
+    : characterForm
+      ? "characters-scene"
+      : quickMode
+        ? "game-scene"
+        : !user
+          ? "welcome-scene"
+          : tab === "home"
+            ? "camp-scene"
+            : activeGame
+              ? "game-scene"
+              : tab === "campaigns" ||
+                  (tab === "play" && (gameStep === "campaign" || !gameCampaign))
+                ? "campaigns-scene"
+                : "characters-scene";
   function exitToMain() {
+    if (creating && !leaveCreation()) return;
     setQuickMode(false);
     try {
       sessionStorage.removeItem("root-quick-active");
@@ -187,7 +225,7 @@ export default function WoodlandApp() {
     try {
       sessionStorage.setItem("root-quick-active", "1");
     } catch {}
-    if (!quickHero) newCharacter();
+    newCharacter(true);
   }
   function restartGame() {
     if (gameMenu.current) gameMenu.current.open = false;
@@ -308,14 +346,23 @@ export default function WoodlandApp() {
   }, [quickMode]);
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" });
-  }, [tab, selected, gameStep]);
+  }, [tab, selected, gameStep, pathname]);
+  useEffect(() => {
+    if (!loading) document.getElementById("creation-title")?.focus();
+  }, [pathname, loading]);
   useEffect(() => {
     document.documentElement.lang = locale;
-    document.title = translate(locale, "Root Helper · Your characters");
-  }, [locale]);
+    document.title = creating
+      ? `${translate(locale, editingCharacter ? "Edit character" : creatingCharacter ? "Create a character" : "Create campaign")} · Root Helper`
+      : translate(locale, "Root Helper · Your characters");
+  }, [locale, creating, creatingCharacter, editingCharacter]);
   useEffect(() => {
     Promise.resolve()
       .then(async () => {
+        const initialUrl = new URL(window.location.href);
+        const restoringQuick =
+          initialUrl.pathname === "/" ||
+          initialUrl.searchParams.get("mode") === "quick";
         try {
           const raw = sessionStorage.getItem("root-quick-sheet");
           const parsed = raw ? sheetSchema.safeParse(JSON.parse(raw)) : null;
@@ -328,13 +375,18 @@ export default function WoodlandApp() {
               version: 1,
               sheet: parsed.data,
             });
-            if (sessionStorage.getItem("root-quick-active") === "1") {
+            if (
+              restoringQuick &&
+              sessionStorage.getItem("root-quick-active") === "1"
+            ) {
               setQuickMode(true);
               setTab("play");
               return;
             }
           }
         } catch {}
+        if (new URLSearchParams(window.location.search).get("mode") === "quick")
+          return;
         const data = await api("auth");
         setUser(data.user);
         if (data.user) {
@@ -393,38 +445,70 @@ export default function WoodlandApp() {
         : [...current, h],
     );
   }
-  function newCharacter() {
+  // Native history keeps the workspace mounted and quick-game navigation offline.
+  function navigateCreation(path: string) {
+    setError("");
+    setModal(null);
+    window.history.pushState(null, "", path);
+  }
+  function newCharacter(quick = quickMode) {
     setAfterAuth(null);
     setEditorDirty(false);
     setEditing(null);
     setEditorStep(0);
     setDraft(undefined);
-    open("character");
+    const params = new URLSearchParams();
+    if (quick) params.set("mode", "quick");
+    else if (tab === "play") {
+      params.set("from", "play");
+      if (gameCampaignId) params.set("campaign", gameCampaignId);
+    }
+    navigateCreation(`/characters/new${params.size ? `?${params}` : ""}`);
+  }
+  function newCampaign() {
+    setEditorDirty(false);
+    navigateCreation(`/campaigns/new${tab === "play" ? "?from=play" : ""}`);
+  }
+  function leaveCreation() {
+    if (
+      busy ||
+      (editorDirty && !window.confirm(t("Close this form without saving?")))
+    )
+      return false;
+    setError("");
+    setDraft(undefined);
+    setEditorDirty(false);
+    window.history.replaceState(null, "", "/");
+    return true;
+  }
+  function finishCreation() {
+    setEditorDirty(false);
+    if (creating) window.history.replaceState(null, "", "/");
+  }
+  function editCharacter(h: Hero, step = 0) {
+    if (h.campaign_id) return;
+    setEditing(h);
+    setEditorStep(step);
+    setEditorDirty(false);
+    setDraft(undefined);
+    const params = new URLSearchParams({ id: h.id });
+    if (quickMode) params.set("mode", "quick");
+    navigateCreation(`/characters/edit?${params}`);
   }
   function closeModal() {
     if (busy) return;
-    if (modal === "auth" && draft) {
-      open("character");
-      return;
-    }
-    if (
-      modal === "character" &&
-      editorDirty &&
-      !window.confirm(t("Close this form without saving?"))
-    )
-      return;
     setModal(null);
     setError("");
   }
   async function persist(
     sheet: Sheet,
-    campaignId: string | null = editing?.campaign_id ||
+    campaignId: string | null = (!creatingCharacter && editing?.campaign_id) ||
       (tab === "play" ? gameCampaignId : null),
   ) {
     const data = await api("heroes", "POST", {
-      id: editing?.id,
+      id: creatingCharacter ? undefined : editing?.id,
       campaignId,
-      version: editing?.version,
+      version: creatingCharacter ? undefined : editing?.version,
       sheet,
     });
     updated(data.hero);
@@ -437,14 +521,25 @@ export default function WoodlandApp() {
     }
     setDraft(undefined);
     setModal(null);
+    finishCreation();
     setNotice("Character sheet saved.");
   }
-  async function saveCharacter(sheet: Sheet) {
+  async function saveCharacter(sheet: Sheet, joinCampaign = false) {
+    if (editingAssigned) {
+      setError(
+        "Character setup is locked while assigned to a campaign. You can still track harm, rolls, equipment, and session progress.",
+      );
+      return;
+    }
+    draftCampaign.current =
+      editing?.campaign_id ||
+      (joinCampaign && tab === "play" ? gameCampaignId : null);
     if (quickMode) {
       try {
         saveQuick(sheet);
         setModal(null);
         setDraft(undefined);
+        finishCreation();
         setNotice("Saved only in this browser tab.");
       } catch (e) {
         setError((e as Error).message);
@@ -460,7 +555,7 @@ export default function WoodlandApp() {
     setBusy(true);
     setError("");
     try {
-      await persist(sheet);
+      await persist(sheet, draftCampaign.current);
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -488,13 +583,16 @@ export default function WoodlandApp() {
       setCampaigns(c.campaigns);
       if (draft) {
         try {
-          await persist(draft);
+          await persist(draft, draftCampaign.current);
         } catch (e) {
-          setModal("character");
+          setModal(null);
           setError((e as Error).message);
         }
       } else {
-        setModal(afterAuth);
+        if (afterAuth === "campaign") {
+          setModal(null);
+          if (!creatingCampaign) newCampaign();
+        } else setModal(afterAuth);
         setAfterAuth(null);
       }
     } catch (e) {
@@ -505,6 +603,10 @@ export default function WoodlandApp() {
   }
   async function saveCampaign(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!user) {
+      needsAccount("campaign");
+      return;
+    }
     setBusy(true);
     setError("");
     const form = new FormData(event.currentTarget);
@@ -530,6 +632,7 @@ export default function WoodlandApp() {
       );
       setCampaignFilter(data.id);
       if (tab === "play") chooseCampaign(data.id);
+      finishCreation();
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -544,7 +647,8 @@ export default function WoodlandApp() {
       open("auth");
       return;
     }
-    open(next);
+    if (next === "campaign") newCampaign();
+    else open(next);
   }
   return (
     <div
@@ -651,7 +755,7 @@ export default function WoodlandApp() {
         </div>
       </header>
       <main className="simple-main">
-        {error && !modal && !deleteTarget && (
+        {error && !characterForm && !modal && !deleteTarget && (
           <p className="error" role="alert">
             {t(error)}
           </p>
@@ -660,6 +764,90 @@ export default function WoodlandApp() {
           <p className="loading" role="status">
             {t("Loading…")}
           </p>
+        ) : creating ? (
+          <section
+            className={`journey-picker creation-page ${creatingCampaign ? "campaign-creation" : "character-creation"}`}
+            aria-labelledby="creation-title"
+          >
+            <button
+              className="text-link creation-back"
+              disabled={busy}
+              onClick={leaveCreation}
+            >
+              <ArrowLeft size={16} />
+              {t("Back")}
+            </button>
+            <h1 id="creation-title" tabIndex={-1}>
+              {t(
+                editingCharacter
+                  ? "Edit character"
+                  : creatingCharacter
+                    ? "Create a character"
+                    : "Create campaign",
+              )}
+            </h1>
+            {characterForm ? (
+              editingCharacter && (!editing || editingAssigned) ? (
+                <div className="locked-editor">
+                  <p>
+                    {t(
+                      editingAssigned
+                        ? "Character setup is locked while assigned to a campaign. You can still track harm, rolls, equipment, and session progress."
+                        : "This character is not available. Sign in with its owner account.",
+                    )}
+                  </p>
+                  <button className="btn" onClick={leaveCreation}>
+                    {t("Back")}
+                  </button>
+                </div>
+              ) : (
+                <CharacterEditor
+                  key={editing?.id || "new"}
+                  initial={draft || editing?.sheet}
+                  initialStep={editingCharacter ? editorStep : 0}
+                  editing={editingCharacter}
+                  campaignName={
+                    !editingCharacter && tab === "play"
+                      ? gameCampaign?.name
+                      : undefined
+                  }
+                  save={saveCharacter}
+                  busy={busy}
+                  error={modal ? "" : error}
+                  markDirty={() => setEditorDirty(true)}
+                />
+              )
+            ) : (
+              <form
+                onSubmit={saveCampaign}
+                onChange={() => setEditorDirty(true)}
+              >
+                <fieldset disabled={busy}>
+                  <label>
+                    {t("Campaign name")}
+                    <input name="name" required maxLength={100} />
+                  </label>
+                  <label>
+                    {t("Current clearing")}
+                    <input name="clearing" maxLength={80} />
+                  </label>
+                </fieldset>
+                {user ? (
+                  <button className="btn primary full" disabled={busy}>
+                    {t(busy ? "Saving…" : "Create campaign")}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="btn primary full"
+                    onClick={() => needsAccount("campaign")}
+                  >
+                    {t("Sign in")}
+                  </button>
+                )}
+              </form>
+            )}
+          </section>
         ) : !user && !quickMode ? (
           <section className="welcome-content">
             <p className="eyebrow">{t("Your Root RPG companion")}</p>
@@ -776,13 +964,7 @@ export default function WoodlandApp() {
             <CharacterControls
               key={hero!.id}
               hero={hero!}
-              edit={(step = 0) => {
-                setEditorStep(step);
-                setEditorDirty(false);
-                setEditing(hero!);
-                setDraft(undefined);
-                open("character");
-              }}
+              edit={(step = 0) => editCharacter(hero!, step)}
               onSaved={updated}
               saveLocal={quickMode ? saveQuick : undefined}
             />
@@ -793,295 +975,62 @@ export default function WoodlandApp() {
             <p>
               {t("No account. No campaign. Saved only in this browser tab.")}
             </p>
-            <button className="btn primary" onClick={newCharacter}>
+            <button className="btn primary" onClick={() => newCharacter()}>
               {t("Create a character")}
             </button>
           </section>
-        ) : tab === "play" && (gameStep === "campaign" || !gameCampaign) ? (
-          <section className="journey-picker">
-            <p className="eyebrow">{t("1 · Choose your campaign")}</p>
-            <h1>{t("Where will you play?")}</h1>
-            <div className="campaign-actions">
-              <button
-                className="btn primary"
-                disabled={busy}
-                onClick={() => open("join")}
-              >
-                <Users size={18} />
-                {t("Join a campaign")}
-              </button>
-              <button
-                className="btn"
-                disabled={busy}
-                onClick={() => open("campaign")}
-              >
-                <Plus size={18} />
-                {t("Create campaign")}
-              </button>
-            </div>
-            <div className="campaign-list">
-              {campaigns.map((c) => (
-                <button
-                  key={c.id}
-                  className="campaign-choice"
-                  disabled={busy}
-                  onClick={() => chooseCampaign(c.id)}
-                >
-                  <span>
-                    <strong>{c.name}</strong>
-                    <small>
-                      {players(c.members)}
-                      {c.clearing ? ` · ${c.clearing}` : ""}
-                    </small>
-                  </span>
-                  <ChevronRight size={20} />
-                </button>
-              ))}
-            </div>
-            {!campaigns.length && (
-              <p className="field-hint">
-                {t(
-                  "Join with an invite code, or create a campaign for your friends.",
-                )}
-              </p>
-            )}
-          </section>
-        ) : tab === "characters" || tab === "play" ? (
-          <section
-            className={`journey-picker ${tab === "characters" ? "collection-page characters-collection" : ""}`}
-          >
-            {tab === "play" && (
-              <div className="campaign-selection">
-                <p className="eyebrow">{t("2 · Choose your character")}</p>
-                <strong>{gameCampaign?.name}</strong>
-                <button
-                  className="text-link"
-                  onClick={() => setGameStep("campaign")}
-                >
-                  {t("Change campaign")}
-                </button>
-              </div>
-            )}
-            <div className="page-heading">
-              <div>
-                <h1>
-                  {t(tab === "play" ? "Who will you be?" : "My characters")}
-                </h1>
-                <p>
-                  {t(
-                    tab === "play"
-                      ? "Choose an existing hero or create one for this campaign. Saved stats are kept."
-                      : "Create a character. Save it. Play.",
-                  )}
-                </p>
-              </div>
-              <button className="btn primary" onClick={newCharacter}>
-                <Plus size={18} />
-                {t("Create a character")}
-              </button>
-            </div>
-            {campaignFilter && tab === "characters" && (
-              <div className="filter-bar">
-                <span>
-                  {campaigns.find((c) => c.id === campaignFilter)?.name}
-                </span>
-                <button
-                  className="text-link"
-                  onClick={() => setCampaignFilter("")}
-                >
-                  {t("All characters")}
-                </button>
-              </div>
-            )}
-            <div className="character-list">
-              {(tab === "play" ? heroes : shown).map((h) => (
-                <div className="character-row" key={h.id}>
-                  <button
-                    className="character-tile"
-                    disabled={busy}
-                    onClick={() => void pickCharacter(h)}
-                  >
-                    <span className="tile-portrait">
-                      <Portrait species={h.sheet.species} />
-                    </span>
-                    <span className="tile-copy">
-                      <strong>{h.sheet.name}</strong>
-                      <span>
-                        {t(h.sheet.species)} · {t(h.sheet.playbook)}
-                      </span>
-                      <small>
-                        {tab === "play" &&
-                        h.campaign_id &&
-                        h.campaign_id !== gameCampaignId
-                          ? t("Move from {campaign}", {
-                              campaign:
-                                campaigns.find((c) => c.id === h.campaign_id)
-                                  ?.name || t("Campaign"),
-                            })
-                          : campaigns.find((c) => c.id === h.campaign_id)
-                              ?.name || t("No campaign yet")}
-                      </small>
-                    </span>
-                    {tab === "characters" && (
-                      <>
-                        <span className="character-attributes">
-                          {stats.map((stat) => {
-                            const value = effectiveStats(h.sheet)[stat];
-                            return (
-                              <span key={stat}>
-                                <AttributeIcon stat={stat} />
-                                <span>{t(stat)}</span>
-                                <strong>
-                                  {value > 0 ? "+" : ""}
-                                  {value}
-                                </strong>
-                              </span>
-                            );
-                          })}
-                        </span>
-                        <span className="character-open">
-                          {t("Open character sheet")}
-                          <ChevronRight size={17} />
-                        </span>
-                      </>
-                    )}
-                    <ChevronRight className="tile-arrow" size={20} />
-                  </button>
-                  {tab === "characters" && (
-                    <button
-                      className="icon-btn delete-control"
-                      aria-label={t("Delete {name}", { name: h.sheet.name })}
-                      onClick={() => {
-                        setError("");
-                        setDeleteTarget({
-                          type: "character",
-                          id: h.id,
-                          name: h.sheet.name,
-                          version: h.version,
-                        });
-                      }}
-                    >
-                      <Trash2 size={17} />
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
-            {!(tab === "play" ? heroes : shown).length && (
-              <p className="empty-note">
-                {t("Your first character starts here.")}
-              </p>
-            )}
-          </section>
+        ) : tab === "campaigns" ||
+          (tab === "play" && (gameStep === "campaign" || !gameCampaign)) ? (
+          <CampaignCollection
+            campaigns={campaigns}
+            userId={user?.id}
+            choosing={tab === "play"}
+            busy={busy}
+            create={() => needsAccount("campaign")}
+            join={() => needsAccount("join")}
+            select={(c) => {
+              if (tab === "play") chooseCampaign(c.id);
+              else {
+                setSelected("");
+                setCampaignFilter(c.id);
+                setTab("characters");
+              }
+            }}
+            copy={async (c) => {
+              try {
+                await navigator.clipboard.writeText(c.invite_code);
+                setNotice("Invite code copied. Share it with your party.");
+              } catch {
+                setNotice(t("Invite code: {code}", { code: c.invite_code }));
+              }
+            }}
+            remove={(c) => {
+              setError("");
+              setDeleteTarget({ type: "campaign", id: c.id, name: c.name });
+            }}
+          />
         ) : (
-          <section className="journey-picker collection-page campaigns-collection">
-            <div className="page-heading">
-              <div>
-                <h1>{t("My campaigns")}</h1>
-                <p>{t("Join your friends or start your own campaign.")}</p>
-              </div>
-              <div className="campaign-actions">
-                <button
-                  className="btn primary"
-                  onClick={() => needsAccount("join")}
-                >
-                  <Users size={18} />
-                  {t("Join a campaign")}
-                </button>
-                <button
-                  className="btn"
-                  onClick={() => needsAccount("campaign")}
-                >
-                  <Plus size={18} />
-                  {t("Create campaign")}
-                </button>
-              </div>
-            </div>
-            <div className="campaign-list">
-              {campaigns.map((c) => (
-                <article className="campaign-card" key={c.id}>
-                  <div className="campaign-card-top">
-                    <span className="campaign-emblem" aria-hidden="true">
-                      <Compass size={28} />
-                    </span>
-                    <span className="campaign-role">
-                      {t(
-                        c.owner_id === user?.id
-                          ? "Your campaign"
-                          : "Joined campaign",
-                      )}
-                    </span>
-                  </div>
-                  <h2>{c.name}</h2>
-                  <div className="campaign-facts">
-                    <span>
-                      <Users size={15} />
-                      {players(c.members)}
-                    </span>
-                    {c.clearing && (
-                      <span>
-                        <MapPin size={15} />
-                        {c.clearing}
-                      </span>
-                    )}
-                  </div>
-                  {c.description && (
-                    <p className="campaign-description">{c.description}</p>
-                  )}
-                  <div className="campaign-card-actions">
-                    <button
-                      className="btn"
-                      onClick={() => {
-                        setSelected("");
-                        setCampaignFilter(c.id);
-                        setTab("characters");
-                      }}
-                    >
-                      {t("My characters")}
-                      <ChevronRight size={16} />
-                    </button>
-                    <button
-                      className="icon-btn"
-                      aria-label={t("Copy invite code")}
-                      onClick={async () => {
-                        try {
-                          await navigator.clipboard.writeText(c.invite_code);
-                          setNotice(
-                            "Invite code copied. Share it with your party.",
-                          );
-                        } catch {
-                          setNotice(
-                            t("Invite code: {code}", { code: c.invite_code }),
-                          );
-                        }
-                      }}
-                    >
-                      <Copy size={19} />
-                    </button>
-                    {c.owner_id === user?.id && (
-                      <button
-                        className="icon-btn delete-control"
-                        aria-label={t("Delete {name}", { name: c.name })}
-                        onClick={() => {
-                          setError("");
-                          setDeleteTarget({
-                            type: "campaign",
-                            id: c.id,
-                            name: c.name,
-                          });
-                        }}
-                      >
-                        <Trash2 size={17} />
-                      </button>
-                    )}
-                  </div>
-                </article>
-              ))}
-            </div>
-            {!campaigns.length && (
-              <p className="empty-note">{t("No campaigns yet")}</p>
-            )}
-          </section>
+          <CharacterCollection
+            heroes={tab === "play" ? heroes : shown}
+            campaigns={campaigns}
+            choosing={tab === "play"}
+            campaign={gameCampaign}
+            filter={campaigns.find((c) => c.id === campaignFilter)}
+            busy={busy}
+            create={() => newCharacter()}
+            select={(h) => void pickCharacter(h)}
+            remove={(h) => {
+              setError("");
+              setDeleteTarget({
+                type: "character",
+                id: h.id,
+                name: h.sheet.name,
+                version: h.version,
+              });
+            }}
+            changeCampaign={() => setGameStep("campaign")}
+            clearFilter={() => setCampaignFilter("")}
+          />
         )}
       </main>
       {notice && (
@@ -1136,21 +1085,6 @@ export default function WoodlandApp() {
               {t("Delete")}
             </button>
           </div>
-        </Modal>
-      )}
-      {modal === "character" && (
-        <Modal
-          title={t(editing ? "Edit character" : "Create a character")}
-          close={closeModal}
-        >
-          <CharacterEditor
-            initial={draft || editing?.sheet}
-            initialStep={editorStep}
-            save={saveCharacter}
-            busy={busy}
-            error={error}
-            markDirty={() => setEditorDirty(true)}
-          />
         </Modal>
       )}
       {modal === "auth" && (
@@ -1231,48 +1165,26 @@ export default function WoodlandApp() {
           </form>
         </Modal>
       )}
-      {(modal === "campaign" || modal === "join") && (
-        <Modal
-          title={t(modal === "join" ? "Join a campaign" : "Create campaign")}
-          close={closeModal}
-        >
+      {modal === "join" && (
+        <Modal title={t("Join a campaign")} close={closeModal}>
           <form onSubmit={saveCampaign}>
-            {modal === "join" ? (
-              <label>
-                {t("Campaign invite code")}
-                <input
-                  name="code"
-                  required
-                  minLength={16}
-                  maxLength={16}
-                  placeholder={t("16-character invite code")}
-                />
-              </label>
-            ) : (
-              <>
-                <label>
-                  {t("Campaign name")}
-                  <input name="name" required maxLength={100} />
-                </label>
-                <label>
-                  {t("Current clearing")}
-                  <input name="clearing" maxLength={80} />
-                </label>
-              </>
-            )}
+            <label>
+              {t("Campaign invite code")}
+              <input
+                name="code"
+                required
+                minLength={16}
+                maxLength={16}
+                placeholder={t("16-character invite code")}
+              />
+            </label>
             {error && (
               <p className="error" role="alert">
                 {t(error)}
               </p>
             )}
             <button className="btn primary full" disabled={busy}>
-              {t(
-                busy
-                  ? "Saving…"
-                  : modal === "join"
-                    ? "Join the campaign"
-                    : "Create campaign",
-              )}
+              {t(busy ? "Saving…" : "Join the campaign")}
             </button>
           </form>
         </Modal>

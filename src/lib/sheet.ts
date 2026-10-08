@@ -72,6 +72,9 @@ export const sheetSchema = z
       .array(
         z.object({
           name: z.string().max(100),
+          kind: z.enum(["gear", "weapon", "armor"]).default("gear"),
+          range: z.string().max(80).default(""),
+          harm: z.number().int().min(0).max(4).default(1),
           details: z.string().max(500),
           wear: z.number().int().min(0).max(8),
           maxWear: z.number().int().min(0).max(8).default(4),
@@ -189,4 +192,27 @@ export function blankSheet(): Sheet {
     ].map((faction) => ({ faction, standing: 0, prestige: 0, notoriety: 0 })),
     advancement: 0,
   };
+}
+
+// Campaign assignment freezes the build, while tabletop bookkeeping stays live.
+export const playTrackingFields = [
+  "injury",
+  "exhaustion",
+  "depletion",
+  "hold",
+  "forward",
+  "ongoing",
+  "coin",
+  "equipment",
+  "reputation",
+  "advancement",
+  "driveMarks",
+] as const satisfies readonly (keyof Sheet)[];
+export function sameCharacterSetup(previous: Sheet, next: Sheet): boolean {
+  const tracking = new Set<string>(playTrackingFields);
+  return (Object.keys(previous) as (keyof Sheet)[]).every(
+    (key) =>
+      tracking.has(key) ||
+      JSON.stringify(previous[key]) === JSON.stringify(next[key]),
+  );
 }

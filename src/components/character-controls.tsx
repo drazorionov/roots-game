@@ -1,6 +1,6 @@
 "use client";
 import { useRef, useState } from "react";
-import { Check, Edit3, Heart, Dices } from "lucide-react";
+import { Check, Edit3, Heart, Dices, LockKeyhole, Swords } from "lucide-react";
 import { api } from "@/lib/client-api";
 import { useTranslation } from "@/lib/i18n";
 import {
@@ -30,8 +30,9 @@ export default function CharacterControls({
   const [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [saved, setSaved] = useState(false),
-    [tab, setTab] = useState("Equipment");
+    [tab, setTab] = useState("Play");
   const locked = useRef(false);
+  const setupLocked = !!hero.campaign_id;
   const [roll, setRoll] = useState<{
     stat: string;
     dice: number[];
@@ -87,7 +88,7 @@ export default function CharacterControls({
     <div className="play-sheet">
       <div className="play-identity">
         <div className="play-portrait">
-          <Portrait species={sheet.species} />
+          <Portrait species={sheet.species} playbook={sheet.playbook} />
         </div>
         <div>
           <h3>{sheet.name}</h3>
@@ -96,12 +97,23 @@ export default function CharacterControls({
           </p>
           <small>{sheet.pronouns}</small>
         </div>
-        <button className="btn" disabled={busy} onClick={() => edit()}>
-          <Edit3 size={15} />
-          {t("Edit character")}
-        </button>
+        {!setupLocked && (
+          <button className="btn" disabled={busy} onClick={() => edit()}>
+            <Edit3 size={15} />
+            {t("Edit character")}
+          </button>
+        )}
       </div>
-      {remaining.length > 0 && (
+      {setupLocked && (
+        <div className="setup-locked-note">
+          <LockKeyhole size={16} />
+          <span>
+            {t("Setup locked")} ·{" "}
+            {t("Harm, rolls, equipment, and session progress stay available.")}
+          </span>
+        </div>
+      )}
+      {!setupLocked && remaining.length > 0 && (
         <details className="setup-checklist">
           <summary>
             {t("Finish setup")} · {remaining.length}
@@ -116,6 +128,11 @@ export default function CharacterControls({
           </button>
         </details>
       )}
+      <div className="roll-heading">
+        <Dices size={19} />
+        <strong>{t("Roll an attribute")}</strong>
+        <span>{t("2d6 + attribute + modifiers")}</span>
+      </div>
       <div className="play-stats">
         {stats.map((stat) => (
           <button
@@ -158,7 +175,7 @@ export default function CharacterControls({
           </button>
         </div>
       )}
-      <div className="play-columns working-columns">
+      <div className="play-columns working-columns session-dashboard">
         <aside className="play-panel harm-panel">
           <h3>
             <Heart size={20} />
@@ -243,27 +260,63 @@ export default function CharacterControls({
             className="sheet-tabs"
             aria-label={t("Character sheet sections")}
           >
-            {["Equipment", "Moves", "Background", "Reputation"].map((name) => (
-              <button
-                key={name}
-                aria-current={tab === name ? "page" : undefined}
-                onClick={() => setTab(name)}
-              >
-                {t(name)}
-              </button>
-            ))}
+            {["Play", "Equipment", "Moves", "Background", "Reputation"].map(
+              (name) => (
+                <button
+                  key={name}
+                  aria-current={tab === name ? "page" : undefined}
+                  onClick={() => setTab(name)}
+                >
+                  {t(name)}
+                </button>
+              ),
+            )}
           </nav>
           <div className="sheet-tab-content">
-            {tab === "Equipment" ? (
-              <GearPanel sheet={sheet} busy={busy} update={update} />
+            {tab === "Play" ? (
+              <div className="live-action-grid">
+                <div className="action-section">
+                  <div className="action-heading">
+                    <Swords size={18} />
+                    <strong>{t("Weapons & equipment")}</strong>
+                  </div>
+                  <GearPanel
+                    sheet={sheet}
+                    busy={busy}
+                    update={update}
+                    roll={(stat) => void rollAttribute(stat)}
+                  />
+                </div>
+                <div className="action-section">
+                  <MovesPanel
+                    setupLocked={setupLocked}
+                    sheet={sheet}
+                    expanded
+                    busy={busy}
+                    roll={(stat) => void rollAttribute(stat)}
+                  />
+                </div>
+              </div>
+            ) : tab === "Equipment" ? (
+              <GearPanel
+                sheet={sheet}
+                busy={busy}
+                update={update}
+                roll={(stat) => void rollAttribute(stat)}
+              />
             ) : tab === "Moves" ? (
-              <MovesPanel sheet={sheet} />
+              <MovesPanel
+                setupLocked={setupLocked}
+                sheet={sheet}
+                busy={busy}
+                roll={(stat) => void rollAttribute(stat)}
+              />
             ) : tab === "Background" ? (
               <BackgroundPanel
                 sheet={sheet}
                 busy={busy}
                 update={update}
-                edit={() => edit(2)}
+                edit={setupLocked ? undefined : () => edit(1)}
               />
             ) : (
               <ReputationPanel sheet={sheet} busy={busy} update={update} />
