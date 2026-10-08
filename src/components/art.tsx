@@ -1,11 +1,47 @@
 "use client";
+import Image from "next/image";
+import { useState } from "react";
 import { useTranslation } from "@/lib/i18n";
+import { playbooks, species as knownSpecies } from "@/lib/sheet";
 export function Portrait({
+  species,
+  playbook,
+  variant = 0,
+  sizes = "(max-width: 767px) 112px, 180px",
+}: {
+  species: string;
+  playbook: string;
+  variant?: number;
+  sizes?: string;
+}) {
+  const { t } = useTranslation();
+  const src = `/art/portraits/cartoon/${playbook.toLowerCase()}-${species.toLowerCase()}.webp`;
+  const [failedSrc, setFailedSrc] = useState("");
+  if (
+    failedSrc === src ||
+    !knownSpecies.includes(species) ||
+    !playbooks.includes(playbook)
+  ) {
+    return <FallbackPortrait species={species} variant={variant} />;
+  }
+  return (
+    <Image
+      src={src}
+      onError={() => setFailedSrc(src)}
+      alt={`${t(species)} · ${t(playbook)}`}
+      width={1024}
+      height={1024}
+      sizes={sizes}
+      className={`portrait portrait-${variant % 3}`}
+    />
+  );
+}
+
+function FallbackPortrait({
   species,
   variant = 0,
 }: {
   species: string;
-  playbook?: string;
   variant?: number;
 }) {
   const { t } = useTranslation();

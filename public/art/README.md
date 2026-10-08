@@ -4,7 +4,7 @@
 
 Visual reference: https://www.direwolfdigital.com/root/ — parchment, dark ink contours, earthy faction colors, and woodland characters. No official logo or downloaded game assets are included.
 
-`paper-grain.svg` and the species portraits in `src/components/art.tsx` are code-native artwork. UI headings use system Georgia with serif fallbacks; body text retains the system sans-serif for readability and Cyrillic support.
+`paper-grain.svg` and the fallback portrait in `src/components/art.tsx` are code-native artwork. The supported class/species pairs use the generated character portraits described below. UI headings use system Georgia with serif fallbacks; body text retains the system sans-serif for readability and Cyrillic support.
 
 Generation prompt:
 
@@ -17,3 +17,11 @@ Use case: illustration-story. Asset type: a single wide decorative illustration 
 ## Distinct screen scenes
 
 `characters-armory.webp`, `campaigns-crossroads.webp`, and `game-watchtower.webp` are original 1536 × 1024 illustrations generated with the built-in imagegen tool, optimized as WebP at quality 82. The scenes distinguish character management, campaign management/selection, and the active game while retaining the established ink-and-paper woodland look. Exact prompts are in [screen-prompts.json](screen-prompts.json).
+
+## Class and species character portraits
+
+The `portraits/cartoon/` collection covers the app's 9 playbooks × 10 species. Each combination is generated individually with the built-in imagegen tool using the user's attached woodland character illustrations as visual references. The requested direction is oversized heads, squat cartoon proportions, flat earthy colors, sparse rough ink, warrior equipment, and crooked smirks. No official character artwork is copied into the app.
+
+Files use the naming convention `{playbook}-{species}.webp`, with lowercase English identifiers. The 1024 × 1024 WebP exports preserve transparency and use quality 90; full-resolution original PNGs remain in the local generated-images library. [prompts.json](portraits/prompts.json) contains every exact generation prompt. [The gallery](portraits/index.html) supports filtering by class and species and downloading individual images.
+
+The character list, editor, and play sheet select images from both the species and playbook. Custom values outside the built-in lists retain the code-native fallback illustration.

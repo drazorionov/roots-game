@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { Portrait } from "./art";
+import PortraitPicker from "./portrait-picker";
 import AttributeIcon from "./attribute-icon";
 import GearPanel from "./gear-panel";
 import { ReputationPanel } from "./sheet-panels";
@@ -238,35 +239,31 @@ export default function CharacterEditor({
         <fieldset disabled={busy}>
           {step === 0 && (
             <>
-              <details className="playbook-catalog" open={!editing}>
-                <summary>
-                  {t("Playbook")} · {t(sheet.playbook)}
-                </summary>
-                <div className="playbook-grid">
-                  {playbooks.map((name) => (
-                    <button
-                      className="playbook-option"
-                      aria-label={t(name)}
-                      type="button"
-                      key={name}
-                      aria-pressed={sheet.playbook === name}
-                      onClick={(event) => {
-                        if (name === sheet.playbook || choosePlaybook(name)) {
-                          const catalog =
-                            event.currentTarget.closest("details");
-                          if (catalog) catalog.open = false;
-                        }
-                      }}
-                    >
-                      <span>
-                        <strong>{t(name)}</strong>
-                        {sheet.playbook === name && <Check size={17} />}
-                      </span>
-                      <small>{t(playbookData[name].summary)}</small>
-                    </button>
-                  ))}
-                </div>
-              </details>
+              <PortraitPicker
+                label={t("Playbook")}
+                value={sheet.playbook}
+                initiallyOpen={!editing}
+                options={playbooks.map((name) => ({
+                  value: name,
+                  label: t(name),
+                  species: sheet.species,
+                  playbook: name,
+                  description: t(playbookData[name].summary),
+                }))}
+                onSelect={choosePlaybook}
+              />
+              <PortraitPicker
+                label={t("Species")}
+                value={sheet.species}
+                initiallyOpen={!editing}
+                options={species.map((name) => ({
+                  value: name,
+                  label: t(name),
+                  species: name,
+                  playbook: sheet.playbook,
+                }))}
+                onSelect={(name) => patch({ species: name })}
+              />
 
               <div className="editor-identity">
                 <label>
@@ -278,22 +275,6 @@ export default function CharacterEditor({
                     placeholder={t("Your character’s name")}
                     onChange={(e) => patch({ name: e.target.value })}
                   />
-                </label>
-              </div>
-              <div className="form-grid">
-                <label>
-                  {t("Species")}
-                  <select
-                    aria-label={t("Species")}
-                    value={sheet.species}
-                    onChange={(e) => patch({ species: e.target.value })}
-                  >
-                    {species.map((s) => (
-                      <option key={s} value={s}>
-                        {t(s)}
-                      </option>
-                    ))}
-                  </select>
                 </label>
               </div>
               <h3 className="form-section">{t("Attributes")}</h3>
@@ -758,10 +739,15 @@ export default function CharacterEditor({
           {step === 5 && (
             <>
               <div className="review-identity">
-                <strong>{sheet.name || t("Your vagabond")}</strong>
-                <p>
-                  {t(sheet.species)} · {t(sheet.playbook)}
-                </p>
+                <div className="review-portrait">
+                  <Portrait species={sheet.species} playbook={sheet.playbook} />
+                </div>
+                <div>
+                  <strong>{sheet.name || t("Your vagabond")}</strong>
+                  <p>
+                    {t(sheet.species)} · {t(sheet.playbook)}
+                  </p>
+                </div>
               </div>
               <div className="builder-stats">
                 {stats.map((stat) => (

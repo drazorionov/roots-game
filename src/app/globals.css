@@ -384,8 +384,8 @@ fieldset {
   flex-wrap: wrap;
 }
 .play-portrait {
-  width: 66px;
-  height: 70px;
+  width: 104px;
+  height: 104px;
   flex-shrink: 0;
 }
 .play-identity > div:nth-child(2) {
@@ -822,8 +822,8 @@ fieldset {
     font-size: 14px;
   }
   .play-portrait {
-    height: 82px;
-    width: 82px;
+    height: 144px;
+    width: 144px;
   }
   .play-identity h3 {
     font-size: 29px;
@@ -908,8 +908,8 @@ fieldset {
     gap: 7px;
   }
   .play-portrait {
-    width: 47px;
-    height: 60px;
+    width: 80px;
+    height: 80px;
   }
   .play-identity h3 {
     font-size: 20px;
@@ -2476,8 +2476,8 @@ form .inline-check {
   border-bottom: 1px solid var(--line);
 }
 .builder-portrait {
-  width: 64px;
-  height: 72px;
+  width: 96px;
+  height: 96px;
   flex-shrink: 0;
   border-radius: 8px;
   background: #e5d6b1;
@@ -2606,48 +2606,90 @@ form .inline-check {
   height: 96px;
   border-radius: 8px;
 }
-.playbook-catalog > summary {
+.portrait-catalog {
+  padding-bottom: 20px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--line);
+}
+.portrait-catalog > summary {
   font-family: var(--heading-font);
   font-size: 23px;
   cursor: pointer;
   min-height: 44px;
+  line-height: 1.5;
 }
-.playbook-grid {
+.portrait-catalog > summary > span {
+  color: var(--muted);
+  font-size: 18px;
+}
+.portrait-choice-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  gap: 12px;
   margin-top: 14px;
 }
-.playbook-option {
+.portrait-choice {
+  display: flex;
+  flex-direction: column;
   text-align: left;
   background: #fff9e8;
-  border: 1px solid #c5b895;
-  border-radius: 6px;
-  padding: 12px;
+  border: 2px solid #c5b895;
+  border-radius: 8px 12px 7px 10px;
+  padding: 10px;
   min-width: 0;
+  transition:
+    border-color 120ms,
+    background 120ms;
 }
-.playbook-option > span {
+.portrait-choice:hover:not(:disabled) {
+  background: #f3edd6;
+  border-color: #8b9675;
+}
+.portrait-choice:focus-visible {
+  outline: 3px solid var(--green);
+  outline-offset: 3px;
+}
+.portrait-choice-art {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  max-height: 200px;
+  margin-bottom: 10px;
+}
+.portrait-choice-name {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: 6px;
+  width: 100%;
   font-family: var(--heading-font);
   font-size: 18px;
+  overflow-wrap: anywhere;
 }
-.playbook-option > span svg {
+.portrait-choice-name svg {
   flex-shrink: 0;
+  color: var(--green);
 }
-.playbook-option small {
+.portrait-choice small {
   display: block;
   font-size: 12px;
   line-height: 1.55;
   color: var(--muted);
   margin-top: 8px;
 }
-.playbook-option[aria-pressed="true"] {
-  border: 2px solid var(--green);
-  padding: 11px;
+.portrait-choice[aria-pressed="true"] {
+  border-color: var(--green);
   background: #e8ead7;
+  box-shadow: inset 0 0 0 1px var(--green);
+}
+.review-identity {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.review-portrait {
+  flex: 0 0 112px;
+  height: 112px;
 }
 .builder-stats {
   display: grid;
@@ -2793,8 +2835,8 @@ form .inline-check {
     gap: 14px;
   }
   .builder-portrait {
-    width: 112px;
-    height: 124px;
+    width: 180px;
+    height: 180px;
   }
   .character-builder .wizard-steps {
     grid-template-columns: 1fr;
@@ -2864,7 +2906,7 @@ form .inline-check {
   .builder-canvas {
     padding: 34px;
   }
-  .playbook-grid {
+  .portrait-choice-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
   .character-builder .move-picker {
@@ -2883,9 +2925,6 @@ form .inline-check {
   }
 }
 @media (max-width: 380px) {
-  .playbook-grid {
-    grid-template-columns: 1fr;
-  }
   .builder-canvas {
     padding: 20px 14px;
   }
@@ -3088,18 +3127,16 @@ form .inline-check {
   margin-bottom: 8px;
 }
 .builder-portrait .portrait {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+  object-fit: contain;
 }
 @media (max-width: 767px) {
-  .playbook-option small {
+  .portrait-choice small {
     display: none;
   }
-  .playbook-option[aria-pressed="true"] small {
+  .portrait-choice[aria-pressed="true"] small {
     display: block;
   }
-  .playbook-option > span {
+  .portrait-choice-name {
     font-size: 17px;
   }
   .builder-profile {
@@ -3109,8 +3146,4 @@ form .inline-check {
   .builder-sidebar {
     padding: 14px;
   }
-}
-
-.character-builder .editor-identity + .form-grid {
-  grid-template-columns: 1fr;
 }
