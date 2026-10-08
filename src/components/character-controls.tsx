@@ -17,12 +17,10 @@ import GearPanel from "./gear-panel";
 import { MovesPanel, BackgroundPanel, ReputationPanel } from "./sheet-panels";
 export default function CharacterControls({
   hero,
-  campaignName,
   edit,
   onSaved,
 }: {
   hero: Hero;
-  campaignName?: string;
   edit: (step?: number) => void;
   onSaved: (h: Hero) => void;
 }) {
@@ -90,7 +88,6 @@ export default function CharacterControls({
           <p>
             {t(sheet.species)} · {t(sheet.playbook)}
           </p>
-          {campaignName && <p className="sheet-campaign">{campaignName}</p>}
           <small>{sheet.pronouns}</small>
         </div>
         <button className="btn" disabled={busy} onClick={() => edit()}>

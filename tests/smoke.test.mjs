@@ -26,6 +26,17 @@ async function request(path, method = "GET", data, cookie, origin = base) {
     cookie: res.headers.get("set-cookie")?.split(";")[0],
   };
 }
+async function waitForScene(page) {
+  await page.evaluate(async () => {
+    const scene = document.querySelector(".simple-app");
+    const background = getComputedStyle(scene, "::before").backgroundImage;
+    const url = background.match(/url\(["']?(.*?)["']?\)/)?.[1];
+    if (!url) throw new Error("Missing scene background");
+    const image = new Image();
+    image.src = url;
+    await image.decode();
+  });
+}
 const sheet = {
   name: "Test Otter",
   species: "Otter",
@@ -93,6 +104,46 @@ test(
       );
       assert.equal(created.status, 200);
       const campaignId = created.data.id;
+      assert.equal(
+        (await request("presence", "POST", { campaignId })).status,
+        401,
+      );
+      assert.equal(
+        (await request("presence", "POST", { campaignId }, guest.cookie))
+          .status,
+        403,
+      );
+      assert.equal(
+        (await request("presence", "POST", { campaignId: "bad" }, owner.cookie))
+          .status,
+        400,
+      );
+      assert.equal(
+        (
+          await request(
+            "presence",
+            "POST",
+            { campaignId },
+            owner.cookie,
+            "https://evil.invalid",
+          )
+        ).status,
+        400,
+      );
+      const firstPresence = await request(
+        "presence",
+        "POST",
+        { campaignId },
+        owner.cookie,
+      );
+      assert.equal(firstPresence.status, 200);
+      assert.equal(firstPresence.data.players.length, 1);
+      assert.equal(
+        (await request("presence", "POST", { campaignId }, owner.cookie)).data
+          .players.length,
+        1,
+      );
+
       assert.equal(
         (await request("heroes", "POST", { campaignId, sheet }, guest.cookie))
           .status,
@@ -184,6 +235,7 @@ test(
         ["ipad", 820, 1180],
       ]) {
         await page.setViewportSize({ width, height });
+        await waitForScene(page);
         await page.screenshot({
           path: `test-results/welcome-${device}.png`,
           fullPage: true,
@@ -394,6 +446,7 @@ test(
         ["ipad", 820, 1180],
       ]) {
         await page.setViewportSize({ width, height });
+        await waitForScene(page);
         await page.screenshot({
           path: `test-results/home-${device}.png`,
           fullPage: true,
@@ -426,7 +479,7 @@ test(
       await expect(
         page.getByRole("heading", { name: "Willow Browser", exact: true }),
       ).toBeVisible();
-      await expect(page.locator(".sheet-campaign")).toBeVisible();
+      await expect(page.locator(".campaign-heading h1")).toBeVisible();
       const uiCampaign = (
         await request("campaigns", "GET", undefined, owner.cookie)
       ).data.campaigns.find((c) => c.name === "Willow’s campaign");
@@ -441,6 +494,8 @@ test(
       await expect(
         page.getByRole("heading", { name: "Willow’s campaign", exact: true }),
       ).toBeVisible();
+      await waitForScene(page);
+      await expect(page.locator(".simple-app")).toHaveClass(/campaigns-scene/);
       await page.screenshot({
         path: "test-results/campaigns-camp.png",
         fullPage: false,
@@ -450,6 +505,8 @@ test(
       await expect(
         page.locator(".character-tile").filter({ hasText: "Willow Browser" }),
       ).toBeVisible();
+      await waitForScene(page);
+      await expect(page.locator(".simple-app")).toHaveClass(/characters-scene/);
       await page.screenshot({
         path: "test-results/characters-camp.png",
         fullPage: false,
@@ -508,6 +565,16 @@ test(
         await request("heroes", "GET", undefined, owner.cookie)
       ).data.heroes.find((h) => h.id === saved.id);
       assert.equal(saved.campaign_id, uiCampaign.id);
+      await expect(page.locator(".campaign-presence")).toContainText(
+        "Online: 1",
+      );
+      await expect(page.locator(".simple-app")).toHaveClass(/game-scene/);
+      for (const label of ["Exit to main", "Restart game", "Start new game"]) {
+        await expect(
+          page.getByRole("button", { name: label, exact: true }),
+        ).toHaveAttribute("title", label);
+      }
+
       const guestContext = await browser.newContext();
       const [cookieName, cookieValue] = guest.cookie.split("=");
       await guestContext.addCookies([
@@ -557,7 +624,7 @@ test(
       await expect(
         guestPage.getByRole("heading", { name: "Guest Vagabond", exact: true }),
       ).toBeVisible();
-      await expect(guestPage.locator(".sheet-campaign")).toHaveText(
+      await expect(guestPage.locator(".campaign-heading h1")).toHaveText(
         "Willow’s campaign",
       );
       assert.equal(
@@ -592,6 +659,33 @@ test(
         ).status,
         409,
       );
+      const ownerPresence = await request(
+        "presence",
+        "POST",
+        { campaignId: uiCampaign.id },
+        owner.cookie,
+      );
+      assert.equal(ownerPresence.status, 200);
+      const together = await request(
+        "presence",
+        "POST",
+        { campaignId: uiCampaign.id },
+        guest.cookie,
+      );
+      assert.equal(together.data.players.length, 2);
+      assert.equal(new Set(together.data.players.map((p) => p.id)).size, 2);
+      await expect(guestPage.locator(".campaign-presence")).toContainText(
+        "Online: 2",
+      );
+      await guestPage.close();
+      await sql`UPDATE campaign_presence SET last_seen = now() - interval '2 minutes' WHERE campaign_id = ${uiCampaign.id} AND user_id = ${guest.data.user.id}`;
+      const expired = await request(
+        "presence",
+        "POST",
+        { campaignId: uiCampaign.id },
+        owner.cookie,
+      );
+      assert.equal(expired.data.players.length, 1);
       await mkdir("test-results", { recursive: true });
       for (const locale of ["ru", "de"]) {
         const d = JSON.parse(
@@ -607,6 +701,9 @@ test(
           .getByRole("button", { name: new RegExp(d["Continue game"]) })
           .click();
         await expect(page.locator("html")).toHaveAttribute("lang", locale);
+        await expect(page.locator(".campaign-presence")).toContainText(
+          d["Online: {count}"].replace("{count}", "1"),
+        );
         await expect(
           page.getByRole("button", { name: d["Edit character"], exact: true }),
         ).toBeVisible();
@@ -623,6 +720,7 @@ test(
             ),
             `${locale} ${device} overflow`,
           );
+          await waitForScene(page);
           await page.screenshot({
             path: `test-results/${device}-${locale}.png`,
             fullPage: true,
@@ -638,6 +736,7 @@ test(
         await expect(
           dialog.getByLabel(d["Playbook"], { exact: true }),
         ).toHaveValue("Vagrant");
+        await waitForScene(page);
         await page.screenshot({
           path: `test-results/create-${locale}.png`,
           fullPage: true,
@@ -656,6 +755,7 @@ test(
           await dialog.evaluate((el) => el.scrollWidth <= el.clientWidth),
           `${locale} ability form overflow`,
         );
+        await waitForScene(page);
         await page.screenshot({
           path: `test-results/abilities-${locale}.png`,
           fullPage: false,
@@ -678,6 +778,7 @@ test(
             ),
             `${locale} ${device} home overflow`,
           );
+          await waitForScene(page);
           await page.screenshot({
             path: `test-results/home-${locale}-${device}.png`,
             fullPage: false,

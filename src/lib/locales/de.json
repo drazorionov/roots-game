@@ -495,5 +495,10 @@
   "2 · Choose your character": "2 · Charakter wählen",
   "Change campaign": "Kampagne wechseln",
   "Choose an existing hero or create one for this campaign. Saved stats are kept.": "Wähle einen Helden oder erstelle einen für diese Kampagne. Gespeicherte Werte bleiben erhalten.",
-  "Move from {campaign}": "Aus {campaign} übernehmen"
+  "Move from {campaign}": "Aus {campaign} übernehmen",
+  "Join this campaign first.": "Tritt zuerst dieser Kampagne bei.",
+  "Online status unavailable.": "Online-Status nicht verfügbar.",
+  "Players viewing this campaign. Updates every 20 seconds.": "Spieler, die diese Kampagne ansehen. Aktualisierung alle 20 Sekunden.",
+  "Online: {count}": "Online: {count}",
+  "Checking players…": "Spieler werden geprüft…"
 }

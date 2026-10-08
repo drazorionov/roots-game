@@ -26,6 +26,7 @@ import { type Hero, type Campaign, type User, type Sheet } from "@/lib/sheet";
 import { api } from "@/lib/client-api";
 import CharacterEditor from "./character-editor";
 import CharacterControls from "./character-controls";
+import CampaignPresence from "./campaign-presence";
 import { Portrait } from "./art";
 function Modal({
   title,
@@ -115,6 +116,16 @@ export default function WoodlandApp() {
     !!campaign &&
     campaign.id === gameCampaignId;
   const scenic = !user || tab === "home";
+  const scene = !user
+    ? "welcome-scene"
+    : tab === "home"
+      ? "camp-scene"
+      : activeGame
+        ? "game-scene"
+        : tab === "campaigns" ||
+            (tab === "play" && (gameStep === "campaign" || !gameCampaign))
+          ? "campaigns-scene"
+          : "characters-scene";
   function remember(id: string, userId = user?.id) {
     setResumeId(id);
     if (userId)
@@ -382,7 +393,7 @@ export default function WoodlandApp() {
   }
   return (
     <div
-      className={`simple-app scene-app ${user ? "camp-scene" : "welcome-scene"} ${!scenic ? "workspace-scene" : ""}`}
+      className={`simple-app scene-app ${scene} ${!scenic ? "workspace-scene" : ""}`}
     >
       {!activeGame && (
         <header className="app-header">
@@ -545,31 +556,42 @@ export default function WoodlandApp() {
         ) : activeGame || (tab === "characters" && hero) ? (
           <>
             {activeGame ? (
-              <nav className="game-actions" aria-label={t("Game controls")}>
-                <button
-                  onClick={() => {
-                    setTab("home");
-                    setError("");
-                  }}
-                >
-                  <Home size={17} />
-                  {t("Exit to main")}
-                </button>
-                <button
-                  onClick={() => {
-                    setSelected("");
-                    setGameStep("character");
-                    setError("");
-                  }}
-                >
-                  <RotateCcw size={17} />
-                  {t("Restart game")}
-                </button>
-                <button onClick={startNewGame}>
-                  <Plus size={18} />
-                  {t("Start new game")}
-                </button>
-              </nav>
+              <header className="game-heading">
+                <div className="campaign-heading">
+                  <h1>{campaign?.name}</h1>
+                  <CampaignPresence campaignId={gameCampaignId} />
+                </div>
+                <nav className="game-actions" aria-label={t("Game controls")}>
+                  <button
+                    aria-label={t("Exit to main")}
+                    title={t("Exit to main")}
+                    onClick={() => {
+                      setTab("home");
+                      setError("");
+                    }}
+                  >
+                    <Home size={18} />
+                  </button>
+                  <button
+                    aria-label={t("Restart game")}
+                    title={t("Restart game")}
+                    onClick={() => {
+                      setSelected("");
+                      setGameStep("character");
+                      setError("");
+                    }}
+                  >
+                    <RotateCcw size={18} />
+                  </button>
+                  <button
+                    onClick={startNewGame}
+                    aria-label={t("Start new game")}
+                    title={t("Start new game")}
+                  >
+                    <Plus size={19} />
+                  </button>
+                </nav>
+              </header>
             ) : (
               <div className="character-toolbar">
                 <button className="text-link" onClick={() => setSelected("")}>
@@ -585,7 +607,6 @@ export default function WoodlandApp() {
             <CharacterControls
               key={hero!.id}
               hero={hero!}
-              campaignName={activeGame ? campaign?.name : undefined}
               edit={(step = 0) => {
                 setEditorStep(step);
                 setEditorDirty(false);

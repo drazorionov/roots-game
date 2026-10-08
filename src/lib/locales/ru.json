@@ -495,5 +495,10 @@
   "2 · Choose your character": "2 · Выберите героя",
   "Change campaign": "Сменить кампанию",
   "Choose an existing hero or create one for this campaign. Saved stats are kept.": "Выберите героя или создайте нового для этой кампании. Сохранённое состояние героя не изменится.",
-  "Move from {campaign}": "Перевести из «{campaign}»"
+  "Move from {campaign}": "Перевести из «{campaign}»",
+  "Join this campaign first.": "Сначала присоединитесь к этой кампании.",
+  "Online status unavailable.": "Статус игроков недоступен.",
+  "Players viewing this campaign. Updates every 20 seconds.": "Игроки, открывшие эту кампанию. Обновляется каждые 20 секунд.",
+  "Online: {count}": "В сети: {count}",
+  "Checking players…": "Проверяем игроков…"
 }

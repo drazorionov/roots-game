@@ -1881,3 +1881,90 @@ form .inline-check {
     line-height: 1.25;
   }
 }
+
+.characters-scene {
+  --scene: url("/art/characters-armory.webp");
+}
+.campaigns-scene {
+  --scene: url("/art/campaigns-crossroads.webp");
+}
+.game-scene {
+  --scene: url("/art/game-watchtower.webp");
+}
+.game-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding-top: env(safe-area-inset-top);
+  margin-bottom: 16px;
+}
+.campaign-heading {
+  min-width: 0;
+  flex: 1;
+}
+.game-heading .campaign-heading h1 {
+  color: #fff6df;
+  font-size: clamp(23px, 3vw, 32px);
+  line-height: 1.15;
+  letter-spacing: -0.5px;
+  overflow-wrap: anywhere;
+  text-wrap: wrap;
+  margin: 0 0 8px;
+}
+.campaign-presence {
+  font-size: 12px;
+  color: #eee5cf;
+}
+.campaign-presence p:first-child {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.online-names {
+  margin-top: 4px;
+  font-size: 11px;
+  line-height: 1.3;
+  color: #d3cfb8;
+  overflow-wrap: anywhere;
+}
+.game-heading .game-actions {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 2px;
+  padding: 0;
+  margin: 0;
+}
+.game-heading .game-actions button {
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: #14292080;
+  border-radius: 7px;
+  color: #fff6df;
+}
+.game-heading .game-actions button:hover {
+  background: #446052;
+}
+@media (max-width: 600px) {
+  .characters-scene::before,
+  .campaigns-scene::before,
+  .game-scene::before {
+    background-position: 64% center;
+  }
+  .game-heading {
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .game-heading .campaign-heading h1 {
+    font-size: 22px;
+  }
+}
+.workspace-scene .app-header .header-actions,
+.workspace-scene .app-header .home-control {
+  background: #142920b3;
+  border-radius: 7px;
+}
