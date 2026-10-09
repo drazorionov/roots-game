@@ -51,6 +51,8 @@ test(
               campaigns: [campaign],
             },
           });
+        if (url.pathname === "/api/activity")
+          return route.fulfill({ json: { events: [], cursor: "0" } });
         if (url.pathname === "/api/presence")
           return route.fulfill({ json: { players: [] } });
         if (url.pathname === "/api/campaigns") {
@@ -120,11 +122,10 @@ test(
       await page
         .getByRole("button", { name: "Roll Charm", exact: true })
         .click();
-      await expect(page.getByRole("dialog")).toBeVisible({ timeout: 500 });
-      await expect(page.locator(".dice-total")).toBeVisible();
-      await page
-        .getByRole("button", { name: "Close dialog", exact: true })
-        .click();
+      await expect(page.locator(".activity-roll").first()).toBeVisible({
+        timeout: 500,
+      });
+      await expect(page.getByRole("dialog")).toHaveCount(0);
       const forward = page
         .locator(".sheet-counter")
         .filter({

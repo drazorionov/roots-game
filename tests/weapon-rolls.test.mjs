@@ -86,7 +86,7 @@ test(
         exact: true,
       });
       await expect(cleave).toContainText("+2");
-      const dialog = page.locator(".dice-dialog");
+      const notification = page.locator(".activity-roll").first();
       for (const [dice, total, result] of [
         [[4, 4], "10", "10+: strong hit"],
         [[3, 3], "7", "7–9: mixed hit"],
@@ -96,16 +96,10 @@ test(
           window.testDice = dice;
         }, dice);
         await cleave.click();
-        await expect(dialog.getByRole("heading")).toHaveText("Cleave +2");
-        await expect(dialog.locator(".dice-total")).toHaveText(total);
-        await expect(dialog.locator(".outcome-badge")).toHaveText(result);
-        await expect(dialog.locator(".dice-action-rules")).toContainText(
-          "A hit inflicts 3 wear",
+        await expect(notification).toContainText(
+          `Test sword · Cleave · ${dice.join(" + ")} + ${total === "10" ? 2 : 1} = ${total} · ${result}`,
         );
-        await expect(dialog.locator(".dice-modifiers")).toContainText(
-          "Might +2",
-        );
-        await page.keyboard.press("Escape");
+        await expect(page.getByRole("dialog")).toHaveCount(0);
         await expect(cleave).toBeFocused();
       }
       const stored = await page.evaluate(() =>
@@ -123,11 +117,10 @@ test(
       await gear
         .getByRole("button", { name: "Roll Paired Fighting", exact: true })
         .click();
-      await expect(dialog.locator(".dice-total")).toHaveText("7");
-      await expect(dialog.locator(".dice-modifiers")).toContainText(
-        "Move bonus +3",
+      await expect(notification).toContainText(
+        "Test sword · Paired Fighting · 2 + 3 + 2 = 7",
       );
-      await page.keyboard.press("Escape");
+      await page.getByRole("button", { name: "Hide all", exact: true }).click();
 
       await page.getByText("Character info & moves", { exact: true }).click();
       const skills = page.locator(".weapon-skills");
@@ -147,11 +140,10 @@ test(
       await skills
         .getByRole("button", { name: "Roll Improvise Weapon", exact: true })
         .click();
-      await expect(dialog.locator(".dice-modifiers")).toContainText(
-        "Cunning +1",
+      await expect(notification).toContainText(
+        "Improvise Weapon · 3 + 4 + 0 = 7",
       );
-      await expect(dialog.locator(".dice-total")).toHaveText("7");
-      await page.keyboard.press("Escape");
+      await expect(page.getByRole("dialog")).toHaveCount(0);
       await gear.screenshot({
         path: "test-results/weapon-actions-desktop.png",
       });
@@ -191,14 +183,29 @@ test(
         window.testDice = [5, 5];
       });
       await cleave.click();
-      await expect(dialog.locator(".dice-total")).toHaveText("11");
-      await dialog.screenshot({
+      await expect(notification).toContainText(
+        "Test sword · Cleave · 5 + 5 + 1 = 11",
+      );
+      await page.locator(".game-activity").screenshot({
         path: "test-results/weapon-action-result.png",
       });
-      await dialog
-        .getByRole("button", { name: "Back to character", exact: true })
-        .click();
       await expect(cleave).toBeFocused();
+      for (const [control, stat, modifier] of [
+        ["Melee · Might", "Might", 1],
+        ["Ranged · Finesse", "Finesse", 0],
+      ]) {
+        await page
+          .getByRole("button", { name: "Hide all", exact: true })
+          .click();
+        await page.evaluate(() => {
+          window.testDice = [3, 3];
+        });
+        await gear.getByRole("button", { name: control, exact: true }).click();
+        await expect(notification).toContainText(
+          `Test sword · ${stat} · 3 + 3 + ${modifier} = ${6 + modifier}`,
+        );
+        await expect(page.getByRole("dialog")).toHaveCount(0);
+      }
       assert.deepEqual(errors, []);
     } finally {
       await browser.close();

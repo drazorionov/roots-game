@@ -245,6 +245,8 @@
   gap: 12px;
 }
 .attribute-roll {
+  position: relative;
+  isolation: isolate;
   display: grid;
   grid-template-columns: 1fr auto;
   align-items: center;
@@ -1336,8 +1338,18 @@
   color: var(--green);
   text-decoration-style: solid;
 }
-.rule-name:focus-visible,
+.attribute-roll-action::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+}
 .attribute-roll-action:focus-visible {
+  outline: none;
+}
+.rule-name:focus-visible,
+.attribute-roll-action:focus-visible::after {
   outline: 2px solid var(--green);
   outline-offset: 4px;
 }
@@ -1357,12 +1369,15 @@
   color: var(--muted);
 }
 .attribute-roll > .rule-name {
+  position: relative;
+  z-index: 2;
+  justify-self: start;
   grid-column: 1 / -1;
   font-size: 18px;
   font-weight: 800;
   line-height: 1.25;
   min-height: 40px;
-  width: 100%;
+  width: fit-content;
 }
 .attribute-roll-action {
   display: flex;

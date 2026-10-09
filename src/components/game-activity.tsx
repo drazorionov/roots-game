@@ -36,6 +36,12 @@ export default function GameActivityFeed({
   const { t, locale } = useTranslation();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [connectionError, setConnectionError] = useState(false);
+  const stack = useRef<HTMLOListElement>(null);
+  const newestId = notifications[0]?.id;
+  useEffect(() => {
+    // A new roll must remain visible even after browsing older notifications.
+    if (stack.current) stack.current.scrollTop = 0;
+  }, [newestId]);
   const seen = useRef(new Set<string>());
   const mounted = useRef(true);
   const campaignId = hero.campaign_id;
@@ -172,6 +178,7 @@ export default function GameActivityFeed({
           </div>
         )}
         <ol
+          ref={stack}
           className="activity-stack"
           role="log"
           aria-live="polite"

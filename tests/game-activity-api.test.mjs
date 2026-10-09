@@ -97,7 +97,12 @@ test(
         id: randomUUID(),
         campaignId: campaign.id,
         heroId: hero.id,
-        roll: { label: "Charm", dice: [4, 3], modifier: -1 },
+        roll: {
+          label: "Might",
+          source: "Test sword",
+          dice: [4, 3],
+          modifier: -1,
+        },
       };
       assert.equal((await request(outsider, "POST", roll)).status, 403);
       assert.equal((await request(member, "POST", roll)).status, 403);

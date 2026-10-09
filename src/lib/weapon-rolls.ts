@@ -36,4 +36,5 @@ export type RollWeaponSkill = (
   stat: Stat | null,
   action: string,
   bonus?: number,
+  source?: string,
 ) => void;

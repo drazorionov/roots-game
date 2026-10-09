@@ -34,7 +34,7 @@ const makeSheet = (patch = {}) =>
   });
 
 test(
-  "character sheet tracks harm, rolls in an accessible dialog, and fits mobile layouts",
+  "character sheet tracks harm, shows rolls in notifications, and fits mobile layouts",
   { timeout: 90000 },
   async () => {
     const browser = await chromium.launch({
@@ -87,17 +87,19 @@ test(
         exact: true,
       });
       await rollButton.click();
-      const dialog = page.getByRole("dialog");
-      await expect(dialog).toBeVisible();
-      await expect(dialog.locator(".dice-total")).toBeVisible();
+      const notification = page.locator(".activity-roll").first();
+      await expect(notification).toBeVisible();
+      await expect(page.getByRole("dialog")).toHaveCount(0);
       const stored = await page.evaluate(() =>
         JSON.parse(sessionStorage.getItem("root-quick-sheet")),
       );
       assert.equal(stored.forward, 0);
       assert.equal(stored.ongoing, -1);
       assert.equal(stored.hold, 2);
-      const equation = await dialog.locator(".dice-equation").textContent();
-      const match = equation.match(/(\d) \+ (\d) ([+−])(\d+) = (-?\d+)/);
+      const equation = await notification
+        .locator(".activity-copy p")
+        .textContent();
+      const match = equation.match(/(\d) \+ (\d) ([+−]) (\d+) = (-?\d+)/);
       assert.ok(match, equation);
       assert.ok([+match[1], +match[2]].every((n) => n >= 1 && n <= 6));
       assert.equal(
@@ -105,8 +107,7 @@ test(
         +match[1] + +match[2] + (match[3] === "+" ? 1 : -1) * +match[4],
       );
       await page.screenshot({ path: "test-results/redesign-dice.png" });
-      await page.keyboard.press("Escape");
-      await expect(dialog).toHaveCount(0);
+      await expect(page.getByRole("dialog")).toHaveCount(0);
       await expect(rollButton).toBeFocused();
       await expect(page.locator(".party-card")).toHaveCount(1);
       await expect(page.locator(".party-card progress")).toHaveCount(3);
@@ -137,10 +138,8 @@ test(
       });
       await page.emulateMedia({ reducedMotion: "reduce" });
       await rollButton.click();
-      await expect(dialog.locator(".dice-total")).toBeVisible();
-      await dialog
-        .getByRole("button", { name: "Close dialog", exact: true })
-        .click();
+      await expect(page.locator(".activity-roll")).toHaveCount(2);
+      await expect(page.getByRole("dialog")).toHaveCount(0);
       await page.reload();
       await expect(
         page.getByRole("button", { name: "Injury 2", exact: true }),

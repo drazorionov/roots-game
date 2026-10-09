@@ -121,10 +121,8 @@ test(
       await page
         .getByRole("button", { name: "Roll Charm", exact: true })
         .click();
-      await expect(
-        page.getByRole("dialog").locator(".dice-total"),
-      ).toBeVisible();
-      await page.keyboard.press("Escape");
+      await expect(page.getByRole("dialog")).toHaveCount(0);
+      await expect(page.locator(".activity-roll").first()).toBeVisible();
       await expect(page.locator(".activity-roll")).toContainText(
         /Charm · [1-6] \+ [1-6] [−+] \d+ =/,
       );
@@ -245,10 +243,8 @@ test(
       await page
         .getByRole("button", { name: "Roll Charm", exact: true })
         .click();
-      await expect(
-        page.getByRole("dialog").locator(".dice-total"),
-      ).toBeVisible();
-      await page.keyboard.press("Escape");
+      await expect(page.getByRole("dialog")).toHaveCount(0);
+      await expect(page.locator(".activity-roll").first()).toBeVisible();
       await expect(page.locator(".activity-popup")).toHaveCount(1);
       await expect(page.locator(".activity-share-error")).toContainText(
         "Roll not shared",
@@ -273,6 +269,122 @@ test(
         document.dispatchEvent(new Event("visibilitychange")),
       );
       await expect(page.locator(".activity-popup")).toHaveCount(1);
+    } finally {
+      await browser.close();
+    }
+  },
+);
+
+test(
+  "attribute tile icon, value, dice, and empty space roll; names only open rules",
+  { timeout: 60000 },
+  async () => {
+    const browser = await chromium.launch({
+      channel: "chrome",
+      headless: true,
+    });
+    try {
+      const page = await browser.newPage({
+        viewport: { width: 1440, height: 1000 },
+        hasTouch: true,
+      });
+      await page.addInitScript((value) => {
+        sessionStorage.setItem("root-quick-sheet", JSON.stringify(value));
+        sessionStorage.setItem("root-quick-active", "1");
+      }, sheet);
+      await page.goto(base);
+      for (const width of [1440, 390]) {
+        await page.setViewportSize({ width, height: 1000 });
+        for (const stat of sheets.stats) {
+          const tile = page.locator(".attribute-roll").filter({
+            has: page.getByRole("button", {
+              name: `Roll ${stat}`,
+              exact: true,
+            }),
+          });
+          const name = tile.getByRole("button", { name: stat, exact: true });
+          await name.click();
+          await expect(page.locator(".rule-dialog")).toBeVisible();
+          await expect(page.locator(".activity-roll")).toHaveCount(0);
+          await page.keyboard.press("Escape");
+          await expect(name).toBeFocused();
+          for (const target of [
+            ".attribute-icon",
+            ".attribute-roll-action strong",
+            ".attribute-dice",
+            "padding",
+            "beside-name",
+          ]) {
+            await tile.scrollIntoViewIfNeeded();
+            const bounds = await tile.boundingBox();
+            const box =
+              target === "padding"
+                ? {
+                    x: bounds.x + bounds.width - 5,
+                    y: bounds.y + 5,
+                    width: 0,
+                    height: 0,
+                  }
+                : target === "beside-name"
+                  ? {
+                      x: bounds.x + bounds.width - 5,
+                      y: (await name.boundingBox()).y + 10,
+                      width: 0,
+                      height: 0,
+                    }
+                  : await tile.locator(target).boundingBox();
+            if (width === 390)
+              await page.touchscreen.tap(
+                box.x + box.width / 2,
+                box.y + box.height / 2,
+              );
+            else
+              await page.mouse.click(
+                box.x + box.width / 2,
+                box.y + box.height / 2,
+              );
+            await expect(page.locator(".activity-roll")).toHaveCount(1);
+            await expect(page.locator(".activity-roll")).toContainText(
+              `${stat} ·`,
+            );
+            await expect(page.getByRole("dialog")).toHaveCount(0);
+            await page
+              .getByRole("button", { name: "Hide all", exact: true })
+              .click();
+          }
+          const rollButton = tile.getByRole("button", {
+            name: `Roll ${stat}`,
+            exact: true,
+          });
+          for (const key of ["Enter", "Space"]) {
+            await rollButton.focus();
+            await page.keyboard.press(key);
+            await expect(page.locator(".activity-roll")).toHaveCount(1);
+            await expect(rollButton).toBeFocused();
+            await page
+              .getByRole("button", { name: "Hide all", exact: true })
+              .click();
+          }
+        }
+      }
+      // New results scroll into view when the stack was scrolled to older rolls.
+      const roll = page.getByRole("button", {
+        name: "Roll Charm",
+        exact: true,
+      });
+      for (let i = 0; i < 6; i++) await roll.click();
+      const stack = page.locator(".activity-stack");
+      await stack.evaluate((element) => {
+        element.scrollTop = element.scrollHeight;
+      });
+      await roll.click();
+      await expect
+        .poll(() => stack.evaluate((element) => element.scrollTop))
+        .toBe(0);
+      await expect(page.locator(".activity-roll")).toHaveCount(7);
+      await page.screenshot({
+        path: "test-results/attribute-tile-notifications.png",
+      });
     } finally {
       await browser.close();
     }

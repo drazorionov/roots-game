@@ -27,7 +27,6 @@ import RuleHelp from "./rule-help";
 import SheetCounter from "./sheet-counter";
 import AttributeIcon from "./attribute-icon";
 import { HarmBox, DiceIcon } from "./game-icons";
-import DiceDialog, { type AttributeRoll } from "./dice-dialog";
 import { useGameActivity } from "./game-activity";
 import GearPanel from "./gear-panel";
 import { MovesPanel, BackgroundPanel, ReputationPanel } from "./sheet-panels";
@@ -57,7 +56,6 @@ export default function CharacterControls({
   }, [saveQueue, hero]);
   const busy = recovering || (state?.conflict ?? false);
   const setupLocked = !!hero.campaign_id;
-  const [roll, setRoll] = useState<AttributeRoll | null>(null);
   const sheet = state?.hero.sheet ?? hero.sheet,
     attributes = effectiveStats(sheet);
   async function update(patch: Partial<Sheet>) {
@@ -80,10 +78,10 @@ export default function CharacterControls({
     stat: (typeof stats)[number] | null,
     action?: string,
     bonus = 0,
+    source?: string,
   ) {
     if (busy) return;
     const currentSheet = saveQueue?.getSnapshot().hero.sheet ?? sheet;
-    const returnFocus = document.activeElement as HTMLElement | null;
     const attribute = stat ? attributes[stat] : bonus;
     const modifier = attribute + currentSheet.forward + currentSheet.ongoing;
     if (currentSheet.forward) {
@@ -101,19 +99,9 @@ export default function CharacterControls({
     const dice: [number, number] = [d6(), d6()];
     activity.recordRoll({
       label: action ?? stat ?? "Move bonus",
+      source,
       dice,
       modifier,
-    });
-    setRoll({
-      returnFocus,
-      stat,
-      action,
-      dice,
-      attribute,
-      forward: currentSheet.forward,
-      ongoing: currentSheet.ongoing,
-      modifier,
-      total: dice[0] + dice[1] + modifier,
     });
   }
   return (
@@ -265,9 +253,11 @@ export default function CharacterControls({
           sheet={sheet}
           busy={busy}
           update={update}
-          roll={(stat) => void rollAttribute(stat)}
-          rollSkill={(stat, action, bonus) =>
-            void rollAttribute(stat, action, bonus)
+          roll={(stat, source) =>
+            void rollAttribute(stat, undefined, 0, source)
+          }
+          rollSkill={(stat, action, bonus, source) =>
+            void rollAttribute(stat, action, bonus, source)
           }
         />
       </section>
@@ -333,7 +323,7 @@ export default function CharacterControls({
             setupLocked={setupLocked}
             sheet={sheet}
             busy={busy}
-            roll={(stat) => void rollAttribute(stat)}
+            roll={(stat, action) => void rollAttribute(stat, action)}
             rollSkill={(stat, action, bonus) =>
               void rollAttribute(stat, action, bonus)
             }
@@ -353,7 +343,6 @@ export default function CharacterControls({
           />
         </details>
       </div>
-      {roll && <DiceDialog roll={roll} close={() => setRoll(null)} />}
       <div className="quick-save-status" role="status">
         {state?.saving ? (
           t("Saving…")

@@ -34,7 +34,7 @@ export default function GearPanel({
   rollSkill,
 }: {
   starting?: boolean;
-  roll?: (stat: "Might" | "Finesse") => void;
+  roll?: (stat: "Might" | "Finesse", source?: string) => void;
   rollSkill?: RollWeaponSkill;
   sheet: Sheet;
   busy: boolean;
@@ -243,7 +243,7 @@ export default function GearPanel({
                 <button
                   className="text-link"
                   disabled={busy}
-                  onClick={() => roll("Might")}
+                  onClick={() => roll("Might", item.name)}
                 >
                   <Dices size={15} />
                   {t("Melee · Might")}
@@ -251,7 +251,7 @@ export default function GearPanel({
                 <button
                   className="text-link"
                   disabled={busy}
-                  onClick={() => roll("Finesse")}
+                  onClick={() => roll("Finesse", item.name)}
                 >
                   <Dices size={15} />
                   {t("Ranged · Finesse")}
@@ -268,7 +268,9 @@ export default function GearPanel({
                       name={name}
                       sheet={sheet}
                       busy={busy}
-                      roll={rollSkill}
+                      roll={(stat, action, bonus) =>
+                        rollSkill(stat, action, bonus, item.name)
+                      }
                     />
                   ))}
               </div>

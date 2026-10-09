@@ -3,6 +3,7 @@ import type { Sheet } from "./sheet";
 
 export const activityRollSchema = z.object({
   label: z.string().min(1).max(100),
+  source: z.string().max(100).optional(),
   dice: z.tuple([
     z.number().int().min(1).max(6),
     z.number().int().min(1).max(6),
@@ -158,5 +159,5 @@ export function describeRoll(roll: ActivityRoll, t: Translate) {
         ? "7–9: mixed hit"
         : "6−: miss",
   );
-  return `${t(roll.label)} · ${roll.dice.join(" + ")} ${roll.modifier < 0 ? "−" : "+"} ${Math.abs(roll.modifier)} = ${total} · ${outcome}`;
+  return `${roll.source ? `${roll.source} · ` : ""}${t(roll.label)} · ${roll.dice.join(" + ")} ${roll.modifier < 0 ? "−" : "+"} ${Math.abs(roll.modifier)} = ${total} · ${outcome}`;
 }

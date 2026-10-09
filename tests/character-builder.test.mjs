@@ -114,10 +114,10 @@ test(
       await page
         .getByRole("button", { name: "Melee · Might", exact: true })
         .click();
-      await expect(page.locator(".dice-dialog")).toContainText("Might");
-      await page
-        .getByRole("button", { name: "Close dialog", exact: true })
-        .click();
+      await expect(page.locator(".activity-roll").first()).toContainText(
+        "Might",
+      );
+      await expect(page.getByRole("dialog")).toHaveCount(0);
       await page.getByRole("button", { name: "Injury 2", exact: true }).click();
       await page
         .getByRole("button", { name: "Edit character", exact: true })

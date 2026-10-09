@@ -564,10 +564,10 @@ test(
           .getByRole("button", { name: "Roll Charm", exact: true })
           .click(),
       );
-      await expect(page.locator(".dice-dialog")).toContainText("Charm");
-      await page
-        .getByRole("button", { name: "Close dialog", exact: true })
-        .click();
+      await expect(page.locator(".activity-roll").first()).toContainText(
+        "Charm",
+      );
+      await expect(page.getByRole("dialog")).toHaveCount(0);
       assert.equal(
         (
           await request("heroes", "GET", undefined, owner.cookie)

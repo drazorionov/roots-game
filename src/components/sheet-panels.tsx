@@ -33,7 +33,7 @@ export function MovesPanel({
   setupLocked = false,
 }: {
   sheet: Sheet;
-  roll?: (stat: (typeof stats)[number]) => void;
+  roll?: (stat: (typeof stats)[number], action?: string) => void;
   rollSkill?: RollWeaponSkill;
   busy?: boolean;
   expanded?: boolean;
@@ -77,7 +77,7 @@ export function MovesPanel({
                   className="btn small move-roll"
                   aria-label={t("Roll {move}", { move: t(name) })}
                   disabled={busy}
-                  onClick={() => roll(move.stat!)}
+                  onClick={() => roll(move.stat!, name)}
                 >
                   <Dices size={15} />
                   {t("Roll {stat}", { stat: t(move.stat) })}
