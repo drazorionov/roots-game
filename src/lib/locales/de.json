@@ -591,5 +591,10 @@
   "Leave game": "Spiel verlassen",
   "Leave {name}? Your characters and progress will be kept. You can rejoin with an invite code.": "{name} verlassen? Deine Charaktere und dein Fortschritt bleiben erhalten. Du kannst mit einem Einladungscode wieder beitreten.",
   "You left the game. Your characters and progress are kept.": "Du hast das Spiel verlassen. Deine Charaktere und dein Fortschritt bleiben erhalten.",
-  "You can only leave a campaign you joined.": "Du kannst nur eine Kampagne verlassen, der du beigetreten bist."
+  "You can only leave a campaign you joined.": "Du kannst nur eine Kampagne verlassen, der du beigetreten bist.",
+  "Campaign master": "Spielleitung",
+  "Party characters": "Gruppencharaktere",
+  "Online": "Online",
+  "Offline": "Offline",
+  "Status unknown": "Status unbekannt"
 }

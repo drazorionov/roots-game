@@ -35,7 +35,6 @@ import { prepareQuickOffline } from "@/lib/quick-offline";
 import CharacterEditor from "./character-editor";
 import CharacterControls from "./character-controls";
 import ActiveGame from "./active-game";
-import CampaignPresence from "./campaign-presence";
 import { CampaignCollection, CharacterCollection } from "./collections";
 function Modal({
   title,
@@ -993,7 +992,7 @@ function WoodlandWorkspace() {
                   <header className="game-heading">
                     <div className="campaign-heading">
                       <h1>{quickMode ? t("Quick game") : campaign?.name}</h1>
-                      {quickMode ? (
+                      {quickMode && (
                         <p className="quick-game-note">
                           {t(
                             "No account. No campaign. Saved only in this browser tab.",
@@ -1004,8 +1003,6 @@ function WoodlandWorkspace() {
                             </span>
                           )}
                         </p>
-                      ) : (
-                        <CampaignPresence campaignId={gameCampaignId} />
                       )}
                     </div>
                   </header>

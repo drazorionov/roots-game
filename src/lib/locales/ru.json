@@ -591,5 +591,10 @@
   "Leave game": "Покинуть игру",
   "Leave {name}? Your characters and progress will be kept. You can rejoin with an invite code.": "Покинуть «{name}»? Ваши персонажи и прогресс сохранятся. Вы сможете вернуться по коду приглашения.",
   "You left the game. Your characters and progress are kept.": "Вы покинули игру. Ваши персонажи и прогресс сохранены.",
-  "You can only leave a campaign you joined.": "Можно покинуть только кампанию, к которой вы присоединились."
+  "You can only leave a campaign you joined.": "Можно покинуть только кампанию, к которой вы присоединились.",
+  "Campaign master": "Мастер кампании",
+  "Party characters": "Персонажи отряда",
+  "Online": "В сети",
+  "Offline": "Не в сети",
+  "Status unknown": "Статус неизвестен"
 }

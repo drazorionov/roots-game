@@ -35,7 +35,11 @@ test(
         .getByRole("button", { name: "Save character", exact: true })
         .click();
       await expect(
-        page.getByRole("heading", { name: "Offline Otter", exact: true }),
+        page.getByRole("heading", {
+          name: "Offline Otter",
+          exact: true,
+          level: 2,
+        }),
       ).toBeVisible();
       await expect(page.locator(".campaign-presence")).toHaveCount(0);
       await expect(page.locator(".language-select option")).toHaveText([
@@ -53,7 +57,11 @@ test(
         });
       await page.reload();
       await expect(
-        page.getByRole("heading", { name: "Offline Otter", exact: true }),
+        page.getByRole("heading", {
+          name: "Offline Otter",
+          exact: true,
+          level: 2,
+        }),
       ).toBeVisible();
       await expect(
         page.getByRole("button", { name: "injury 2", exact: true }),
@@ -91,7 +99,11 @@ test(
       }
       await creation.locator(".creation-back").click();
       await expect(
-        page.getByRole("heading", { name: "Offline Otter", exact: true }),
+        page.getByRole("heading", {
+          name: "Offline Otter",
+          exact: true,
+          level: 2,
+        }),
       ).toBeVisible();
       await page
         .getByRole("button", { name: "Edit character", exact: true })
@@ -121,7 +133,11 @@ test(
         null,
       );
       await expect(
-        other.getByRole("heading", { name: "Offline Otter", exact: true }),
+        other.getByRole("heading", {
+          name: "Offline Otter",
+          exact: true,
+          level: 2,
+        }),
       ).toHaveCount(0);
     } finally {
       await browser.close();

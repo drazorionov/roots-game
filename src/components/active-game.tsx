@@ -1,18 +1,17 @@
 "use client";
 import { useEffect, useState, type ReactNode } from "react";
-import { MapPin, Users, UserRound, ArrowRight, RefreshCw } from "lucide-react";
+import { MapPin, RefreshCw } from "lucide-react";
 import { api } from "@/lib/client-api";
 import { useTranslation } from "@/lib/i18n";
 import {
   type Hero,
   type Campaign,
-  stats,
   harmTracks,
   harmCapacity,
 } from "@/lib/sheet";
-import { effectiveStats } from "@/lib/playbooks";
 import { Portrait } from "./art";
-import AttributeIcon from "./attribute-icon";
+import { MasterPortrait } from "./notebook-doodles";
+import CampaignPresence, { type Player } from "./campaign-presence";
 
 export default function ActiveGame({
   campaign,
@@ -27,51 +26,39 @@ export default function ActiveGame({
   children: ReactNode;
   heading?: ReactNode;
 }) {
-  const { t } = useTranslation();
-  const [view, setView] = useState("character");
+  const [onlinePlayers, setOnlinePlayers] = useState<Player[] | undefined>();
   if (!enabled) return children;
   return (
     <div className="active-game">
-      <div className="game-heading-row">
+      <div className="session-heading">
         {heading}
-        <nav className="game-views" aria-label={t("Game views")}>
-          <button
-            aria-current={view === "campaign" ? "page" : undefined}
-            onClick={() => setView("campaign")}
-          >
-            <Users size={18} />
-            {t("Campaign overview")}
-          </button>
-          <button
-            aria-current={view === "character" ? "page" : undefined}
-            onClick={() => setView("character")}
-          >
-            <UserRound size={18} />
-            {t("My character")}
-          </button>
-        </nav>
+        {campaign && (
+          <CampaignPresence
+            key={campaign.id}
+            campaignId={campaign.id}
+            onChange={setOnlinePlayers}
+          />
+        )}
       </div>
-      {view === "campaign" && (
-        <CampaignOverview
-          key={campaign?.id || "quick"}
-          campaign={campaign}
-          hero={hero}
-          openCharacter={() => setView("character")}
-        />
-      )}
-      <div hidden={view !== "character"}>{children}</div>
+      <CampaignRoster
+        key={campaign?.id || "quick"}
+        campaign={campaign}
+        hero={hero}
+        onlinePlayers={onlinePlayers}
+      />
+      {children}
     </div>
   );
 }
 
-function CampaignOverview({
+function CampaignRoster({
   campaign,
   hero,
-  openCharacter,
+  onlinePlayers,
 }: {
   campaign?: Campaign;
   hero: Hero;
-  openCharacter: () => void;
+  onlinePlayers?: Player[];
 }) {
   const { t } = useTranslation();
   const [party, setParty] = useState<Hero[]>([]);
@@ -105,33 +92,21 @@ function CampaignOverview({
       clearTimeout(timer);
     };
   }, [campaignId, attempt]);
-  // The active sheet may have saved more recently than the roster poll.
+  // Keep this player's latest saved values ahead of the roster poll.
   const members = [hero, ...party.filter((member) => member.id !== hero.id)];
+  const status = (ownerId: string) =>
+    onlinePlayers === undefined
+      ? t("Status unknown")
+      : onlinePlayers.some((player) => player.id === ownerId)
+        ? t("Online")
+        : t("Offline");
   return (
-    <section
-      className="campaign-overview collection-page characters-collection"
-      aria-labelledby="party-title"
-    >
-      <header className="party-heading">
-        <div>
-          <h2 id="party-title">{t("Your travelling party")}</h2>
-        </div>
-        {campaign?.clearing && (
-          <span className="clearing-badge">
-            <MapPin size={17} />
-            {campaign.clearing}
-          </span>
-        )}
-      </header>
-      {campaign?.description && (
-        <p className="campaign-description">{campaign.description}</p>
-      )}
-      {!campaign && (
-        <p className="party-notice">
-          {t(
-            "Quick game is a solo sheet. Join a campaign to see your party here.",
-          )}
-        </p>
+    <section className="session-party" aria-label={t("Your travelling party")}>
+      {campaign?.clearing && (
+        <span className="clearing-badge">
+          <MapPin size={14} />
+          {campaign.clearing}
+        </span>
       )}
       {campaign && !loaded && !error && (
         <p role="status" className="party-notice">
@@ -150,76 +125,85 @@ function CampaignOverview({
           </button>
         </div>
       )}
-      <div className="character-list">
-        {members.map((member) => {
-          const sheet = member.sheet;
-          const attributes = effectiveStats(sheet);
-          const own = member.id === hero.id;
-          return (
-            <div className="character-row" key={member.id}>
+      <div className="session-roster">
+        <div
+          className="session-players"
+          tabIndex={0}
+          role="group"
+          aria-label={t("Party characters")}
+        >
+          {members.map((member) => {
+            const sheet = member.sheet;
+            const own = member.id === hero.id;
+            const online = onlinePlayers?.some(
+              (player) => player.id === member.owner_id,
+            );
+            return (
               <article
-                className={`character-tile party-card ${own ? "own-character" : ""}`}
+                key={member.id}
+                className={`session-tile party-card ${own ? "own-character" : ""}`}
+                aria-label={`${sheet.name} · ${own ? t("You") : member.player}`}
               >
-                <span className="tile-portrait">
-                  <Portrait species={sheet.species} playbook={sheet.playbook} />
-                </span>
-                <div className="tile-copy">
-                  <h3>{sheet.name}</h3>
-                  <span>
-                    {t(sheet.species)} · {t(sheet.playbook)}
-                  </span>
-                  <small className={own ? "party-owner" : undefined}>
+                <div className="session-portrait">
+                  <Portrait
+                    species={sheet.species}
+                    playbook={sheet.playbook}
+                    sizes="64px"
+                  />
+                  {campaign && (
+                    <span
+                      className={`presence-dot ${onlinePlayers === undefined ? "unknown" : online ? "online" : "offline"}`}
+                      title={status(member.owner_id)}
+                      role="img"
+                      aria-label={status(member.owner_id)}
+                    />
+                  )}
+                </div>
+                <div className="session-tile-copy">
+                  <h3 title={sheet.name}>{sheet.name}</h3>
+                  <small title={member.player}>
                     {own ? t("You") : member.player}
                   </small>
+                  <div className="party-conditions">
+                    {harmTracks.map((track) => (
+                      <div
+                        className={track}
+                        key={track}
+                        title={`${t(track)}: ${sheet[track]} / ${harmCapacity(sheet, track)}`}
+                      >
+                        <progress
+                          aria-label={`${sheet.name}: ${t(track)}`}
+                          value={sheet[track]}
+                          max={harmCapacity(sheet, track)}
+                        />
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div className="character-attributes">
-                  {stats.map((stat) => (
-                    <span key={stat}>
-                      <AttributeIcon stat={stat} />
-                      <span>{t(stat)}</span>
-                      <strong>
-                        {attributes[stat] > 0 ? "+" : ""}
-                        {attributes[stat]}
-                      </strong>
-                    </span>
-                  ))}
-                </div>
-                <div className="party-conditions">
-                  {harmTracks.map((track) => (
-                    <div key={track} className={track}>
-                      <span>
-                        {t(track)}
-                        <b>
-                          {sheet[track]} / {harmCapacity(sheet, track)}
-                        </b>
-                      </span>
-                      <progress
-                        aria-label={t(track)}
-                        value={sheet[track]}
-                        max={harmCapacity(sheet, track)}
-                      />
-                    </div>
-                  ))}
-                </div>
-                {own && (
-                  <button
-                    className="text-link character-open party-open"
-                    onClick={openCharacter}
-                  >
-                    {t("Open character sheet")}
-                    <ArrowRight size={16} />
-                  </button>
-                )}
               </article>
+            );
+          })}
+        </div>
+        {campaign && (
+          <article className="session-tile master-tile">
+            <div className="master-portrait">
+              <MasterPortrait />
+              <span
+                className={`presence-dot ${onlinePlayers === undefined ? "unknown" : onlinePlayers.some((p) => p.id === campaign.owner_id) ? "online" : "offline"}`}
+                title={status(campaign.owner_id)}
+                role="img"
+                aria-label={status(campaign.owner_id)}
+              />
             </div>
-          );
-        })}
+            <div className="session-tile-copy">
+              <small>{t("Campaign master")}</small>
+              <h3 title={campaign.master_name}>
+                {campaign.master_name || t("Campaign master")}
+              </h3>
+            </div>
+          </article>
+        )}
       </div>
-      {campaign && loaded && !error && members.length === 1 && (
-        <p className="party-notice">
-          {t("Your companions have not added characters to this campaign yet.")}
-        </p>
-      )}
     </section>
   );
 }

@@ -12,7 +12,7 @@ export async function GET() {
         { status: 401 },
       );
     const campaigns =
-      await db()`SELECT c.*, (SELECT count(*)::int FROM memberships m WHERE m.campaign_id = c.id) as members FROM campaigns c JOIN memberships m ON c.id = m.campaign_id WHERE m.user_id = ${user.id} ORDER BY c.created_at`;
+      await db()`SELECT c.*, u.name AS master_name, (SELECT count(*)::int FROM memberships m WHERE m.campaign_id = c.id) as members FROM campaigns c JOIN users u ON u.id = c.owner_id JOIN memberships m ON c.id = m.campaign_id WHERE m.user_id = ${user.id} ORDER BY c.created_at`;
     return NextResponse.json({ campaigns });
   } catch {
     return NextResponse.json(

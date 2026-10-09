@@ -54,7 +54,9 @@ test(
       }, makeSheet());
       await page.goto(base);
       await expect(
-        page.getByRole("heading", { name: "Rowan Ashfoot", exact: true }),
+        page
+          .locator(".hero-caption")
+          .getByRole("heading", { name: "Rowan Ashfoot", exact: true }),
       ).toBeVisible();
       await expect(
         page.getByRole("button", { name: "Increase Forward", exact: true }),
@@ -106,14 +108,12 @@ test(
       await page.keyboard.press("Escape");
       await expect(dialog).toHaveCount(0);
       await expect(rollButton).toBeFocused();
-      await page
-        .getByRole("button", { name: "Campaign overview", exact: true })
-        .click();
       await expect(page.locator(".party-card")).toHaveCount(1);
-      await expect(page.locator(".party-notice")).toContainText("Quick game");
-      await page
-        .getByRole("button", { name: "Open character sheet", exact: true })
-        .click();
+      await expect(page.locator(".party-card progress")).toHaveCount(3);
+      await expect(
+        page.locator(".party-card progress").first(),
+      ).toHaveAttribute("value", "2");
+      await expect(page.locator(".master-tile")).toHaveCount(0);
       await expect(
         page.getByText("Weathered longsword", { exact: true }),
       ).toBeVisible();
@@ -159,7 +159,7 @@ test(
 );
 
 test(
-  "campaign overview loads companions separately and remains read-only",
+  "session roster includes online and offline companions, master, and the live sheet",
   { timeout: 60000 },
   async () => {
     const browser = await chromium.launch({
@@ -172,6 +172,8 @@ test(
       });
       const campaign = {
         id: "campaign-one",
+        owner_id: "user-master",
+        master_name: "Oak Storykeeper",
         name: "The Long Road",
         clearing: "Mossbank Clearing",
         description: "A trail through a changing Woodland.",
@@ -198,6 +200,7 @@ test(
         }),
       };
       let fail = true;
+      let presenceFailure = false;
       let mutations = 0;
       await page.route("**/api/**", async (route) => {
         const url = new URL(route.request().url());
@@ -218,8 +221,13 @@ test(
           });
         if (url.pathname === "/api/campaigns")
           return route.fulfill({ json: { campaigns: [campaign] } });
-        if (url.pathname === "/api/presence")
-          return route.fulfill({ json: { players: [] } });
+        if (url.pathname === "/api/presence") {
+          if (presenceFailure)
+            return route.fulfill({ status: 503, json: { error: "Offline" } });
+          return route.fulfill({
+            json: { players: [{ id: "user-one", name: "Rowan Player" }] },
+          });
+        }
         if (url.searchParams.has("campaign"))
           return fail
             ? route.fulfill({
@@ -234,11 +242,8 @@ test(
       );
       await page.goto(base);
       await page.getByRole("button", { name: /Continue game/ }).click();
-      await page
-        .getByRole("button", { name: "Campaign overview", exact: true })
-        .click();
       await expect(
-        page.locator(".campaign-overview").getByRole("alert"),
+        page.locator(".session-party").getByRole("alert"),
       ).toContainText("Could not load characters.");
       fail = false;
       await page.getByRole("button", { name: "Retry", exact: true }).click();
@@ -248,6 +253,29 @@ test(
         .filter({ hasText: "Moss Underbough" });
       await expect(companion).toContainText("Morgan");
       await expect(companion.getByRole("button")).toHaveCount(0);
+      await expect(
+        companion.getByRole("img", { name: "Offline", exact: true }),
+      ).toBeVisible();
+      await expect(
+        page
+          .locator(".own-character")
+          .getByRole("img", { name: "Online", exact: true }),
+      ).toBeVisible();
+      await expect(page.locator(".master-tile")).toContainText(
+        "Oak Storykeeper",
+      );
+      await expect(page.locator(".party-card progress")).toHaveCount(6);
+      const roster = await page.locator(".session-players").boundingBox();
+      const master = await page.locator(".master-tile").boundingBox();
+      const sheetBox = await page.locator(".field-sheet").boundingBox();
+      assert.ok(
+        master.x >= roster.x + roster.width,
+        "Master stays at the right",
+      );
+      assert.ok(
+        sheetBox.y > roster.y + roster.height,
+        "Sheet follows the party strip",
+      );
       await expect(page.locator(".clearing-badge")).toContainText(
         "Mossbank Clearing",
       );
@@ -266,12 +294,25 @@ test(
           () => document.documentElement.scrollWidth <= innerWidth,
         ),
       );
-      await page
-        .getByRole("button", { name: "My character", exact: true })
-        .click();
       await expect(
-        page.getByRole("heading", { name: "Rowan Ashfoot", exact: true }),
+        page
+          .locator(".hero-caption")
+          .getByRole("heading", { name: "Rowan Ashfoot", exact: true }),
       ).toBeVisible();
+      assert.ok(
+        await page
+          .locator(".session-players")
+          .evaluate((el) => el.scrollWidth > el.clientWidth),
+        "Party scrolls within the mobile viewport",
+      );
+      presenceFailure = true;
+      await page.evaluate(() =>
+        document.dispatchEvent(new Event("visibilitychange")),
+      );
+      await expect(
+        page.locator(".own-character .presence-dot"),
+      ).toHaveAttribute("aria-label", "Status unknown");
+      await expect(page.locator(".hero-caption")).toBeVisible();
       assert.equal(mutations, 0);
     } finally {
       await browser.close();

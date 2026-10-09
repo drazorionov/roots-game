@@ -143,6 +143,7 @@ export type Hero = {
   version: number;
 };
 export type Campaign = {
+  master_name?: string;
   id: string;
   name: string;
   description: string;

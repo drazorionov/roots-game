@@ -3,11 +3,13 @@ import { useEffect, useState } from "react";
 import { Users } from "lucide-react";
 import { useTranslation } from "@/lib/i18n";
 
-type Player = { id: string; name: string };
+export type Player = { id: string; name: string };
 export default function CampaignPresence({
   campaignId,
+  onChange,
 }: {
   campaignId: string;
+  onChange?: (players: Player[] | undefined) => void;
 }) {
   const { t } = useTranslation();
   const [state, setState] = useState<{
@@ -31,9 +33,15 @@ export default function CampaignPresence({
         });
         if (!response.ok) throw new Error("presence");
         const data = await response.json();
-        if (!disposed) setState({ campaignId, players: data.players });
+        if (!disposed) {
+          setState({ campaignId, players: data.players });
+          onChange?.(data.players);
+        }
       } catch {
-        if (!disposed) setState({ campaignId, failed: true });
+        if (!disposed) {
+          setState({ campaignId, failed: true });
+          onChange?.(undefined);
+        }
       } finally {
         pending = false;
       }
@@ -47,7 +55,7 @@ export default function CampaignPresence({
       window.clearInterval(interval);
       document.removeEventListener("visibilitychange", heartbeat);
     };
-  }, [campaignId]);
+  }, [campaignId, onChange]);
   const current = state?.campaignId === campaignId ? state : undefined;
   return (
     <div

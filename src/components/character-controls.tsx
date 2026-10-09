@@ -20,6 +20,7 @@ import {
 } from "@/lib/sheet";
 import { effectiveStats, natureHints, setupRemaining } from "@/lib/playbooks";
 import { Portrait } from "./art";
+import { NotebookDoodle } from "./notebook-doodles";
 import SheetCounter from "./sheet-counter";
 import AttributeIcon from "./attribute-icon";
 import { HarmMark, DiceIcon } from "./game-icons";
@@ -137,9 +138,7 @@ export default function CharacterControls({
                 <span className="eyebrow">{t("Current condition")}</span>
                 <h3 id="harm-title">{t("Harm")}</h3>
               </div>
-              <span className="section-number" aria-hidden="true">
-                01
-              </span>
+              <NotebookDoodle kind="harm" />
             </div>
             <p className="field-hint">
               {t("Tap a symbol to mark or clear harm.")}
@@ -211,7 +210,10 @@ export default function CharacterControls({
             <span className="eyebrow">{t("Take a chance")}</span>
             <h3 id="attribute-title">{t("Roll an attribute")}</h3>
           </div>
-          <p>{t("2d6 + attribute + modifiers")}</p>
+          <div className="roll-heading-note">
+            <NotebookDoodle kind="dice" />
+            <p>{t("2d6 + attribute + modifiers")}</p>
+          </div>
         </div>
         <div className="attribute-rolls">
           {stats.map((stat) => (
@@ -245,9 +247,7 @@ export default function CharacterControls({
               {t("Weapons & equipment")}
             </h3>
           </div>
-          <span className="section-number" aria-hidden="true">
-            02
-          </span>
+          <NotebookDoodle kind="gear" />
         </div>
         <GearPanel
           sheet={sheet}
@@ -328,6 +328,7 @@ export default function CharacterControls({
           <summary>
             <ScrollText size={19} />
             {t("Background")}
+            <NotebookDoodle kind="story" />
           </summary>
           <BackgroundPanel
             sheet={sheet}
