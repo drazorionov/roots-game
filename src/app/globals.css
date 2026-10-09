@@ -1896,7 +1896,16 @@ form .inline-check {
   --scene: url("/art/campaigns-crossroads.webp");
 }
 .game-scene {
-  --scene: url("/art/game-watchtower.webp");
+  --scene: url("/art/game-night.webp");
+}
+.game-scene[data-game-time="morning"] {
+  --scene: url("/art/game-morning.webp");
+}
+.game-scene[data-game-time="day"] {
+  --scene: url("/art/game-day.webp");
+}
+.game-scene[data-game-time="evening"] {
+  --scene: url("/art/game-evening.webp");
 }
 .game-heading {
   display: flex;

@@ -32,6 +32,7 @@ import {
 } from "@/lib/sheet";
 import { api } from "@/lib/client-api";
 import { prepareQuickOffline } from "@/lib/quick-offline";
+import { useGameTime } from "@/lib/use-game-time";
 import CharacterEditor from "./character-editor";
 import CharacterControls from "./character-controls";
 import ActiveGame from "./active-game";
@@ -199,6 +200,7 @@ function WoodlandWorkspace() {
                   (tab === "play" && (gameStep === "campaign" || !gameCampaign))
                 ? "campaigns-scene"
                 : "characters-scene";
+  const gameTime = useGameTime(scene === "game-scene");
   function exitToMain() {
     if (creating && !leaveCreation()) return;
     setQuickMode(false);
@@ -706,6 +708,7 @@ function WoodlandWorkspace() {
   return (
     <div
       className={`simple-app scene-app ${scene} ${!scenic ? "workspace-scene" : ""}`}
+      data-game-time={gameTime}
     >
       <header className="app-header">
         <button className="brand" aria-label={t("Home")} onClick={exitToMain}>
