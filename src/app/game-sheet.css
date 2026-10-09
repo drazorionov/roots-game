@@ -131,45 +131,54 @@
 .harm-token {
   width: 44px;
   height: 46px;
-  padding: 7px;
+  padding: 0;
   display: grid;
   place-items: center;
-  border: 1.5px solid var(--harm-color);
-  border-radius: 3px 5px 3px 4px;
-  background: #fcf3df;
-  color: var(--harm-cross);
-  box-shadow:
-    inset 0 0 0 3px #fff8e866,
-    0 2px 0 #46382218;
-  transition:
-    background 0.15s,
-    transform 0.15s;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--harm-color);
+  transition: transform 0.15s;
 }
-.harm-mark {
+.harm-box {
   width: 100%;
   height: 100%;
+  pointer-events: none;
+  transform: rotate(-2deg);
+}
+.harm-token:nth-child(3n + 2) .harm-box {
+  transform: rotate(2deg);
+}
+.harm-token:nth-child(3n) .harm-box {
+  transform: rotate(-1deg);
+}
+.harm-box-paper {
+  fill: #fcf3df;
+}
+.harm-mark {
   opacity: 0;
+  transform-origin: center;
+}
+.harm-token:nth-child(3n + 2) .harm-mark {
+  transform: rotate(-6deg) scale(0.94, 1.03);
+}
+.harm-token:nth-child(3n) .harm-mark {
+  transform: rotate(5deg) scale(1.04, 0.95);
 }
 .injury {
   --harm-color: #7b3146;
   --harm-tint: #ead1d1;
-  --harm-cross: #ff9b96;
 }
 .exhaustion {
   --harm-color: #a96e12;
   --harm-tint: #eee0b4;
-  --harm-cross: #ffdfa0;
 }
 .depletion {
   --harm-color: #656a70;
   --harm-tint: #dadddd;
-  --harm-cross: #f1f2ef;
 }
-.harm-token.marked {
-  background: var(--harm-color);
-  box-shadow:
-    inset 0 0 0 3px #ffffff14,
-    0 2px 0 #46382222;
+.harm-token.marked .harm-box-paper {
+  fill: var(--harm-tint);
 }
 .harm-token.marked .harm-mark {
   opacity: 1;
@@ -177,8 +186,11 @@
 .harm-token:hover:not(:disabled) {
   transform: translateY(-2px);
 }
-.harm-token:not(.marked):hover:not(:disabled) {
-  background: var(--harm-tint);
+.harm-token:not(.marked):hover:not(:disabled) .harm-box-paper {
+  fill: var(--harm-tint);
+}
+.harm-token:active:not(:disabled) {
+  transform: translateY(1px);
 }
 .condition-tokens .track-full {
   width: 100%;
@@ -643,7 +655,6 @@
   .harm-token {
     width: 40px;
     height: 44px;
-    padding: 7px;
   }
   .modifier-counters {
     gap: 10px;

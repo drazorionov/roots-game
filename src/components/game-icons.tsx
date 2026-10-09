@@ -1,22 +1,47 @@
-// An inked cross for marked harm boxes; track colors come from the sheet.
-export function HarmMark() {
+// Slightly different pen outlines keep a row from looking mechanically stamped.
+const harmOutlines = [
+  "M6 5Q22 3 41 5Q44 19 42 41Q25 44 5 41Q3 24 6 5Z",
+  "M5 6Q24 4 41 4Q43 23 41 42Q22 41 6 43Q4 25 5 6Z",
+  "M7 4Q24 6 42 5Q41 23 43 40Q25 43 5 42Q6 23 7 4Z",
+];
+
+export function HarmBox({ variant = 0 }: { variant?: number }) {
   return (
     <svg
-      viewBox="0 0 40 40"
+      viewBox="0 0 48 48"
       fill="none"
       aria-hidden="true"
-      className="harm-mark"
+      focusable="false"
+      className="harm-box"
     >
       <path
-        d="m8 6 12 11L31 6l3 4-11 11 11 11-4 3-11-11L8 35l-3-4 11-11L5 10Z"
-        fill="currentColor"
+        className="harm-box-paper"
+        d={harmOutlines[variant % harmOutlines.length]}
+        stroke="currentColor"
+        strokeWidth="2.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       />
       <path
-        d="m10 10 19 20M29 11 10 30"
+        d="M9 7Q23 5 37 7M44 12l-1 22M9 44q15 1 28-1M4 13l-1 19"
         stroke="currentColor"
-        strokeWidth="1.5"
+        strokeWidth=".7"
         strokeLinecap="round"
+        opacity=".4"
       />
+      <g className="harm-mark">
+        <g fill="currentColor">
+          <path d="m12 10 3 1 1-1 7 9 7 8 7 7-1 3-3-1-1 1-9-11-7-8-5-6Z" />
+          <path d="m34 10 3 2-1 3-8 9-6 5-8 9-3-1 1-4 8-9 8-7 5-7Z" />
+        </g>
+        <path
+          d="m13 14 8 9m7 8 5 5M33 14l-8 9m-7 7-4 5"
+          stroke="var(--harm-tint)"
+          strokeWidth=".8"
+          strokeLinecap="round"
+          opacity=".7"
+        />
+      </g>
     </svg>
   );
 }
