@@ -111,7 +111,7 @@ test(
         .getByRole("button", { name: "Add faction", exact: true })
         .click();
       await expect(
-        panel.locator('.faction-icon[src="/art/factions/lizard-cult.webp"]'),
+        panel.locator('.faction-icon[src^="/art/factions/lizard-cult.webp"]'),
       ).toHaveCount(1);
       await panel
         .getByLabel("Faction name", { exact: true })
