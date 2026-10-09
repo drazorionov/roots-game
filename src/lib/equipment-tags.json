@@ -1,0 +1,254 @@
+[
+  {
+    "id": "large",
+    "name": "Large",
+    "description": "Mark exhaustion when inflicting harm with this weapon to inflict 1 additional harm.",
+    "value": 1,
+    "page": 2
+  },
+  {
+    "id": "reach",
+    "name": "Reach",
+    "description": "When you engage in melee, mark wear on this weapon to inflict harm instead of trading harm; you cannot use this tag if your enemy’s weapon also has reach.",
+    "value": 1,
+    "page": 4
+  },
+  {
+    "id": "barbed",
+    "name": "Barbed",
+    "description": "When you catch someone with this weapon’s end, mark exhaustion to move to intimate range and grapple them as if you had rolled a 10+.",
+    "value": 1,
+    "page": 4
+  },
+  {
+    "id": "poison",
+    "name": "Poison",
+    "description": "When you target a vulnerable foe, inflict exhaustion instead of injury; your target is poisoned until cured. While poisoned, each time they take a significant or strenuous action, inflict exhaustion. If they fall unconscious, inflict injury every 6 hours until they receive the cure or perish.",
+    "value": 1,
+    "page": 6
+  },
+  {
+    "id": "entangling",
+    "name": "Entangling",
+    "description": "When you target a vulnerable foe with this weapon, aim for the head or the feet. If the feet, then on a hit, instead of inflicting harm, your target becomes entangled and falls. They must take time to free themselves before moving. If the head, then on a hit, mark wear and inflict 2-injury.",
+    "value": 1,
+    "page": 8
+  },
+  {
+    "id": "metal-rim",
+    "name": "Metal rim",
+    "description": "When you absorb injury as wear on this shield in close combat, you may mark an additional wear to immediately strike back with the edge of the shield and inflict injury.",
+    "value": 1,
+    "page": 10
+  },
+  {
+    "id": "scattered-spike",
+    "name": "Scattered spike",
+    "description": "When you throw out caltrops to cover a door, path, or small area, mark any amount of wear. Anyone who crosses the caltrops must either take time and pass cautiously, or mark injury for each wear you marked to cover the area.",
+    "value": 1,
+    "page": 12
+  },
+  {
+    "id": "hidden",
+    "name": "Hidden",
+    "description": "Mark exhaustion when being searched or examined to ensure this item goes unnoticed. Mark wear to attempt the blindside roguish feat if you don’t have it, or to take a 10+ to blindside if you do have it.",
+    "value": 1,
+    "page": 14
+  },
+  {
+    "id": "heavy-bludgeon",
+    "name": "Heavy bludgeon",
+    "description": "Mark exhaustion to ignore your enemy’s armor when you inflict harm.",
+    "value": 1,
+    "page": 16
+  },
+  {
+    "id": "slow",
+    "name": "Slow",
+    "description": "When you engage in melee with this weapon, choose one fewer option. Mark wear to ignore this effect.",
+    "value": -1,
+    "page": 16
+  },
+  {
+    "id": "iron-bolts",
+    "name": "Iron bolts",
+    "description": "This weapon inflicts 1 additional wear when its harm is absorbed by armor.",
+    "value": 1,
+    "page": 18
+  },
+  {
+    "id": "hair-trigger",
+    "name": "Hair trigger",
+    "description": "Mark wear to target a vulnerable foe at close range instead of far.",
+    "value": 1,
+    "page": 18
+  },
+  {
+    "id": "quick",
+    "name": "Quick",
+    "description": "Mark exhaustion to engage in melee with Finesse instead of Might.",
+    "value": 1,
+    "page": 20
+  },
+  {
+    "id": "throwable",
+    "name": "Throwable",
+    "description": "Mark exhaustion to target a vulnerable foe with this weapon at far range.",
+    "value": 1,
+    "page": 20
+  },
+  {
+    "id": "akimbo",
+    "name": "Akimbo",
+    "description": "Mark exhaustion when wielding a dagger in each hand to inflict 1 additional injury.",
+    "value": 1,
+    "page": 20
+  },
+  {
+    "id": "intriguing",
+    "name": "Intriguing",
+    "description": "Mark wear when you play this instrument to ask an audience member a question from figure someone out.",
+    "value": 1,
+    "page": 22
+  },
+  {
+    "id": "soothing",
+    "name": "Soothing",
+    "description": "Mark exhaustion when you play this instrument in a quiet moment to clear exhaustion from each of your listeners.",
+    "value": 1,
+    "page": 22
+  },
+  {
+    "id": "blunted",
+    "name": "Blunted",
+    "description": "This weapon inflicts exhaustion, not injury.",
+    "value": 1,
+    "page": 24
+  },
+  {
+    "id": "versatile",
+    "name": "Versatile",
+    "description": "When you move to or from a range this weapon can reach, mark wear to make a quick strike and inflict injury on any opponent in this weapon’s range.",
+    "value": 1,
+    "page": 24
+  },
+  {
+    "id": "foxfolk-steel",
+    "name": "Foxfolk steel",
+    "description": "Ignore the first box of wear you mark on this item each session.",
+    "value": 1,
+    "page": 26
+  },
+  {
+    "id": "healer-s-kit",
+    "name": "Healer’s kit",
+    "description": "When you use these supplies to provide medical aid to someone (including yourself), mark wear to clear exhaustion from them, or mark 2-wear to clear injury from them.",
+    "value": 1,
+    "page": 30
+  },
+  {
+    "id": "arrow-proof",
+    "name": "Arrow-proof",
+    "description": "Ignore the first hit dealing injury from arrows that you suffer in a scene.",
+    "value": 1,
+    "page": 32
+  },
+  {
+    "id": "thick",
+    "name": "Thick",
+    "description": "When you mark wear on this shield to block a hit, you only ever mark 1-wear, even if you are blocking more harm from a single hit.",
+    "value": 1,
+    "page": 32
+  },
+  {
+    "id": "heavy-draw-weight",
+    "name": "Heavy Draw Weight",
+    "description": "When you target a vulnerable foe with this bow, mark exhaustion to inflict 1 additional injury.",
+    "value": 1,
+    "page": 34
+  },
+  {
+    "id": "sharp",
+    "name": "Sharp",
+    "description": "Mark wear when inflicting harm with this weapon to inflict 1 additional harm.",
+    "value": 1,
+    "page": 36
+  },
+  {
+    "id": "iron-flanges",
+    "name": "Iron Flanges",
+    "description": "This weapon inflicts 1 additional wear when its harm is absorbed by armor.",
+    "value": 1,
+    "page": 38
+  },
+  {
+    "id": "hilt-guard",
+    "name": "Hilt Guard",
+    "description": "When you parry with this weapon, you can mark wear instead of exhaustion.",
+    "value": 1,
+    "page": 40
+  },
+  {
+    "id": "punch-through",
+    "name": "Punch Through",
+    "description": "Mark exhaustion when dealing harm at intimate range to ignore your enemy’s armor.",
+    "value": 1,
+    "page": 42
+  },
+  {
+    "id": "short-limbs",
+    "name": "Short Limbs",
+    "description": "Mark wear to fire a quick shot at far range.",
+    "value": 1,
+    "page": 46
+  },
+  {
+    "id": "ceremonial",
+    "name": "Ceremonial",
+    "description": "Choose an attached faction. While this item is displayed, treat yourself as having +1 Reputation with that faction, and -1 Reputation with other factions.",
+    "value": 1,
+    "page": 48
+  },
+  {
+    "id": "expendable",
+    "name": "Expendable",
+    "description": "When you throw this weapon, it is automatically destroyed.",
+    "value": -1,
+    "page": 50
+  },
+  {
+    "id": "explosive",
+    "name": "Explosive",
+    "description": "When this item is destroyed, it explodes and deals 3-injury to everyone in its range (close). It also starts fires and destroys structures.",
+    "value": 2,
+    "page": 50
+  },
+  {
+    "id": "tricky",
+    "name": "Tricky",
+    "description": "When you use this item to trick an NPC by distracting them at a distance, on a 7–9 mark wear to eliminate one option from the trick an NPC move before the NPC picks.",
+    "value": 1,
+    "page": 56
+  },
+  {
+    "id": "unassuming",
+    "name": "Unassuming",
+    "description": "Until you harm an enemy, they will never deem you more of a threat than other vagabonds with arms and armor.",
+    "value": 1,
+    "page": 60
+  },
+  {
+    "id": "notched",
+    "name": "Notched",
+    "description": "When you inflict wear on armor or another weapon, mark wear to inflict 2 additional wear.",
+    "value": 1,
+    "page": 62
+  },
+  {
+    "id": "metal-boss",
+    "name": "Metal boss",
+    "description": "When you engage in melee with an opponent, mark wear to inflict exhaustion in addition to all other harm.",
+    "value": 1,
+    "page": 64
+  }
+]

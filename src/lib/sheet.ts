@@ -44,6 +44,46 @@ export function harmCapacity(
           : 0;
   return sheet.harmSlots[track] + extras;
 }
+export const equipmentSchema = z
+  .object({
+    name: z.string().max(100),
+    // Legacy categories remain readable; the editor offers Weapon and Item.
+    kind: z.enum(["item", "weapon", "gear", "armor"]).default("gear"),
+    visualId: z.string().max(80).default(""),
+    range: z.string().max(80).default(""),
+    harm: z.number().int().min(0).max(4).default(1),
+    harmType: z
+      .enum([
+        "injury",
+        "exhaustion",
+        "wear",
+        "morale",
+        "depletion",
+        "special",
+        "none",
+      ])
+      .default("injury"),
+    harmDetails: z.string().max(500).default(""),
+    skillTags: selections,
+    specialTags: selections,
+    tagSettings: z.string().max(500).default(""),
+    details: z.string().max(500),
+    wear: z.number().int().min(0).max(8),
+    maxWear: z.number().int().min(0).max(8).default(4),
+    secondaryWear: z.number().int().min(0).max(8).default(0),
+    secondaryMaxWear: z.number().int().min(0).max(8).default(0),
+    value: z.number().int().min(0).max(100).default(0),
+    load: z.number().int().min(0).max(10),
+  })
+  .superRefine((item, ctx) => {
+    if (item.wear > item.maxWear || item.secondaryWear > item.secondaryMaxWear)
+      ctx.addIssue({
+        code: "custom",
+        path: ["wear"],
+        message: "Wear exceeds available boxes",
+      });
+  });
+export type Equipment = z.infer<typeof equipmentSchema>;
 export const sheetSchema = z
   .object({
     name: z.string().trim().min(1).max(80),
@@ -68,21 +108,7 @@ export const sheetSchema = z
     moves: note,
     feats: note,
     weaponSkills: note,
-    equipment: z
-      .array(
-        z.object({
-          name: z.string().max(100),
-          kind: z.enum(["gear", "weapon", "armor"]).default("gear"),
-          range: z.string().max(80).default(""),
-          harm: z.number().int().min(0).max(4).default(1),
-          details: z.string().max(500),
-          wear: z.number().int().min(0).max(8),
-          maxWear: z.number().int().min(0).max(8).default(4),
-          value: z.number().int().min(0).max(100).default(0),
-          load: z.number().int().min(0).max(10),
-        }),
-      )
-      .max(30),
+    equipment: z.array(equipmentSchema).max(30),
     reputation: z
       .array(
         z.object({

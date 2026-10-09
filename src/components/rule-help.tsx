@@ -17,6 +17,7 @@ export default function RuleHelp({
   name,
   summary,
   page,
+  source,
   children,
   className = "",
   ariaLabel,
@@ -24,6 +25,7 @@ export default function RuleHelp({
   name: string;
   summary?: string;
   page?: number | string;
+  source?: string;
   children?: ReactNode;
   className?: string;
   ariaLabel?: string;
@@ -87,6 +89,7 @@ export default function RuleHelp({
             name={name}
             summary={text}
             page={sourcePage}
+            source={source}
             close={() => setOpen(false)}
           />,
           document.body,
@@ -99,11 +102,13 @@ function RuleDialog({
   name,
   summary,
   page,
+  source,
   close,
 }: {
   name: string;
   summary: string;
   page?: number | string;
+  source?: string;
   close: () => void;
 }) {
   const { t } = useTranslation();
@@ -148,7 +153,9 @@ function RuleDialog({
       </p>
       {page && (
         <small className="rule-source">
-          {t("Player handouts · p. {page}", { page })}
+          {source
+            ? t("{source} · p. {page}", { source: t(source), page })
+            : t("Player handouts · p. {page}", { page })}
         </small>
       )}
     </dialog>

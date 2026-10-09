@@ -1,3 +1,4 @@
+import equipmentCatalogue from "./equipment-catalogue.json";
 import { factions } from "./factions";
 
 export async function prepareQuickOffline(): Promise<boolean> {
@@ -16,6 +17,7 @@ export async function prepareQuickOffline(): Promise<boolean> {
       ...[
         ...document.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]'),
       ].map((l) => l.href),
+      ...equipmentCatalogue.map((entry) => `/art/equipment/${entry.id}.webp`),
       ...factions.map((f) => `/art/factions/${f.icon}.webp`),
       "/art/game-watchtower.webp",
       "/art/characters-armory.webp",

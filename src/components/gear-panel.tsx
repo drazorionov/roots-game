@@ -1,5 +1,5 @@
 "use client";
-import { useState, type FormEvent } from "react";
+import { useState } from "react";
 import {
   Plus,
   Trash2,
@@ -9,16 +9,27 @@ import {
   Package,
   Dices,
 } from "lucide-react";
-import { type Sheet } from "@/lib/sheet";
-import { effectiveStats, playbookData } from "@/lib/playbooks";
+import { type Sheet, type Equipment } from "@/lib/sheet";
+import {
+  effectiveStats,
+  effectiveWeapons,
+  playbookData,
+} from "@/lib/playbooks";
 import { useTranslation } from "@/lib/i18n";
 import RuleHelp from "./rule-help";
 import { CoinIcon } from "./game-icons";
 import SheetCounter from "./sheet-counter";
+import EquipmentEditor from "./equipment-editor";
+import {
+  EquipmentArt,
+  SpecialTagHelp,
+  WeaponSkillLibrary,
+} from "./equipment-library";
+import { newEquipment, harmLabels, splitRanges } from "@/lib/equipment";
 export type UpdateSheet = (patch: Partial<Sheet>) => Promise<boolean>;
 export default function GearPanel({
   sheet,
-  busy,
+  busy: parentBusy,
   update,
   starting = false,
   roll,
@@ -32,14 +43,23 @@ export default function GearPanel({
   const { t } = useTranslation();
   const [editing, setEditing] = useState<number | null>(null),
     [error, setError] = useState("");
-  const [kind, setKind] = useState("gear");
+  const [initial, setInitial] = useState<Equipment>(() => newEquipment());
+  const [saving, setSaving] = useState(false);
+  const busy = parentBusy || saving;
   const [itemSnapshot, setItemSnapshot] = useState("");
   const load = sheet.equipment.reduce((n, x) => n + x.load, 0),
     burdened = 4 + effectiveStats(sheet).Might;
   const item =
     editing !== null && editing >= 0 ? sheet.equipment[editing] : undefined;
-  async function save(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+  function begin(index: number) {
+    const current = index >= 0 ? sheet.equipment[index] : undefined;
+    setInitial(current ? structuredClone(current) : newEquipment());
+    setItemSnapshot(current ? JSON.stringify(current) : "");
+    setEditing(index);
+    setError("");
+  }
+  async function save(next: Equipment, pay: boolean) {
+    if (busy) return;
     if (
       editing !== null &&
       editing >= 0 &&
@@ -48,39 +68,25 @@ export default function GearPanel({
       setError("This item changed. Reopen it before saving your edits.");
       return;
     }
-    const data = new FormData(e.currentTarget);
-    const value = Number(data.get("value"));
-    const pay = !!data.get("pay");
-    if (pay && value > sheet.coin) {
+    if (pay && next.value > sheet.coin) {
       setError("Not enough coin.");
       return;
     }
-    const maxWear = Number(data.get("maxWear"));
-    const next = {
-      kind: data.get("kind") as "gear" | "weapon" | "armor",
-      range: String(data.get("range") || ""),
-      harm: Number(data.get("harm") ?? 1),
-      name: String(data.get("name")),
-      details: String(data.get("details")),
-      load: Number(data.get("load")),
-      value,
-      maxWear,
-      wear: Math.min(item?.wear || 0, maxWear),
-    };
-    if (item && item.wear > maxWear) {
-      setError("Repair the item before reducing its wear boxes.");
-      return;
-    }
-    if (
-      await update({
-        equipment: item
-          ? sheet.equipment.map((x, i) => (i === editing ? next : x))
-          : [...sheet.equipment, next],
-        coin: sheet.coin - (pay ? value : 0),
-      })
-    ) {
-      setEditing(null);
-      setError("");
+    setSaving(true);
+    try {
+      if (
+        await update({
+          equipment: item
+            ? sheet.equipment.map((x, i) => (i === editing ? next : x))
+            : [...sheet.equipment, next],
+          coin: sheet.coin - (pay ? next.value : 0),
+        })
+      ) {
+        setEditing(null);
+        setError("");
+      }
+    } finally {
+      setSaving(false);
     }
   }
   return (
@@ -105,6 +111,7 @@ export default function GearPanel({
           )}
         </div>
       </div>
+      <WeaponSkillLibrary learned={effectiveWeapons(sheet)} />
       <div className="equipment-grid">
         <article className="coin-tile">
           <CoinIcon />
@@ -150,10 +157,7 @@ export default function GearPanel({
                 aria-label={t("Edit {item}", { item: item.name })}
                 disabled={busy}
                 onClick={() => {
-                  setKind(item.kind);
-                  setItemSnapshot(JSON.stringify(item));
-                  setEditing(i);
-                  setError("");
+                  begin(i);
                 }}
               >
                 <Edit3 size={16} />
@@ -176,6 +180,10 @@ export default function GearPanel({
                 <Trash2 size={16} />
               </button>
             </div>
+            <EquipmentArt id={item.visualId} className="owned-equipment-art" />
+            <small className="equipment-kind">
+              {t(item.kind === "weapon" ? "Weapon" : "Item")}
+            </small>
             <div className="gear-facts">
               <span>
                 <RuleHelp name="Load" />: {item.load}
@@ -184,18 +192,41 @@ export default function GearPanel({
                 <RuleHelp name="Value" />: {item.value}
               </span>
             </div>
-            {item.kind === "weapon" && (
+            {(item.kind === "weapon" ||
+              (item.kind === "item" && item.harmType !== "none") ||
+              item.range) && (
               <div className="weapon-facts">
                 <span>
-                  <RuleHelp name="Weapon harm" />: {item.harm}
+                  <RuleHelp name="Weapon harm" />:{" "}
+                  {item.harmType === "special" || item.harmType === "none"
+                    ? ""
+                    : item.harm}{" "}
+                  {t(harmLabels[item.harmType])}
                 </span>
                 {item.range && (
                   <span>
-                    <RuleHelp name="Range" />: {t(item.range)}
+                    <RuleHelp name="Range" />:{" "}
+                    {splitRanges(item.range)
+                      .map((range) => t(range))
+                      .join(", ")}
                   </span>
                 )}
               </div>
             )}
+            {item.harmDetails && <p>{item.harmDetails}</p>}
+            <div className="chosen-tags">
+              {item.skillTags.map((name) => (
+                <span key={name}>
+                  <RuleHelp name={name} />
+                </span>
+              ))}
+              {item.specialTags.map((id) => (
+                <span key={id}>
+                  <SpecialTagHelp id={id} />
+                </span>
+              ))}
+            </div>
+            {item.tagSettings && <p>{item.tagSettings}</p>}
             {item.details && <p>{item.details}</p>}
             {item.kind === "weapon" && roll && (
               <div className="weapon-rolls">
@@ -217,37 +248,57 @@ export default function GearPanel({
                 </button>
               </div>
             )}
-            <div className="gear-wear">
-              <span>
-                <RuleHelp name="Wear" />
-              </span>
-              {Array.from({ length: item.maxWear }, (_, j) => j + 1).map(
-                (n) => (
-                  <button
-                    key={n}
-                    className={`pip ${item.wear >= n ? "filled" : ""}`}
-                    aria-label={t("{item}: wear {value}", {
-                      item: item.name,
-                      value: n,
-                    })}
-                    aria-pressed={item.wear >= n}
-                    disabled={busy}
-                    onClick={() =>
-                      void update({
-                        equipment: sheet.equipment.map((x, j) =>
-                          j === i
-                            ? { ...x, wear: x.wear === n ? n - 1 : n }
-                            : x,
-                        ),
-                      })
-                    }
-                  />
-                ),
-              )}
-              <small>
-                {item.wear}/{item.maxWear}
-              </small>
-            </div>
+            {([false, true] as const)
+              .filter((secondary) => !secondary || item.secondaryMaxWear > 0)
+              .map((secondary) => {
+                const capacity = secondary
+                  ? item.secondaryMaxWear
+                  : item.maxWear;
+                const wear = secondary ? item.secondaryWear : item.wear;
+                return (
+                  <div className="gear-wear" key={String(secondary)}>
+                    <span>
+                      {secondary ? (
+                        t("Second item wear")
+                      ) : (
+                        <RuleHelp name="Wear" />
+                      )}
+                    </span>
+                    {Array.from({ length: capacity }, (_, j) => j + 1).map(
+                      (n) => (
+                        <button
+                          key={n}
+                          className={`pip ${wear >= n ? "filled" : ""}`}
+                          aria-label={t(
+                            secondary
+                              ? "{item}: second item wear {value}"
+                              : "{item}: wear {value}",
+                            { item: item.name, value: n },
+                          )}
+                          aria-pressed={wear >= n}
+                          disabled={busy}
+                          onClick={() =>
+                            void update({
+                              equipment: sheet.equipment.map((x, j) =>
+                                j === i
+                                  ? {
+                                      ...x,
+                                      [secondary ? "secondaryWear" : "wear"]:
+                                        wear === n ? n - 1 : n,
+                                    }
+                                  : x,
+                              ),
+                            })
+                          }
+                        />
+                      ),
+                    )}
+                    <small>
+                      {wear}/{capacity}
+                    </small>
+                  </div>
+                );
+              })}
           </article>
         ))}
         {editing === null && (
@@ -255,9 +306,7 @@ export default function GearPanel({
             className="btn equipment-add-tile"
             disabled={busy || sheet.equipment.length >= 30}
             onClick={() => {
-              setKind("gear");
-              setEditing(-1);
-              setError("");
+              begin(-1);
             }}
           >
             <Plus size={24} />
@@ -266,130 +315,24 @@ export default function GearPanel({
         )}
       </div>
       {editing !== null && (
-        <form className="quick-gear-form" key={editing} onSubmit={save}>
-          <fieldset disabled={busy}>
-            <label>
-              {t("Equipment type")}
-              <select
-                name="kind"
-                aria-label={t("Equipment type")}
-                value={kind}
-                onChange={(e) => setKind(e.target.value)}
-              >
-                <option value="gear">{t("Gear")}</option>
-                <option value="weapon">{t("Weapon")}</option>
-                <option value="armor">{t("Armor")}</option>
-              </select>
-            </label>
-            {kind === "weapon" && (
-              <div className="form-grid">
-                <div className="rule-field">
-                  <RuleHelp name="Range" />
-                  <input
-                    aria-label={t("Range")}
-                    name="range"
-                    maxLength={80}
-                    defaultValue={item?.range || ""}
-                    placeholder={t("Close, far, or another range")}
-                  />
-                </div>
-                <div className="rule-field">
-                  <RuleHelp name="Weapon harm" />
-                  <input
-                    aria-label={t("Weapon harm")}
-                    name="harm"
-                    type="number"
-                    min={0}
-                    max={4}
-                    defaultValue={item?.harm ?? 1}
-                  />
-                </div>
-              </div>
-            )}
-            <label>
-              {t("Item name")}
-              <input
-                name="name"
-                required
-                maxLength={100}
-                defaultValue={item?.name || ""}
-              />
-            </label>
-            <div className="rule-field">
-              <RuleHelp name="Details & tags" />
-              <input
-                aria-label={t("Details & tags")}
-                name="details"
-                maxLength={500}
-                defaultValue={item?.details || ""}
-              />
-            </div>
-            <div className="gear-form-numbers">
-              <div className="rule-field">
-                <RuleHelp name="Load" />
-                <input
-                  aria-label={t("Load")}
-                  name="load"
-                  type="number"
-                  min={0}
-                  max={10}
-                  defaultValue={item?.load ?? 1}
-                  required
-                />
-              </div>
-              <div className="rule-field">
-                <RuleHelp name="Value" />
-                <input
-                  aria-label={t("Value")}
-                  name="value"
-                  type="number"
-                  min={0}
-                  max={100}
-                  defaultValue={item?.value ?? 0}
-                  required
-                />
-              </div>
-              <div className="rule-field">
-                <RuleHelp name="Wear boxes" />
-                <input
-                  aria-label={t("Wear boxes")}
-                  name="maxWear"
-                  type="number"
-                  min={0}
-                  max={8}
-                  defaultValue={item?.maxWear ?? 4}
-                  required
-                />
-              </div>
-            </div>
-            {!item && (
-              <label className="inline-check">
-                <input type="checkbox" name="pay" defaultChecked={starting} />
-                {t("Pay from coin")}
-              </label>
-            )}
-            <div className="form-actions">
-              <button
-                className="btn"
-                type="button"
-                onClick={() => {
-                  setEditing(null);
-                  setError("");
-                }}
-              >
-                {t("Cancel")}
-              </button>
-              <button className="btn primary">
-                {t(item ? "Save equipment" : "Add equipment")}
-              </button>
-            </div>
-          </fieldset>
-          {error && (
-            <p className="error" role="alert">
-              {t(error)}
-            </p>
-          )}
-        </form>
+        <EquipmentEditor
+          key={`${editing}-${itemSnapshot}`}
+          initial={initial}
+          existing={editing >= 0}
+          starting={starting}
+          busy={busy}
+          learned={effectiveWeapons(sheet)}
+          save={save}
+          cancel={() => {
+            setEditing(null);
+            setError("");
+          }}
+        />
+      )}
+      {error && (
+        <p className="error" role="alert">
+          {t(error)}
+        </p>
       )}
     </section>
   );

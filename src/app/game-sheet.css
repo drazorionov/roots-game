@@ -1643,3 +1643,306 @@
 .character-builder .attribute-inputs {
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 110px), 1fr));
 }
+
+/* Equipment deck: illustrated cards, editable properties and rule libraries. */
+.equipment-library,
+.equipment-editor .tag-picker,
+.visual-picker {
+  border: 1px solid #b9aa89;
+  border-radius: 6px;
+  background: #f5ecd6;
+  padding: 12px;
+  margin: 12px 0;
+  min-width: 0;
+}
+.equipment-library > summary,
+.tag-picker > summary,
+.visual-picker > summary {
+  cursor: pointer;
+  font-weight: 700;
+  min-height: 44px;
+  align-content: center;
+}
+.equipment-library > summary svg {
+  display: inline;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+.equipment-library > summary span,
+.tag-picker > summary span {
+  color: #616e4d;
+  margin-left: 8px;
+}
+.equipment-library p,
+.equipment-editor p {
+  font-size: 13px;
+  line-height: 1.6;
+}
+.library-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: end;
+  margin: 16px 0;
+}
+.library-filters > label {
+  flex: 1 1 180px;
+}
+.library-filters label,
+.equipment-editor label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+}
+.library-filters .inline-check,
+.equipment-editor .inline-check {
+  flex-direction: row;
+  align-items: center;
+}
+.library-filters input,
+.library-filters select {
+  width: 100%;
+  min-width: 0;
+}
+.library-filters input[type="checkbox"],
+.equipment-editor input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+.equipment-catalogue-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
+  gap: 12px;
+  max-height: 620px;
+  overflow-y: auto;
+  padding: 3px;
+}
+.equipment-choice {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 8px;
+  border: 1px solid #b3a484;
+  border-radius: 5px 12px 5px 9px;
+  background: #ede2c3;
+  color: #343b2c;
+  text-align: center;
+}
+.equipment-choice:hover:not(:disabled),
+.equipment-visual-grid button:hover:not(:disabled) {
+  background: #e3d4ae;
+  border-color: #536541;
+}
+.equipment-art {
+  object-fit: contain;
+  width: 100%;
+  height: 145px;
+}
+.equipment-choice small {
+  font-size: 11px;
+  line-height: 1.5;
+}
+.library-source {
+  display: block;
+  margin-top: 14px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.skill-reference-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 270px), 1fr));
+  gap: 12px;
+  max-height: 650px;
+  overflow-y: auto;
+}
+.skill-reference-grid article {
+  border: 1px solid #c3b48f;
+  border-radius: 5px;
+  padding: 16px;
+  background: #fff8e7;
+}
+.skill-reference-grid h4 {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin: 0;
+}
+.skill-reference-grid h4 small {
+  margin-left: auto;
+  color: #536541;
+  font: 11px var(--font-body);
+}
+.skill-reference-grid article > small {
+  color: var(--muted);
+  font-size: 11px;
+}
+.owned-equipment-art {
+  height: 155px;
+  margin: 6px 0;
+}
+.equipment-kind {
+  color: var(--muted);
+  margin-top: 4px;
+}
+.equipment-editor {
+  margin: 16px 0;
+}
+.equipment-editor > fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+.equipment-editor-heading {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.equipment-editor-heading > .equipment-art {
+  width: 90px;
+  height: 115px;
+  flex-shrink: 0;
+}
+.equipment-editor-heading h4 {
+  margin: 0;
+  font-size: 20px;
+}
+.equipment-editor-heading p {
+  margin-bottom: 0;
+}
+.equipment-editor .visual-picker,
+.equipment-editor .tag-picker {
+  margin: 0;
+}
+.equipment-visual-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  gap: 8px;
+  max-height: 330px;
+  overflow-y: auto;
+  padding: 4px;
+}
+.equipment-visual-grid button {
+  min-height: 44px;
+  background: #fff8e7;
+  border: 1px solid #b3a484;
+  border-radius: 6px;
+  padding: 8px;
+  font-size: 11px;
+}
+.equipment-visual-grid button[aria-pressed="true"] {
+  outline: 3px solid #536541;
+  outline-offset: -3px;
+  background: #e0e6ce;
+}
+.equipment-visual-grid .equipment-art {
+  height: 90px;
+}
+.equipment-range {
+  border: 1px solid #b9aa89;
+  padding: 12px;
+  border-radius: 6px;
+}
+.range-options {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.equipment-editor .range-options label {
+  min-height: 44px;
+}
+.chosen-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 12px 0;
+}
+.chosen-tags:empty {
+  display: none;
+}
+.chosen-tags > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid #b5ad90;
+  border-radius: 6px;
+  background: #e6e4cb;
+  padding: 4px 8px;
+  font-size: 12px;
+}
+.chosen-tags > span > button:not(.rule-name) {
+  border: 0;
+  background: transparent;
+  width: 32px;
+  min-height: 36px;
+  font-size: 22px;
+}
+.tag-options {
+  max-height: 360px;
+  overflow-y: auto;
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 4px;
+}
+.tag-options > div {
+  border-bottom: 1px solid #c3b48f;
+  padding-bottom: 10px;
+}
+.tag-options .inline-check {
+  min-height: 44px;
+  font-weight: 700;
+}
+.tag-options .rule-name {
+  font-size: 12px;
+}
+.tag-options p {
+  margin: 2px 0 0 25px;
+}
+.tag-flaw {
+  color: #973d2f;
+}
+.tag-benefit {
+  color: #37632f;
+}
+.selected-tag-effects {
+  background: #fff7e5;
+  border-left: 3px solid #748159;
+  padding: 4px 14px;
+}
+.equipment-editor textarea {
+  min-height: 70px;
+  resize: vertical;
+}
+.equipment-editor .form-grid {
+  width: 100%;
+}
+.equipment-library button:focus-visible,
+.equipment-editor button:focus-visible {
+  outline: 3px solid #536541;
+  outline-offset: 2px;
+}
+@media (max-width: 540px) {
+  .equipment-catalogue-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .equipment-choice .equipment-art {
+    height: 120px;
+  }
+  .equipment-editor {
+    padding: 12px;
+  }
+  .equipment-editor .form-grid {
+    grid-template-columns: 1fr;
+  }
+  .equipment-editor .gear-form-numbers {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .chosen-tags .rule-name {
+    min-height: 36px;
+  }
+}
