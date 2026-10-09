@@ -22,9 +22,9 @@ The administration directory uses `admin-archive.webp`, an original woodland cou
 
 ## Class and species character portraits
 
-The `portraits/cartoon/` collection covers the app's 9 playbooks × 10 species. Each combination is generated individually with the built-in imagegen tool using the user's attached woodland character illustrations as visual references. The requested direction is oversized heads, squat cartoon proportions, flat earthy colors, sparse rough ink, warrior equipment, and crooked smirks. No official character artwork is copied into the app.
+The `portraits/cartoon/` collection covers the app's 9 playbooks × 12 species. Each combination is generated individually with the built-in imagegen tool using the user's attached woodland character illustrations as visual references. The requested direction is oversized heads, squat cartoon proportions, flat earthy colors, sparse rough ink, warrior equipment, and crooked smirks. No official character artwork is copied into the app.
 
-Files use the naming convention `{playbook}-{species}.webp`, with lowercase English identifiers. The 1024 × 1024 WebP exports preserve transparency and use quality 90; full-resolution original PNGs remain in the local generated-images library. [prompts.json](portraits/prompts.json) contains every exact generation prompt. [The gallery](portraits/index.html) supports filtering by class and species and downloading individual images.
+Files use the naming convention `{playbook}-{species}.webp`, with lowercase English identifiers. The 1024 × 1024 WebP exports preserve transparency and use quality 90; full-resolution original PNGs remain in the local generated-images library. [prompts.json](portraits/prompts.json) contains the original generation prompts. [bear-lizard-prompts.json](portraits/bear-lizard-prompts.json) records the 18 bear and lizard prompts, generated with the built-in imagegen tool using the existing fox portrait collection and lizard faction icon as style references. [The gallery](portraits/index.html) supports filtering by class and species and downloading individual images.
 
 The character list, editor, and play sheet select images from both the species and playbook. Custom values outside the built-in lists retain the code-native fallback illustration.
 

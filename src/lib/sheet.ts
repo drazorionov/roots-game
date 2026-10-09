@@ -23,6 +23,8 @@ export const species = [
   "Badger",
   "Squirrel",
   "Wolf",
+  "Bear",
+  "Lizard",
 ];
 const note = z.string().max(6000);
 const selections = z.array(z.string().max(100)).max(30).default([]);
