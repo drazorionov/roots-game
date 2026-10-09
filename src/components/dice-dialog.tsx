@@ -86,7 +86,7 @@ export default function DiceDialog({
         ))}
       </div>
       <div
-        className="dice-outcome"
+        className={`dice-outcome ${roll.total >= 10 ? "strong-hit" : roll.total >= 7 ? "mixed-hit" : "miss"}`}
         role="status"
         aria-live="polite"
         aria-atomic="true"
@@ -97,9 +97,7 @@ export default function DiceDialog({
           <>
             <span className="eyebrow">{t("Total")}</span>
             <strong className="dice-total">{roll.total}</strong>
-            <p className="dice-equation">
-              {roll.dice.join(" + ")} {signed(roll.modifier)} = {roll.total}
-            </p>
+
             <span
               className={`outcome-badge ${roll.total >= 10 ? "strong-hit" : roll.total >= 7 ? "mixed-hit" : "miss"}`}
             >
@@ -111,6 +109,9 @@ export default function DiceDialog({
                     : "6−: miss",
               )}
             </span>
+            <p className="dice-equation">
+              {roll.dice.join(" + ")} {signed(roll.modifier)} = {roll.total}
+            </p>
           </>
         )}
       </div>

@@ -22,7 +22,7 @@ import { effectiveStats, natureHints, setupRemaining } from "@/lib/playbooks";
 import { Portrait } from "./art";
 import SheetCounter from "./sheet-counter";
 import AttributeIcon from "./attribute-icon";
-import { HarmIcon, DiceIcon } from "./game-icons";
+import { HarmMark, DiceIcon } from "./game-icons";
 import DiceDialog, { type AttributeRoll } from "./dice-dialog";
 import GearPanel from "./gear-panel";
 import { MovesPanel, BackgroundPanel, ReputationPanel } from "./sheet-panels";
@@ -169,7 +169,7 @@ export default function CharacterControls({
                         void update({ [track]: sheet[track] === n ? n - 1 : n })
                       }
                     >
-                      <HarmIcon track={track} />
+                      <HarmMark />
                     </button>
                   ))}
                   {sheet[track] === harmCapacity(sheet, track) && (

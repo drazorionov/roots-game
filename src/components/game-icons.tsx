@@ -1,60 +1,22 @@
-import type { harmTracks } from "@/lib/sheet";
-
-// Original woodland tokens: bandaged wound, fading flame, and empty satchel.
-export function HarmIcon({ track }: { track: (typeof harmTracks)[number] }) {
+// An inked cross for marked harm boxes; track colors come from the sheet.
+export function HarmMark() {
   return (
     <svg
       viewBox="0 0 40 40"
       fill="none"
       aria-hidden="true"
-      className="harm-icon"
+      className="harm-mark"
     >
-      <g
+      <path
+        d="m8 6 12 11L31 6l3 4-11 11 11 11-4 3-11-11L8 35l-3-4 11-11L5 10Z"
+        fill="currentColor"
+      />
+      <path
+        d="m10 10 19 20M29 11 10 30"
         stroke="currentColor"
-        strokeWidth="1.8"
+        strokeWidth="1.5"
         strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        {track === "injury" ? (
-          <>
-            <path
-              d="m11 5 24 24-6 6L5 11Z"
-              fill="currentColor"
-              fillOpacity=".14"
-            />
-            <path
-              d="M29 5 5 29l6 6L35 11Z"
-              fill="var(--token-paper, #faf0d8)"
-            />
-            <path
-              d="m17 14 9 9-3 3-9-9Z"
-              fill="currentColor"
-              fillOpacity=".25"
-            />
-            <path d="m27 11 1 1m-17 15 1 1m-1-16 1-1m16 17-1 1" />
-          </>
-        ) : track === "exhaustion" ? (
-          <>
-            <path
-              d="M21 4c3 9-6 10-2 17 4-1 7-5 7-8 7 8 10 16 3 21-6 5-19 1-20-7-1-6 3-10 7-13-1 6 2 6 2 6-2-6 5-9 3-16Z"
-              fill="currentColor"
-              fillOpacity=".16"
-            />
-            <path d="M21 24c-5 4-6 8-1 10 6 0 6-5 1-10Z" fill="currentColor" />
-            <path d="m6 8 2 3m24-6-2 4" />
-          </>
-        ) : (
-          <>
-            <path
-              d="m13 6 6 2 8-2-2 9c8 6 10 15 6 18-6 4-18 3-22-1-4-5 1-13 7-17Z"
-              fill="currentColor"
-              fillOpacity=".14"
-            />
-            <path d="m14 14 12 1m-12 3 12-1m-6 2-2 5m5-5 4 4M12 29q8 5 16-1" />
-            <path d="m8 5-3-2m26 8 4-2" />
-          </>
-        )}
-      </g>
+      />
     </svg>
   );
 }

@@ -12,7 +12,6 @@ import {
 } from "@/lib/sheet";
 import { effectiveStats } from "@/lib/playbooks";
 import { Portrait } from "./art";
-import { HarmIcon } from "./game-icons";
 import AttributeIcon from "./attribute-icon";
 
 export default function ActiveGame({
@@ -183,13 +182,17 @@ function CampaignOverview({
                 <div className="party-conditions">
                   {harmTracks.map((track) => (
                     <div key={track} className={track}>
-                      <HarmIcon track={track} />
                       <span>
                         {t(track)}
                         <b>
                           {sheet[track]} / {harmCapacity(sheet, track)}
                         </b>
                       </span>
+                      <progress
+                        aria-label={t(track)}
+                        value={sheet[track]}
+                        max={harmCapacity(sheet, track)}
+                      />
                     </div>
                   ))}
                 </div>
