@@ -179,6 +179,7 @@ export type Campaign = {
   invite_code: string;
   owner_id: string;
   members: number;
+  member_list?: { id: string; name: string }[] | null;
 };
 export type User = { id: string; name: string; email: string; isAdmin?: boolean };
 export function blankSheet(): Sheet {

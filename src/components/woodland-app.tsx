@@ -144,6 +144,11 @@ function WoodlandWorkspace() {
   } | null>(null);
   const gameMenu = useRef<HTMLDetailsElement>(null);
   const [leaveTarget, setLeaveTarget] = useState<Campaign | null>(null);
+  const [managedCampaignId, setManagedCampaignId] = useState("");
+  const [memberTarget, setMemberTarget] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
   const [switchTarget, setSwitchTarget] = useState<{
     id: string;
     name: string;
@@ -185,6 +190,9 @@ function WoodlandWorkspace() {
     (h) => h.id === resumeId && campaigns.some((c) => c.id === h.campaign_id),
   );
   const gameCampaign = campaigns.find((c) => c.id === gameCampaignId);
+  const managedCampaign = campaigns.find(
+    (c) => c.id === managedCampaignId && c.owner_id === user?.id,
+  );
   const campaignHeroes = heroes.filter((h) => h.campaign_id === gameCampaignId);
   const selectableHeroes = [
     ...campaignHeroes,
@@ -335,6 +343,33 @@ function WoodlandWorkspace() {
     setError("");
     setLeaveTarget(c);
     if (gameMenu.current) gameMenu.current.open = false;
+  }
+  async function removeMember() {
+    if (!managedCampaign || !memberTarget || busy) return;
+    setBusy(true);
+    setError("");
+    try {
+      await api("campaigns", "POST", {
+        action: "removeMember",
+        id: managedCampaign.id,
+        userId: memberTarget.id,
+      });
+      setCampaigns((current) =>
+        current.map((c) => {
+          if (c.id !== managedCampaign.id) return c;
+          const members = (c.member_list || []).filter(
+            (m) => m.id !== memberTarget.id,
+          );
+          return { ...c, member_list: members, members: members.length };
+        }),
+      );
+      setMemberTarget(null);
+      setNotice("Player removed. Their characters and progress are kept.");
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
   }
   async function leaveGame() {
     if (!leaveTarget || busy) return;
@@ -1233,6 +1268,11 @@ function WoodlandWorkspace() {
         ) : tab === "campaigns" ||
           (tab === "play" && (gameStep === "campaign" || !gameCampaign)) ? (
           <CampaignCollection
+            managePlayers={(c) => {
+              setError("");
+              setMemberTarget(null);
+              setManagedCampaignId(c.id);
+            }}
             leave={askToLeave}
             campaigns={campaigns}
             userId={user?.id}
@@ -1315,6 +1355,77 @@ function WoodlandWorkspace() {
               {t("Switch campaign")}
             </button>
           </div>
+        </Modal>
+      )}
+      {managedCampaign && (
+        <Modal
+          title={t(memberTarget ? "Remove player" : "Manage players")}
+          close={() => {
+            if (!busy) {
+              setManagedCampaignId("");
+              setMemberTarget(null);
+              setError("");
+            }
+          }}
+        >
+          <p className="delete-explanation">{managedCampaign.name}</p>
+          {memberTarget ? (
+            <>
+              <p className="delete-explanation">
+                {t(
+                  "Remove {name} from this campaign? Their characters and progress will be kept outside the campaign. They can rejoin with an invite code.",
+                  { name: memberTarget.name },
+                )}
+              </p>
+              <div className="form-actions">
+                <button
+                  className="btn"
+                  disabled={busy}
+                  onClick={() => {
+                    setMemberTarget(null);
+                    setError("");
+                  }}
+                >
+                  {t("Cancel")}
+                </button>
+                <button
+                  className="btn danger"
+                  disabled={busy}
+                  onClick={() => void removeMember()}
+                >
+                  {t(busy ? "Saving…" : "Remove player")}
+                </button>
+              </div>
+            </>
+          ) : (
+            <ul className="campaign-member-list">
+              {(managedCampaign.member_list || []).map((member) => (
+                <li key={member.id}>
+                  <span>{member.name}</span>
+                  {member.id === managedCampaign.owner_id ? (
+                    <small>{t("Campaign master")}</small>
+                  ) : (
+                    <button
+                      className="btn"
+                      disabled={busy}
+                      aria-label={t("Remove {name}", { name: member.name })}
+                      onClick={() => {
+                        setError("");
+                        setMemberTarget(member);
+                      }}
+                    >
+                      {t("Remove player")}
+                    </button>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+          {error && (
+            <p className="error" role="alert">
+              {t(error)}
+            </p>
+          )}
         </Modal>
       )}
       {leaveTarget && (

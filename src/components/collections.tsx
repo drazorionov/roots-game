@@ -63,6 +63,7 @@ export function CampaignCollection({
   copy,
   remove,
   leave,
+  managePlayers,
 }: {
   campaigns: Campaign[];
   userId?: string;
@@ -75,6 +76,7 @@ export function CampaignCollection({
   copy: (campaign: Campaign) => void;
   remove: (campaign: Campaign) => void;
   leave: (campaign: Campaign) => void;
+  managePlayers: (campaign: Campaign) => void;
 }) {
   const { t, players } = useTranslation();
   return (
@@ -189,6 +191,18 @@ export function CampaignCollection({
                 )}
                 <ChevronRight size={16} />
               </button>
+              {c.owner_id === userId && (
+                <button
+                  className="icon-btn"
+                  type="button"
+                  disabled={busy}
+                  aria-label={t("Manage players")}
+                  title={t("Manage players")}
+                  onClick={() => managePlayers(c)}
+                >
+                  <Users size={19} />
+                </button>
+              )}
               {c.owner_id !== userId && (
                 <button
                   className="icon-btn"

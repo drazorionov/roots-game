@@ -915,5 +915,11 @@
   "Save or reload your unsaved character changes first.": "Сначала сохраните изменения персонажа или загрузите сохранённый лист.",
   "Unsaved changes for {name}.": "Есть несохранённые изменения: {name}.",
   "Saving changes for {name}…": "Сохранение изменений: {name}…",
-  "Return to game": "Вернуться к игре"
+  "Return to game": "Вернуться к игре",
+  "Manage players": "Управление игроками",
+  "Remove player": "Удалить игрока",
+  "Remove {name}": "Удалить {name}",
+  "Only the campaign creator can remove another member.": "Только создатель кампании может удалить другого участника.",
+  "Player removed. Their characters and progress are kept.": "Игрок удалён. Его персонажи и прогресс сохранены.",
+  "Remove {name} from this campaign? Their characters and progress will be kept outside the campaign. They can rejoin with an invite code.": "Удалить {name} из этой кампании? Персонажи и прогресс игрока сохранятся вне кампании. Игрок сможет вернуться по коду приглашения."
 }

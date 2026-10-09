@@ -2211,6 +2211,27 @@ form .inline-check {
 .collection-page .campaign-card-actions > .btn {
   margin-right: auto;
 }
+.campaign-member-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.campaign-member-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 0;
+  border-top: 1px solid #c5b895;
+}
+.campaign-member-list li > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.campaign-member-list .btn,
+.campaign-member-list small {
+  flex-shrink: 0;
+}
 .workspace-scene .collection-page {
   max-width: none;
   padding: 0;

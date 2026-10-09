@@ -915,5 +915,11 @@
   "Save or reload your unsaved character changes first.": "Speichere zuerst deine Charakteränderungen oder lade den gespeicherten Bogen.",
   "Unsaved changes for {name}.": "Ungespeicherte Änderungen für {name}.",
   "Saving changes for {name}…": "Änderungen für {name} werden gespeichert…",
-  "Return to game": "Zurück zum Spiel"
+  "Return to game": "Zurück zum Spiel",
+  "Manage players": "Spieler verwalten",
+  "Remove player": "Spieler entfernen",
+  "Remove {name}": "{name} entfernen",
+  "Only the campaign creator can remove another member.": "Nur der Ersteller der Kampagne kann ein anderes Mitglied entfernen.",
+  "Player removed. Their characters and progress are kept.": "Spieler entfernt. Seine Charaktere und Fortschritte bleiben erhalten.",
+  "Remove {name} from this campaign? Their characters and progress will be kept outside the campaign. They can rejoin with an invite code.": "{name} aus dieser Kampagne entfernen? Die Charaktere und Fortschritte bleiben außerhalb der Kampagne erhalten. Mit einem Einladungscode ist ein erneuter Beitritt möglich."
 }
