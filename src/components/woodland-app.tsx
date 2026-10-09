@@ -222,6 +222,26 @@ function WoodlandWorkspace() {
     setError("");
     if (gameMenu.current) gameMenu.current.open = false;
   }
+  function backToPreviousScreen() {
+    setError("");
+    if (tab === "play" && !quickMode) {
+      if (activeGame) {
+        setGameStep("character");
+        setSelected("");
+        return;
+      }
+      if (gameStep === "character" && gameCampaign) {
+        setGameStep("campaign");
+        return;
+      }
+    }
+    if (tab === "characters" && campaignFilter) {
+      setCampaignFilter("");
+      setTab("campaigns");
+      return;
+    }
+    exitToMain();
+  }
   function saveQuick(sheet: Sheet) {
     const parsed = sheetSchema.parse(sheet);
     try {
@@ -858,6 +878,16 @@ function WoodlandWorkspace() {
         </div>
       </header>
       <main className="simple-main">
+        {!loading && !creating && (quickMode || (user && tab !== "home")) && (
+          <button
+            className="text-link workspace-back"
+            disabled={busy}
+            onClick={backToPreviousScreen}
+          >
+            <ArrowLeft size={16} />
+            {t("Back")}
+          </button>
+        )}
         {error && !characterForm && !modal && !deleteTarget && (
           <p className="error" role="alert">
             {t(error)}
@@ -873,7 +903,7 @@ function WoodlandWorkspace() {
             aria-labelledby="creation-title"
           >
             <button
-              className="text-link creation-back"
+              className="text-link workspace-back creation-back"
               disabled={busy}
               onClick={leaveCreation}
             >
@@ -978,7 +1008,7 @@ function WoodlandWorkspace() {
             </button>
           </section>
         ) : tab === "admin" && user?.isAdmin ? (
-          <AdminPanel back={exitToMain} />
+          <AdminPanel />
         ) : tab === "home" ? (
           <section className="home-content">
             <p className="eyebrow">{t("Your clearing")}</p>
@@ -1067,7 +1097,7 @@ function WoodlandWorkspace() {
             />
           </ActiveGame>
         ) : quickMode ? (
-          <section className="journey-picker">
+          <section className="journey-picker quick-start-page">
             <h1>{t("Quick game")}</h1>
             <p>
               {t("No account. No campaign. Saved only in this browser tab.")}

@@ -6,9 +6,6 @@
   color: var(--ink);
   overflow-wrap: anywhere;
 }
-.admin-back {
-  margin-bottom: 20px;
-}
 .collection-page .admin-heading {
   align-items: center;
   gap: 20px;
@@ -266,12 +263,11 @@
 .admin-confirm > label {
   margin-bottom: 12px;
 }
+.admin-limit-note,
+.admin-panel > [role="status"] {
+  color: #eee5cf;
+}
 @media (min-width: 768px) {
-  .admin-panel .admin-back,
-  .admin-limit-note,
-  .admin-panel > [role="status"] {
-    color: #eee5cf;
-  }
   .admin-toolbar {
     flex: 0 1 350px;
   }
@@ -288,15 +284,12 @@
   }
 }
 @media (max-width: 767px) {
-  .workspace-scene .admin-panel {
-    padding: 20px 16px;
-  }
   .collection-page .admin-heading {
     flex-direction: column;
     align-items: stretch;
     gap: 16px;
   }
-  .scene-app .admin-heading h1 {
+  .workspace-scene .admin-panel .admin-heading h1 {
     font-size: clamp(23px, 5.8vw, 32px);
     letter-spacing: -0.8px;
   }

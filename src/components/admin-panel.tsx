@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import {
-  ArrowLeft,
   Shield,
   RefreshCw,
   Search,
@@ -34,7 +33,7 @@ type AdminUser = User & {
 };
 type Directory = { users: AdminUser[]; maxUsers: number };
 
-export default function AdminPanel({ back }: { back: () => void }) {
+export default function AdminPanel() {
   const { t, locale } = useTranslation();
   const [directory, setDirectory] = useState<Directory | null>(null);
   const [error, setError] = useState("");
@@ -120,10 +119,6 @@ export default function AdminPanel({ back }: { back: () => void }) {
       className="journey-picker collection-page admin-panel"
       aria-labelledby="admin-title"
     >
-      <button className="text-link admin-back" onClick={back}>
-        <ArrowLeft size={16} />
-        {t("Back")}
-      </button>
       <div className="page-heading admin-heading">
         <h1 id="admin-title">
           <Shield size={28} />
