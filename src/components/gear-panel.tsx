@@ -17,7 +17,7 @@ import {
 } from "@/lib/playbooks";
 import { useTranslation } from "@/lib/i18n";
 import RuleHelp from "./rule-help";
-import { CoinIcon } from "./game-icons";
+import { CoinIcon, HarmBox } from "./game-icons";
 import SheetCounter from "./sheet-counter";
 import EquipmentEditor from "./equipment-editor";
 import { EquipmentArt, SpecialTagHelp } from "./equipment-library";
@@ -278,7 +278,7 @@ export default function GearPanel({
                         (n) => (
                           <button
                             key={n}
-                            className={`pip ${wear >= n ? "filled" : ""}`}
+                            className={`pip wear-token ${wear >= n ? "filled" : ""}`}
                             aria-label={t(
                               secondary
                                 ? "{item}: second item wear {value}"
@@ -300,7 +300,9 @@ export default function GearPanel({
                                 ),
                               })
                             }
-                          />
+                          >
+                            <HarmBox variant={n - 1} />
+                          </button>
                         ),
                       )}
                     </div>

@@ -8,6 +8,7 @@ import { type Sheet } from "@/lib/sheet";
 import { type UpdateSheet } from "./gear-panel";
 import RuleHelp from "./rule-help";
 import SheetCounter from "./sheet-counter";
+import { HarmBox } from "./game-icons";
 
 export function ReputationPanel({
   sheet,
@@ -81,7 +82,7 @@ export function ReputationPanel({
                   change(i, key, f[key] >= value ? value - 1 : value)
                 }
               >
-                <span aria-hidden="true">{f[key] >= value ? "×" : ""}</span>
+                <HarmBox variant={value - 1} />
               </button>
             );
           }

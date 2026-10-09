@@ -3301,18 +3301,23 @@ form .inline-check {
 .reputation-positive {
   min-width: 0;
 }
+.reputation-negative {
+  --harm-color: #7b3146;
+  --harm-tint: #ead1d8;
+}
+.reputation-positive {
+  --harm-color: #31553b;
+  --harm-tint: #d4e1ce;
+}
 .reputation-track-label {
   display: flex;
   justify-content: space-between;
   margin: 0 3px 3px;
-  color: #765143;
+  color: var(--harm-color);
   text-transform: uppercase;
   letter-spacing: 1px;
   font-size: 10px;
   font-weight: 700;
-}
-.reputation-positive .reputation-track-label {
-  color: #596344;
 }
 .reputation-track-label small {
   font-size: 10px;
@@ -3351,31 +3356,13 @@ form .inline-check {
   border-radius: 48% 53% 44% 50%;
   transform: rotate(-9deg);
 }
-.reputation-box span {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: min(20px, 88%);
+.reputation-box {
+  color: var(--harm-color);
+}
+.reputation-box .harm-box {
+  width: min(24px, 96%);
+  height: auto;
   aspect-ratio: 1;
-  border: 1px solid #82775d;
-  border-radius: 2px 1px 2px 1px;
-  background: #fffaf040;
-  font:
-    22px/1 Georgia,
-    serif;
-}
-.reputation-box[aria-pressed="true"] span {
-  background: #d7d0ad;
-  color: #3d452d;
-  border-color: #5e6948;
-}
-.reputation-box.notoriety[aria-pressed="true"] span {
-  background: #e9cdb9;
-  color: #763e2d;
-  border-color: #905b44;
-}
-.reputation-box:hover:not(:disabled) span {
-  background: #d6c49a;
 }
 .reputation-standing:hover:not(:disabled) {
   color: #9b4a30;
@@ -3443,8 +3430,8 @@ form .inline-check {
   .reputation-track-label {
     margin-top: 5px;
   }
-  .reputation-box span {
-    width: min(22px, 88%);
+  .reputation-box .harm-box {
+    width: min(26px, 96%);
   }
   .reputation-standing {
     flex-basis: 25px;

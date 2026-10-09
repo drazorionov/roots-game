@@ -146,10 +146,10 @@
   pointer-events: none;
   transform: rotate(-2deg);
 }
-.harm-token:nth-child(3n + 2) .harm-box {
+:is(.harm-token, .wear-token, .reputation-box):nth-child(3n + 2) .harm-box {
   transform: rotate(2deg);
 }
-.harm-token:nth-child(3n) .harm-box {
+:is(.harm-token, .wear-token, .reputation-box):nth-child(3n) .harm-box {
   transform: rotate(-1deg);
 }
 .harm-box-paper {
@@ -159,15 +159,15 @@
   opacity: 0;
   transform-origin: center;
 }
-.harm-token:nth-child(3n + 2) .harm-mark {
+:is(.harm-token, .wear-token, .reputation-box):nth-child(3n + 2) .harm-mark {
   transform: rotate(-6deg) scale(0.94, 1.03);
 }
-.harm-token:nth-child(3n) .harm-mark {
+:is(.harm-token, .wear-token, .reputation-box):nth-child(3n) .harm-mark {
   transform: rotate(5deg) scale(1.04, 0.95);
 }
 .injury {
-  --harm-color: #7b3146;
-  --harm-tint: #ead1d1;
+  --harm-color: #dc143c;
+  --harm-tint: #f4d3da;
 }
 .exhaustion {
   --harm-color: #a96e12;
@@ -177,16 +177,18 @@
   --harm-color: #656a70;
   --harm-tint: #dadddd;
 }
-.harm-token.marked .harm-box-paper {
+:is(.harm-token, .wear-token, .reputation-box)[aria-pressed="true"]
+  .harm-box-paper {
   fill: var(--harm-tint);
 }
-.harm-token.marked .harm-mark {
+:is(.harm-token, .wear-token, .reputation-box)[aria-pressed="true"] .harm-mark {
   opacity: 1;
 }
 .harm-token:hover:not(:disabled) {
   transform: translateY(-2px);
 }
-.harm-token:not(.marked):hover:not(:disabled) .harm-box-paper {
+:is(.harm-token, .wear-token, .reputation-box):hover:not(:disabled)
+  .harm-box-paper {
   fill: var(--harm-tint);
 }
 .harm-token:active:not(:disabled) {
@@ -947,7 +949,7 @@
   isolation: isolate;
   border-color: #bab8a2;
   border-radius: 3px 9px 6px 4px;
-  background-color: #f9f6e9;
+  background-color: #f9f6e9eb;
   background-image:
     radial-gradient(
       ellipse 100px 85px at 89% 6%,
@@ -1352,6 +1354,21 @@
   height: 40px;
   min-width: 0;
   flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  --harm-color: #8b7650;
+  --harm-tint: #f4e9cf;
+  color: var(--harm-color);
+}
+.wear-token .harm-box-paper {
+  fill: var(--harm-tint);
+}
+.wear-token .harm-box {
+  width: min(100%, 34px);
+  height: 34px;
 }
 .coin-tile {
   display: grid;
