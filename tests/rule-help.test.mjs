@@ -290,6 +290,25 @@ test(
           .getByRole("button", { name: new RegExp(t("Identity")) })
           .click();
         await help("Charm", page.locator(".builder-stats"));
+        await page
+          .locator(".optional-details > summary")
+          .filter({ hasText: t("Custom attributes") })
+          .click();
+        await page.setViewportSize({ width: 320, height: 900 });
+        assert.ok(
+          await page
+            .locator(".attribute-inputs .rule-name")
+            .evaluateAll((labels) =>
+              labels.every(
+                (label) =>
+                  label.getBoundingClientRect().width <=
+                  label.parentElement.getBoundingClientRect().width,
+              ),
+            ),
+          `${locale} custom attribute names fit their fields`,
+        );
+        await help("Cunning", page.locator(".attribute-inputs"));
+        await page.setViewportSize({ width: 1280, height: 900 });
         const info = page.getByRole("button", {
           name: t("About {name}").replace("{name}", t("Ranger")),
           exact: true,

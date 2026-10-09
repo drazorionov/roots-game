@@ -1625,3 +1625,6 @@
     grid-template-columns: 1fr;
   }
 }
+.character-builder .attribute-inputs {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 110px), 1fr));
+}
