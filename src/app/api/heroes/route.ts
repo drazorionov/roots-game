@@ -62,9 +62,18 @@ export async function POST(req: Request) {
           { status: 403 },
         );
     }
-    const rows = data.id
-      ? await sql`UPDATE heroes SET sheet = ${JSON.stringify(data.sheet)}::jsonb, campaign_id = ${data.campaignId}, version = version + 1, updated_at = now() WHERE id = ${data.id} AND owner_id = ${user.id} AND version = ${data.version ?? 0} AND (${data.campaignId}::uuid IS NULL OR EXISTS (SELECT 1 FROM memberships WHERE campaign_id = ${data.campaignId} AND user_id = ${user.id})) RETURNING *`
-      : await sql`INSERT INTO heroes (campaign_id, owner_id, sheet) SELECT ${data.campaignId}, ${user.id}, ${JSON.stringify(data.sheet)}::jsonb WHERE ${data.campaignId}::uuid IS NULL OR EXISTS (SELECT 1 FROM memberships WHERE campaign_id = ${data.campaignId} AND user_id = ${user.id}) RETURNING *`;
+    const save = data.id
+      ? sql`UPDATE heroes SET sheet = ${JSON.stringify(data.sheet)}::jsonb, campaign_id = ${data.campaignId}, version = version + 1, updated_at = now() WHERE id = ${data.id} AND owner_id = ${user.id} AND version = ${data.version ?? 0} AND (${data.campaignId}::uuid IS NULL OR EXISTS (SELECT 1 FROM memberships WHERE campaign_id = ${data.campaignId} AND user_id = ${user.id})) RETURNING *`
+      : sql`INSERT INTO heroes (campaign_id, owner_id, sheet) SELECT ${data.campaignId}, ${user.id}, ${JSON.stringify(data.sheet)}::jsonb WHERE ${data.campaignId}::uuid IS NULL OR EXISTS (SELECT 1 FROM memberships WHERE campaign_id = ${data.campaignId} AND user_id = ${user.id}) RETURNING *`;
+    // Lock membership before saving, in the same order as leaving a campaign.
+    const rows = data.campaignId
+      ? (
+          await sql.transaction([
+            sql`SELECT campaign_id FROM memberships WHERE campaign_id = ${data.campaignId} AND user_id = ${user.id} FOR KEY SHARE`,
+            save,
+          ])
+        )[1]
+      : await save;
     if (!rows[0])
       return NextResponse.json(
         {

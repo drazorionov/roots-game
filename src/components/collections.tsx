@@ -4,6 +4,7 @@ import {
   Compass,
   Copy,
   LockKeyhole,
+  LogOut,
   MapPin,
   Plus,
   Trash2,
@@ -60,6 +61,7 @@ export function CampaignCollection({
   select,
   copy,
   remove,
+  leave,
 }: {
   campaigns: Campaign[];
   userId?: string;
@@ -70,6 +72,7 @@ export function CampaignCollection({
   select: (campaign: Campaign) => void;
   copy: (campaign: Campaign) => void;
   remove: (campaign: Campaign) => void;
+  leave: (campaign: Campaign) => void;
 }) {
   const { t, players } = useTranslation();
   return (
@@ -161,6 +164,18 @@ export function CampaignCollection({
                 {t(choosing ? "Choose campaign" : "My characters")}
                 <ChevronRight size={16} />
               </button>
+              {c.owner_id !== userId && (
+                <button
+                  className="icon-btn"
+                  type="button"
+                  disabled={busy}
+                  aria-label={t("Leave game")}
+                  title={t("Leave game")}
+                  onClick={() => leave(c)}
+                >
+                  <LogOut size={19} />
+                </button>
+              )}
               {!choosing && (
                 <>
                   <button

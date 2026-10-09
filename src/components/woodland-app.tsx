@@ -133,6 +133,7 @@ function WoodlandWorkspace() {
     version?: number;
   } | null>(null);
   const gameMenu = useRef<HTMLDetailsElement>(null);
+  const [leaveTarget, setLeaveTarget] = useState<Campaign | null>(null);
   const [resumeId, setResumeId] = useState("");
   const [gameStep, setGameStep] = useState<"campaign" | "character" | "sheet">(
     searchParams.get("campaign") ? "character" : "campaign",
@@ -268,6 +269,40 @@ function WoodlandWorkspace() {
       }
       setDeleteTarget(null);
       setNotice("Deleted.");
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+  function askToLeave(c: Campaign) {
+    setError("");
+    setLeaveTarget(c);
+    if (gameMenu.current) gameMenu.current.open = false;
+  }
+  async function leaveGame() {
+    if (!leaveTarget || busy) return;
+    setBusy(true);
+    setError("");
+    try {
+      const data = await api("campaigns", "POST", {
+        action: "leave",
+        id: leaveTarget.id,
+      });
+      const detached = data.heroes as Hero[];
+      setCampaigns((current) => current.filter((c) => c.id !== leaveTarget.id));
+      setHeroes((current) =>
+        current.map((h) => detached.find((d) => d.id === h.id) || h),
+      );
+      if (campaignFilter === leaveTarget.id) setCampaignFilter("");
+      if (detached.some((h) => h.id === resumeId)) remember("");
+      if (gameCampaignId === leaveTarget.id) {
+        setGameCampaignId("");
+        setGameStep("campaign");
+        setSelected("");
+      }
+      setLeaveTarget(null);
+      setNotice("You left the game. Your characters and progress are kept.");
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -700,6 +735,12 @@ function WoodlandWorkspace() {
                 <MoreHorizontal size={22} />
               </summary>
               <div className="game-menu-items">
+                {!quickMode && campaign && campaign.owner_id !== user?.id && (
+                  <button disabled={busy} onClick={() => askToLeave(campaign)}>
+                    <LogOut size={17} />
+                    {t("Leave game")}
+                  </button>
+                )}
                 <button onClick={exitToMain}>
                   <Home size={17} />
                   {t("Exit to main")}
@@ -990,6 +1031,7 @@ function WoodlandWorkspace() {
         ) : tab === "campaigns" ||
           (tab === "play" && (gameStep === "campaign" || !gameCampaign)) ? (
           <CampaignCollection
+            leave={askToLeave}
             campaigns={campaigns}
             userId={user?.id}
             choosing={tab === "play"}
@@ -1046,6 +1088,48 @@ function WoodlandWorkspace() {
           <Check size={18} />
           {t(notice)}
         </div>
+      )}
+      {leaveTarget && (
+        <Modal
+          title={t("Leave game")}
+          close={() => {
+            if (!busy) {
+              setLeaveTarget(null);
+              setError("");
+            }
+          }}
+        >
+          <p className="delete-explanation">
+            {t(
+              "Leave {name}? Your characters and progress will be kept. You can rejoin with an invite code.",
+              { name: leaveTarget.name },
+            )}
+          </p>
+          {error && (
+            <p className="error" role="alert">
+              {t(error)}
+            </p>
+          )}
+          <div className="form-actions">
+            <button
+              className="btn"
+              disabled={busy}
+              onClick={() => {
+                setLeaveTarget(null);
+                setError("");
+              }}
+            >
+              {t("Cancel")}
+            </button>
+            <button
+              className="btn primary"
+              disabled={busy}
+              onClick={() => void leaveGame()}
+            >
+              {t(busy ? "Saving…" : "Leave game")}
+            </button>
+          </div>
+        </Modal>
       )}
       {deleteTarget && (
         <Modal

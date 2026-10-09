@@ -41,6 +41,10 @@ export async function POST(req: Request) {
           clearing: z.string().max(80),
         }),
         z.object({
+          action: z.literal("leave"),
+          id: z.string().uuid(),
+        }),
+        z.object({
           action: z.literal("join"),
           code: z
             .string()
@@ -51,6 +55,23 @@ export async function POST(req: Request) {
       ])
       .parse(await req.json());
     const sql = db();
+    if (data.action === "leave") {
+      // Hero assignment shares this membership lock so it cannot race leaving.
+      const [, heroes, left] = await sql.transaction([
+        sql`SELECT m.campaign_id FROM memberships m JOIN campaigns c ON c.id = m.campaign_id WHERE m.campaign_id = ${data.id} AND m.user_id = ${user.id} AND c.owner_id <> ${user.id} FOR UPDATE OF m`,
+        sql`UPDATE heroes SET campaign_id = NULL, version = version + 1, updated_at = now() WHERE campaign_id = ${data.id} AND owner_id = ${user.id} AND EXISTS (SELECT 1 FROM memberships m JOIN campaigns c ON c.id = m.campaign_id WHERE m.campaign_id = ${data.id} AND m.user_id = ${user.id} AND c.owner_id <> ${user.id}) RETURNING *`,
+        sql`DELETE FROM memberships m USING campaigns c WHERE m.campaign_id = c.id AND m.campaign_id = ${data.id} AND m.user_id = ${user.id} AND c.owner_id <> ${user.id} RETURNING m.campaign_id`,
+      ]);
+      if (!left.length)
+        return NextResponse.json(
+          { error: "You can only leave a campaign you joined." },
+          { status: 403 },
+        );
+      return NextResponse.json({
+        id: data.id,
+        heroes: heroes.map((hero) => ({ ...hero, player: user.name })),
+      });
+    }
     let id;
     if (data.action === "join") {
       const rows =

@@ -10,7 +10,7 @@ A simple React + Next.js companion for Root: The Roleplaying Game, designed for 
 - Choose Quick game on the welcome page for an offline tabletop companion: create a character without an account or campaign. Its sheet stays in session storage in the current browser tab, survives refresh, and is not uploaded. Start online once; “Ready for offline play” confirms the public app assets are cached for offline refresh. Closing the tab ends this temporary game (browser session restoration may restore it).
 - Sign in for persistent characters and online campaigns.
 - Delete your own characters from My characters, or campaigns you created from My campaigns. Both actions ask for confirmation. Deleting a campaign keeps every player’s characters and removes their campaign assignment.
-- See your campaigns, join with an invite code, or create one and share its code.
+- See your campaigns, join with an invite code, or create one and share its code. Leave a joined campaign from its card or the active game menu. Leaving removes your membership and online presence while keeping your characters, equipment, and progress; characters from that campaign become unassigned and editable. Rejoin later with an invite code. Campaign creators cannot leave their own campaign.
 - Choose a campaign for your saved character. Tap harm boxes to track injury, exhaustion, and depletion; manage equipment, coins, load, and wear. Roll attributes with forward/ongoing modifiers, mark fulfilled drives, and track faction reputation. Each change saves immediately.
 - Switch between English, Russian, and German. Your device remembers the language; your written content remains unchanged.
 
