@@ -36,9 +36,15 @@ export function loadRoutes(sql, mailFetch = globalThis.fetch) {
     return loadedModule.exports;
   }
   return Object.fromEntries(
-    ["auth", "admin", "heroes", "campaigns", "presence", "recovery"].map(
-      (name) => [name, load(`src/app/api/${name}/route.ts`)],
-    ),
+    [
+      "auth",
+      "admin",
+      "heroes",
+      "campaigns",
+      "presence",
+      "recovery",
+      "activity",
+    ].map((name) => [name, load(`src/app/api/${name}/route.ts`)]),
   );
 }
 

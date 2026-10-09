@@ -921,5 +921,20 @@
   "Remove {name}": "Удалить {name}",
   "Only the campaign creator can remove another member.": "Только создатель кампании может удалить другого участника.",
   "Player removed. Their characters and progress are kept.": "Игрок удалён. Его персонажи и прогресс сохранены.",
-  "Remove {name} from this campaign? Their characters and progress will be kept outside the campaign. They can rejoin with an invite code.": "Удалить {name} из этой кампании? Персонажи и прогресс игрока сохранятся вне кампании. Игрок сможет вернуться по коду приглашения."
+  "Remove {name} from this campaign? Their characters and progress will be kept outside the campaign. They can rejoin with an invite code.": "Удалить {name} из этой кампании? Персонажи и прогресс игрока сохранятся вне кампании. Игрок сможет вернуться по коду приглашения.",
+  "Game activity": "События игры",
+  "Recent activity": "Последние события",
+  "Hide all": "Скрыть всё",
+  "Hide notification from {name}": "Скрыть уведомление от {name}",
+  "Rolled dice": "Бросок кубиков",
+  "Updated character": "Изменение персонажа",
+  "Sharing roll…": "Отправка броска…",
+  "Activity unavailable. Retrying…": "События недоступны. Повторная попытка…",
+  "Roll not shared. Retry to notify the party.": "Бросок не отправлен. Повторите, чтобы уведомить группу.",
+  "Added {item}": "Добавлено: {item}",
+  "Removed {item}": "Удалено: {item}",
+  "Updated {item}": "Изменено: {item}",
+  "Updated": "Изменено",
+  "Fulfilled drives": "Выполненные стремления",
+  "Character setup": "Создание персонажа"
 }

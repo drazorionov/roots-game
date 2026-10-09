@@ -921,5 +921,20 @@
   "Remove {name}": "{name} entfernen",
   "Only the campaign creator can remove another member.": "Nur der Ersteller der Kampagne kann ein anderes Mitglied entfernen.",
   "Player removed. Their characters and progress are kept.": "Spieler entfernt. Seine Charaktere und Fortschritte bleiben erhalten.",
-  "Remove {name} from this campaign? Their characters and progress will be kept outside the campaign. They can rejoin with an invite code.": "{name} aus dieser Kampagne entfernen? Die Charaktere und Fortschritte bleiben außerhalb der Kampagne erhalten. Mit einem Einladungscode ist ein erneuter Beitritt möglich."
+  "Remove {name} from this campaign? Their characters and progress will be kept outside the campaign. They can rejoin with an invite code.": "{name} aus dieser Kampagne entfernen? Die Charaktere und Fortschritte bleiben außerhalb der Kampagne erhalten. Mit einem Einladungscode ist ein erneuter Beitritt möglich.",
+  "Game activity": "Spielaktivität",
+  "Recent activity": "Letzte Aktivitäten",
+  "Hide all": "Alle ausblenden",
+  "Hide notification from {name}": "Benachrichtigung von {name} ausblenden",
+  "Rolled dice": "Gewürfelt",
+  "Updated character": "Charakter aktualisiert",
+  "Sharing roll…": "Wurf wird geteilt…",
+  "Activity unavailable. Retrying…": "Aktivität nicht verfügbar. Neuer Versuch…",
+  "Roll not shared. Retry to notify the party.": "Wurf nicht geteilt. Erneut versuchen, um die Gruppe zu informieren.",
+  "Added {item}": "Hinzugefügt: {item}",
+  "Removed {item}": "Entfernt: {item}",
+  "Updated {item}": "Aktualisiert: {item}",
+  "Updated": "Aktualisiert",
+  "Fulfilled drives": "Erfüllte Antriebe",
+  "Character setup": "Charaktererstellung"
 }

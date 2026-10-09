@@ -28,6 +28,7 @@ import SheetCounter from "./sheet-counter";
 import AttributeIcon from "./attribute-icon";
 import { HarmBox, DiceIcon } from "./game-icons";
 import DiceDialog, { type AttributeRoll } from "./dice-dialog";
+import { useGameActivity } from "./game-activity";
 import GearPanel from "./gear-panel";
 import { MovesPanel, BackgroundPanel, ReputationPanel } from "./sheet-panels";
 export default function CharacterControls({
@@ -42,6 +43,7 @@ export default function CharacterControls({
   saveQueue?: HeroSaveQueue;
 }) {
   const { t } = useTranslation();
+  const activity = useGameActivity();
   const [error, setError] = useState(""),
     [saved, setSaved] = useState(false);
   const [recovering, setRecovering] = useState(false);
@@ -64,7 +66,9 @@ export default function CharacterControls({
     setSaved(false);
     try {
       if (!saveLocal) return false;
-      saveLocal({ ...sheet, ...patch });
+      const next = { ...sheet, ...patch };
+      saveLocal(next);
+      activity.recordChange(sheet, next);
       setSaved(true);
       return true;
     } catch (e) {
@@ -94,7 +98,12 @@ export default function CharacterControls({
       } while (bytes[0] >= 252);
       return (bytes[0] % 6) + 1;
     };
-    const dice = [d6(), d6()];
+    const dice: [number, number] = [d6(), d6()];
+    activity.recordRoll({
+      label: action ?? stat ?? "Move bonus",
+      dice,
+      modifier,
+    });
     setRoll({
       returnFocus,
       stat,

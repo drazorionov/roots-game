@@ -12,6 +12,7 @@ import {
 import { setupRemaining } from "@/lib/playbooks";
 import { Portrait } from "./art";
 import { MasterPortrait } from "./notebook-doodles";
+import GameActivityFeed from "./game-activity";
 import CampaignPresence, { type Player } from "./campaign-presence";
 
 export default function ActiveGame({
@@ -32,77 +33,79 @@ export default function ActiveGame({
   if (!enabled) return children;
   const remaining = hero.campaign_id ? [] : setupRemaining(hero.sheet);
   return (
-    <div className="active-game">
-      <div className="session-heading">
-        {heading}
-        {campaign && (
-          <CampaignPresence
-            key={campaign.id}
-            campaignId={campaign.id}
-            onChange={setOnlinePlayers}
-          />
-        )}
-      </div>
-      <CampaignRoster
-        key={campaign?.id || "quick"}
-        campaign={campaign}
-        hero={hero}
-        onlinePlayers={onlinePlayers}
-      />
-      {children}
-      <footer className="campaign-footer">
-        {remaining.length > 0 && (
-          <details className="setup-checklist">
-            <summary>
-              {t("Finish setup")} · {remaining.length}
-            </summary>
-            <ul>
-              {remaining.map((message) => (
-                <li key={message}>{t(message)}</li>
-              ))}
-            </ul>
-          </details>
-        )}
-        {hero.campaign_id && (
-          <p className="setup-locked-note">
-            <LockKeyhole size={16} aria-hidden="true" />
-            <span>
-              {t("Setup locked")} ·{" "}
-              {t(
-                "Harm, rolls, equipment, and session progress stay available.",
-              )}
-            </span>
+    <GameActivityFeed key={hero.id} hero={hero}>
+      <div className="active-game">
+        <div className="session-heading">
+          {heading}
+          {campaign && (
+            <CampaignPresence
+              key={campaign.id}
+              campaignId={campaign.id}
+              onChange={setOnlinePlayers}
+            />
+          )}
+        </div>
+        <CampaignRoster
+          key={campaign?.id || "quick"}
+          campaign={campaign}
+          hero={hero}
+          onlinePlayers={onlinePlayers}
+        />
+        {children}
+        <footer className="campaign-footer">
+          {remaining.length > 0 && (
+            <details className="setup-checklist">
+              <summary>
+                {t("Finish setup")} · {remaining.length}
+              </summary>
+              <ul>
+                {remaining.map((message) => (
+                  <li key={message}>{t(message)}</li>
+                ))}
+              </ul>
+            </details>
+          )}
+          {hero.campaign_id && (
+            <p className="setup-locked-note">
+              <LockKeyhole size={16} aria-hidden="true" />
+              <span>
+                {t("Setup locked")} ·{" "}
+                {t(
+                  "Harm, rolls, equipment, and session progress stay available.",
+                )}
+              </span>
+            </p>
+          )}
+          <p>
+            {t(
+              "Tap a name for rules; use dice to roll and symbols to mark harm.",
+            )}
           </p>
-        )}
-        <p>
-          {t(
-            "Tap a name for rules; use dice to roll and symbols to mark harm.",
-          )}
-        </p>
-        <p>
-          {t(
-            "Attribute rolls include forward and ongoing. Forward is cleared after one roll; hold is spent manually.",
-          )}
-        </p>
-        <p>
-          {t(
-            "Mark boxes outward from zero. Tap a marked box to erase it and the marks beyond it. Circle your standing when the table resolves a change.",
-          )}
-        </p>
-        <p>
-          {t(
-            "Mark each fulfilled drive once per session. Each mark adds one advancement.",
-          )}
-        </p>
-        <p>
-          {t(
-            campaign
-              ? "Changes save automatically."
-              : "Saved only in this browser tab.",
-          )}
-        </p>
-      </footer>
-    </div>
+          <p>
+            {t(
+              "Attribute rolls include forward and ongoing. Forward is cleared after one roll; hold is spent manually.",
+            )}
+          </p>
+          <p>
+            {t(
+              "Mark boxes outward from zero. Tap a marked box to erase it and the marks beyond it. Circle your standing when the table resolves a change.",
+            )}
+          </p>
+          <p>
+            {t(
+              "Mark each fulfilled drive once per session. Each mark adds one advancement.",
+            )}
+          </p>
+          <p>
+            {t(
+              campaign
+                ? "Changes save automatically."
+                : "Saved only in this browser tab.",
+            )}
+          </p>
+        </footer>
+      </div>
+    </GameActivityFeed>
   );
 }
 

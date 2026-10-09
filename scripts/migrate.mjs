@@ -45,6 +45,38 @@ await sql.transaction([
     END $$`,
   sql`DROP TRIGGER IF EXISTS heroes_mark_campaign_started ON heroes`,
   sql`CREATE TRIGGER heroes_mark_campaign_started AFTER INSERT OR UPDATE OF campaign_id, sheet ON heroes FOR EACH ROW EXECUTE FUNCTION mark_campaign_started()`,
+  sql`CREATE TABLE IF NOT EXISTS game_activity (
+    sequence bigserial PRIMARY KEY,
+    id text UNIQUE NOT NULL,
+    campaign_id uuid NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+    player text NOT NULL,
+    character text NOT NULL,
+    kind text NOT NULL CHECK (kind IN ('change', 'roll')),
+    changes jsonb,
+    roll jsonb,
+    created_at timestamptz NOT NULL DEFAULT now()
+  )`,
+  sql`CREATE INDEX IF NOT EXISTS game_activity_campaign_sequence_idx ON game_activity(campaign_id, sequence)`,
+  // Serialize event insertion per campaign so polling cursors cannot skip an
+  // uncommitted event with a lower sequence. Roll writes take the same lock.
+  sql`CREATE OR REPLACE FUNCTION log_game_sheet_change() RETURNS trigger LANGUAGE plpgsql AS $$
+    DECLARE changed jsonb;
+    BEGIN
+      IF NEW.campaign_id IS NULL OR OLD.campaign_id IS DISTINCT FROM NEW.campaign_id OR OLD.sheet = NEW.sheet THEN
+        RETURN NEW;
+      END IF;
+      SELECT jsonb_agg(jsonb_build_object('field', entry.key, 'before', OLD.sheet -> entry.key, 'after', entry.value))
+        INTO changed FROM jsonb_each(NEW.sheet) entry WHERE OLD.sheet -> entry.key IS DISTINCT FROM entry.value;
+      IF changed IS NOT NULL THEN
+        PERFORM id FROM campaigns WHERE id = NEW.campaign_id FOR UPDATE;
+        INSERT INTO game_activity (id, campaign_id, player, character, kind, changes)
+          SELECT gen_random_uuid()::text, NEW.campaign_id, u.name, COALESCE(NEW.sheet ->> 'name', 'Character'), 'change', changed
+          FROM users u WHERE u.id = NEW.owner_id;
+      END IF;
+      RETURN NEW;
+    END $$`,
+  sql`DROP TRIGGER IF EXISTS heroes_log_game_change ON heroes`,
+  sql`CREATE TRIGGER heroes_log_game_change AFTER UPDATE OF sheet ON heroes FOR EACH ROW EXECUTE FUNCTION log_game_sheet_change()`,
   sql`CREATE INDEX IF NOT EXISTS heroes_campaign_idx ON heroes(campaign_id)`,
   sql`CREATE INDEX IF NOT EXISTS memberships_user_idx ON memberships(user_id)`,
   sql`CREATE TABLE IF NOT EXISTS rate_limits (key text PRIMARY KEY, attempts integer NOT NULL, reset_at timestamptz NOT NULL)`,

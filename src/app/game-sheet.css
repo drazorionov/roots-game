@@ -2190,3 +2190,183 @@
     gap: 12px;
   }
 }
+
+/* A compact, independently scrollable stack above the lower-left game edge. */
+.game-activity {
+  color: var(--ink);
+  position: fixed;
+  z-index: 15;
+  left: max(18px, env(safe-area-inset-left));
+  bottom: max(18px, env(safe-area-inset-bottom));
+  width: min(370px, calc(100vw - 36px));
+  pointer-events: none;
+}
+.activity-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 7px 9px 7px 12px;
+  margin-bottom: 8px;
+  border: 1px solid #bcae8d;
+  border-radius: 7px;
+  background: #f7efdcef;
+  box-shadow: 0 3px 12px #201c2520;
+  font-size: 11px;
+  color: var(--muted);
+  pointer-events: auto;
+}
+.activity-toolbar > span,
+.activity-toolbar button {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.activity-toolbar b {
+  font-size: 10px;
+  padding: 2px 5px;
+  border-radius: 4px;
+  background: var(--soft);
+}
+.activity-toolbar button {
+  min-height: 30px;
+  color: var(--ink);
+  font-weight: 650;
+}
+.activity-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: min(380px, 42dvh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  pointer-events: auto;
+}
+.activity-popup {
+  position: relative;
+  display: grid;
+  grid-template-columns: 29px minmax(0, 1fr) 28px;
+  align-items: start;
+  gap: 8px;
+  padding: 12px 8px 12px 12px;
+  border: 1px solid #bcae8d;
+  border-left: 3px solid var(--green);
+  border-radius: 7px;
+  background: var(--panel) url("/art/paper-grain.svg");
+  box-shadow: 0 5px 18px #221b2925;
+  animation: activity-arrive 180ms ease-out;
+}
+.activity-roll {
+  border-left-color: var(--rust);
+}
+.activity-symbol {
+  width: 29px;
+  height: 29px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #435a4712;
+  color: var(--green);
+}
+.activity-roll .activity-symbol {
+  color: var(--rust);
+  background: #a9563812;
+}
+.activity-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+}
+.activity-meta strong {
+  font: 700 15px var(--heading-font);
+  overflow-wrap: anywhere;
+}
+.activity-meta time {
+  color: var(--muted);
+  font-size: 10px;
+  margin-left: auto;
+}
+.activity-player {
+  display: block;
+  font-size: 10px;
+  color: var(--muted);
+  margin: 3px 0 6px;
+  overflow-wrap: anywhere;
+}
+.activity-copy p {
+  font-size: 12px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.activity-copy small {
+  display: block;
+  font-size: 10px;
+  margin-top: 6px;
+  color: var(--muted);
+}
+.activity-dismiss {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  color: var(--muted);
+}
+.activity-dismiss:hover,
+.activity-toolbar button:hover {
+  background: var(--soft);
+  color: var(--ink);
+}
+.activity-share-error .text-link {
+  font-size: 12px;
+  min-height: 30px;
+}
+.activity-connection {
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  color: var(--muted);
+  font-size: 11px;
+}
+@keyframes activity-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (max-width: 600px) {
+  .game-activity {
+    left: max(10px, env(safe-area-inset-left));
+    bottom: max(10px, env(safe-area-inset-bottom));
+    width: min(370px, calc(100vw - 20px));
+  }
+  .activity-stack {
+    max-height: 30dvh;
+  }
+  .activity-dismiss {
+    width: 32px;
+    height: 32px;
+  }
+  .activity-popup {
+    grid-template-columns: 29px minmax(0, 1fr) 32px;
+  }
+  .activity-toolbar button {
+    min-height: 34px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .activity-popup {
+    animation: none;
+  }
+}
