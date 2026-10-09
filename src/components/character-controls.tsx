@@ -37,12 +37,14 @@ export default function CharacterControls({
   saveLocal,
   saveQueue,
   management = false,
+  readOnly = false,
 }: {
   hero: Hero;
   edit: (step?: number) => void;
   saveLocal?: (sheet: Sheet) => void;
   saveQueue?: HeroSaveQueue;
   management?: boolean;
+  readOnly?: boolean;
 }) {
   const { t } = useTranslation();
   const activity = useGameActivity();
@@ -57,12 +59,14 @@ export default function CharacterControls({
   useEffect(() => {
     saveQueue?.receive(hero);
   }, [saveQueue, hero]);
-  const busy = recovering || (state?.conflict ?? false);
-  const setupLocked = !!hero.campaign_id && !management;
+  const busy = readOnly || recovering || (state?.conflict ?? false);
+  const setupLocked = readOnly || (!!hero.campaign_id && !management);
+  const canRoll = !management && !readOnly;
   const [roll, setRoll] = useState<AttributeRoll | null>(null);
   const sheet = state?.hero.sheet ?? hero.sheet,
     attributes = effectiveStats(sheet);
   async function update(patch: Partial<Sheet>) {
+    if (readOnly) return false;
     if (saveQueue) return saveQueue.update(patch);
     setError("");
     setSaved(false);
@@ -84,7 +88,7 @@ export default function CharacterControls({
     bonus = 0,
     source?: string,
   ) {
-    if (busy || roll || management) return;
+    if (busy || roll || !canRoll) return;
     const currentSheet = saveQueue?.getSnapshot().hero.sheet ?? sheet;
     const returnFocus = document.activeElement as HTMLElement | null;
     const attribute = stat ? attributes[stat] : bonus;
@@ -223,13 +227,19 @@ export default function CharacterControls({
         <div className="field-section-heading">
           <div>
             <span className="eyebrow">
-              {t(management ? "Campaign master" : "Take a chance")}
+              {t(
+                readOnly
+                  ? "Read-only"
+                  : management
+                    ? "Campaign master"
+                    : "Take a chance",
+              )}
             </span>
             <h3 id="attribute-title">
-              {t(management ? "Attributes" : "Roll an attribute")}
+              {t(canRoll ? "Roll an attribute" : "Attributes")}
             </h3>
           </div>
-          {!management && (
+          {canRoll && (
             <div className="roll-heading-note">
               <NotebookDoodle kind="dice" />
               <p>{t("2d6 + attribute + modifiers")}</p>
@@ -241,7 +251,7 @@ export default function CharacterControls({
             <div className="attribute-roll" key={stat}>
               <AttributeIcon stat={stat} />
               <RuleHelp name={stat} />
-              {management ? (
+              {!canRoll ? (
                 <div className="attribute-roll-action">
                   <strong>
                     {attributes[stat] >= 0 ? "+" : ""}
@@ -285,12 +295,12 @@ export default function CharacterControls({
           busy={busy}
           update={update}
           roll={
-            management
+            !canRoll
               ? undefined
               : (stat, source) => void rollAttribute(stat, undefined, 0, source)
           }
           rollSkill={
-            management
+            !canRoll
               ? undefined
               : (stat, action, bonus, source) =>
                   void rollAttribute(stat, action, bonus, source)
@@ -360,12 +370,12 @@ export default function CharacterControls({
             sheet={sheet}
             busy={busy}
             roll={
-              management
+              !canRoll
                 ? undefined
                 : (stat, action) => void rollAttribute(stat, action)
             }
             rollSkill={
-              management
+              !canRoll
                 ? undefined
                 : (stat, action, bonus) =>
                     void rollAttribute(stat, action, bonus)
@@ -433,7 +443,7 @@ export default function CharacterControls({
                   setRecovering(true);
                   try {
                     const data = await api(
-                      management
+                      !canRoll
                         ? `heroes?campaign=${encodeURIComponent(hero.campaign_id!)}`
                         : "heroes",
                     );

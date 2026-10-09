@@ -10,17 +10,23 @@ import CharacterEditor from "./character-editor";
 
 export default function CampaignSheets({
   campaign,
+  initialHeroId = "",
+  canManage,
+  returnFocus,
   close,
   onSaved,
 }: {
   campaign: Campaign;
+  initialHeroId?: string;
+  canManage: boolean;
+  returnFocus: HTMLElement | null;
   close: () => void;
   onSaved: (hero: Hero) => void;
 }) {
   const { t } = useTranslation();
   const dialog = useRef<HTMLDialogElement>(null);
   const [heroes, setHeroes] = useState<Hero[]>([]);
-  const [selected, setSelected] = useState("");
+  const [selected, setSelected] = useState(initialHeroId);
   const [loading, setLoading] = useState(true);
   const [attempt, setAttempt] = useState(0);
   const [error, setError] = useState("");
@@ -35,14 +41,14 @@ export default function CampaignSheets({
   const { queueFor, pending } = useHeroSaves(updated);
   const hero = heroes.find((h) => h.id === selected);
   useEffect(() => {
-    const previous = document.activeElement as HTMLElement | null;
+    const previous = returnFocus;
     const element = dialog.current;
     element?.showModal();
     return () => {
       element?.close();
-      previous?.focus();
+      requestAnimationFrame(() => previous?.focus());
     };
-  }, []);
+  }, [returnFocus]);
   useEffect(() => {
     const controller = new AbortController();
     api(
@@ -78,7 +84,7 @@ export default function CampaignSheets({
     return !dirty || window.confirm(t("Close this form without saving?"));
   }
   async function save(sheet: Sheet) {
-    if (!editing || busy) return;
+    if (!canManage || !editing || busy) return;
     setBusy(true);
     setError("");
     try {
@@ -126,7 +132,9 @@ export default function CampaignSheets({
       </div>
       <p className="field-hint">
         {t(
-          "As campaign master, you can edit every campaign sheet. Personal base characters stay unchanged.",
+          canManage
+            ? "As campaign master, you can edit every campaign sheet. Personal base characters stay unchanged."
+            : "Read-only. You can view all character sheets in this campaign.",
         )}
       </p>
       {loading ? (
@@ -208,10 +216,11 @@ export default function CampaignSheets({
               <CharacterControls
                 key={hero.id}
                 hero={hero}
-                management
-                saveQueue={queueFor(hero)}
+                management={canManage}
+                readOnly={!canManage}
+                saveQueue={canManage ? queueFor(hero) : undefined}
                 edit={(nextStep = 0) => {
-                  if (!canLeave()) return;
+                  if (!canManage || !canLeave()) return;
                   setError("");
                   setStep(nextStep);
                   setEditing(queueFor(hero).getSnapshot().hero);

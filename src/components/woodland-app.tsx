@@ -23,6 +23,8 @@ import {
   ArrowLeft,
   ChevronRight,
   Shield,
+  BookOpen,
+  ArrowRightLeft,
 } from "lucide-react";
 import { useTranslation, translate, type Locale } from "@/lib/i18n";
 import {
@@ -47,7 +49,9 @@ function Modal({
   title,
   children,
   close,
+  className = "",
 }: {
+  className?: string;
   title: string;
   children: ReactNode;
   close: () => void;
@@ -67,7 +71,7 @@ function Modal({
     <dialog
       ref={ref}
       aria-label={title}
-      className="modal"
+      className={`modal ${className}`}
       onCancel={(e) => {
         e.preventDefault();
         close();
@@ -147,6 +151,8 @@ function WoodlandWorkspace() {
   const [leaveTarget, setLeaveTarget] = useState<Campaign | null>(null);
   const [managedCampaignId, setManagedCampaignId] = useState("");
   const [sheetCampaignId, setSheetCampaignId] = useState("");
+  const [sheetHeroId, setSheetHeroId] = useState("");
+  const [sheetTrigger, setSheetTrigger] = useState<HTMLElement | null>(null);
   const [transferCampaignId, setTransferCampaignId] = useState("");
   const [transferUserId, setTransferUserId] = useState("");
   const [memberTarget, setMemberTarget] = useState<{
@@ -198,9 +204,7 @@ function WoodlandWorkspace() {
     (c) => c.id === managedCampaignId && c.owner_id === user?.id,
   );
   const campaignHeroes = heroes.filter((h) => h.campaign_id === gameCampaignId);
-  const sheetCampaign = campaigns.find(
-    (c) => c.id === sheetCampaignId && c.owner_id === user?.id,
-  );
+  const sheetCampaign = campaigns.find((c) => c.id === sheetCampaignId);
   const transferCampaign = campaigns.find(
     (c) => c.id === transferCampaignId && c.owner_id === user?.id,
   );
@@ -354,12 +358,14 @@ function WoodlandWorkspace() {
     setLeaveTarget(c);
     if (gameMenu.current) gameMenu.current.open = false;
   }
-  function openPlayerSheets(c: Campaign) {
+  function openPlayerSheets(c: Campaign, heroId = "") {
     if (pendingSaves.length) {
       setError("Save or reload your unsaved character changes first.");
       return;
     }
     setError("");
+    setSheetTrigger(document.activeElement as HTMLElement | null);
+    setSheetHeroId(heroId);
     setSheetCampaignId(c.id);
     if (gameMenu.current) gameMenu.current.open = false;
   }
@@ -982,24 +988,26 @@ function WoodlandWorkspace() {
                 )}
                 {activeGame && (
                   <>
-                    {!quickMode &&
-                      campaign?.owner_id === user?.id &&
-                      campaign && (
-                        <>
-                          <button
-                            disabled={busy}
-                            onClick={() => openPlayerSheets(campaign)}
-                          >
-                            {t("Player sheets")}
-                          </button>
+                    {!quickMode && campaign && (
+                      <>
+                        <button
+                          disabled={busy}
+                          onClick={() => openPlayerSheets(campaign)}
+                        >
+                          <BookOpen size={17} aria-hidden="true" />
+                          {t("Player sheets")}
+                        </button>
+                        {campaign.owner_id === user?.id && (
                           <button
                             disabled={busy}
                             onClick={() => openTransfer(campaign)}
                           >
+                            <ArrowRightLeft size={17} aria-hidden="true" />
                             {t("Transfer campaign")}
                           </button>
-                        </>
-                      )}
+                        )}
+                      </>
+                    )}
                     {!quickMode &&
                       campaign &&
                       campaign.owner_id !== user?.id && (
@@ -1305,6 +1313,11 @@ function WoodlandWorkspace() {
           </section>
         ) : activeGame ? (
           <ActiveGame
+            openSheet={
+              campaign
+                ? (member) => openPlayerSheets(campaign, member.id)
+                : undefined
+            }
             enabled
             key={hero!.id}
             hero={hero!}
@@ -1444,6 +1457,9 @@ function WoodlandWorkspace() {
       {sheetCampaign && (
         <CampaignSheets
           campaign={sheetCampaign}
+          initialHeroId={sheetHeroId}
+          returnFocus={sheetTrigger}
+          canManage={sheetCampaign.owner_id === user?.id}
           close={() => setSheetCampaignId("")}
           onSaved={(saved) => {
             if (saved.owner_id === user?.id) updated(saved);
@@ -1453,6 +1469,7 @@ function WoodlandWorkspace() {
       {transferCampaign && (
         <Modal
           title={t("Transfer campaign")}
+          className="campaign-transfer-dialog"
           close={() => {
             if (!busy) {
               setTransferCampaignId("");
@@ -1460,11 +1477,15 @@ function WoodlandWorkspace() {
             }
           }}
         >
-          <p className="delete-explanation">{transferCampaign.name}</p>
-          <label>
-            {t("New campaign master")}
+          <p className="transfer-campaign-name">
+            <Compass size={18} aria-hidden="true" />
+            {transferCampaign.name}
+          </p>
+          <label className="transfer-player-field">
+            <span>{t("New campaign master")}</span>
             <select
               aria-label={t("New campaign master")}
+              aria-describedby="transfer-consequences"
               value={transferUserId}
               disabled={busy}
               onChange={(e) => setTransferUserId(e.target.value)}
@@ -1485,7 +1506,7 @@ function WoodlandWorkspace() {
               {t("Invite another player before transferring this campaign.")}
             </p>
           )}
-          <p className="delete-explanation">
+          <p className="transfer-consequences" id="transfer-consequences">
             {t(
               "The selected player will become the campaign owner and can edit all player sheets, manage players, and delete the campaign. You will remain a regular member.",
             )}

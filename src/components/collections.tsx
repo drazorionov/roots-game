@@ -1,5 +1,8 @@
 "use client";
 import {
+  BookOpen,
+  ArrowRightLeft,
+  MoreHorizontal,
   ChevronRight,
   Compass,
   Copy,
@@ -146,34 +149,36 @@ export function CampaignCollection({
               <span className="campaign-role">
                 {t(c.owner_id === userId ? "Your campaign" : "Joined campaign")}
               </span>
-              {c.owner_id === userId && (
-                <details
-                  className="game-menu campaign-options"
-                  onKeyDown={(e) => {
-                    if (e.key === "Escape") e.currentTarget.open = false;
-                  }}
-                  onBlur={(e) => {
-                    if (!e.currentTarget.contains(e.relatedTarget))
-                      e.currentTarget.open = false;
-                  }}
+              <details
+                className="game-menu campaign-options"
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") e.currentTarget.open = false;
+                }}
+                onBlur={(e) => {
+                  if (!e.currentTarget.contains(e.relatedTarget))
+                    e.currentTarget.open = false;
+                }}
+              >
+                <summary
+                  aria-label={t("Campaign options for {name}", {
+                    name: c.name,
+                  })}
                 >
-                  <summary
-                    aria-label={t("Campaign options for {name}", {
-                      name: c.name,
-                    })}
-                  >
-                    …
-                  </summary>
-                  <div className="game-menu-items">
-                    <button disabled={busy} onClick={() => playerSheets(c)}>
-                      {t("Player sheets")}
-                    </button>
+                  <MoreHorizontal size={22} aria-hidden="true" />
+                </summary>
+                <div className="game-menu-items">
+                  <button disabled={busy} onClick={() => playerSheets(c)}>
+                    <BookOpen size={17} aria-hidden="true" />
+                    {t("Player sheets")}
+                  </button>
+                  {c.owner_id === userId && (
                     <button disabled={busy} onClick={() => transfer(c)}>
+                      <ArrowRightLeft size={17} aria-hidden="true" />
                       {t("Transfer campaign")}
                     </button>
-                  </div>
-                </details>
-              )}
+                  )}
+                </div>
+              </details>
             </div>
             <h2>{c.name}</h2>
             <div className="campaign-facts">

@@ -264,7 +264,7 @@
 }
 .attribute-roll:hover:not(:disabled) {
   transform: translateY(-3px);
-  border-color: var(--green);
+  outline: 1px solid #719460;
 }
 .attribute-roll > .attribute-icon {
   width: 52px;
@@ -979,11 +979,9 @@
 }
 .session-tile h3 {
   font: 700 17px/1.15 var(--heading-font);
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
+  white-space: nowrap;
   overflow: hidden;
-  overflow-wrap: anywhere;
+  text-overflow: ellipsis;
 }
 .session-tile small {
   display: block;
@@ -1769,7 +1767,7 @@
   flex-shrink: 0;
 }
 .choice-card:has(input:checked) {
-  border-color: var(--green);
+  outline: 1px solid #719460;
   background: #e5e3c9;
 }
 .choice-card > p {
@@ -2454,4 +2452,17 @@
   .activity-popup {
     animation: none;
   }
+}
+
+button.session-tile {
+  text-align: left;
+  cursor: pointer;
+}
+button.session-tile:hover {
+  outline: 1px solid #719460;
+  box-shadow: 0 2px 8px #24322320;
+}
+button.session-tile:focus-visible {
+  outline: 2px solid #719460;
+  outline-offset: 3px;
 }

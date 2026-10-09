@@ -202,7 +202,13 @@ test(
       assert.deepEqual(transfers, [
         { action: "transfer", id: "woods", userId: "bob" },
       ]);
-      await expect(options).toHaveCount(0);
+      await options.click();
+      await expect(
+        page.getByRole("button", { name: "Transfer campaign", exact: true }),
+      ).toHaveCount(0);
+      await expect(
+        page.getByRole("button", { name: "Player sheets", exact: true }),
+      ).toBeVisible();
       await expect(page.locator(".campaign-card")).toContainText(
         "Joined campaign",
       );
@@ -214,7 +220,7 @@ test(
 );
 
 test(
-  "active game menu offers owner tools only to the current campaign master",
+  "party tiles open the selected sheet with editing only for the campaign master",
   { timeout: 60000 },
   async () => {
     const browser = await chromium.launch({
@@ -243,7 +249,24 @@ test(
           version: 1,
           sheet: { ...sheets.blankSheet(), name: "Viewer hero" },
         };
+        const otherHero = {
+          ...hero,
+          id: "other-hero",
+          owner_id: "other-player",
+          player: "Николай Разоренов с очень длинным именем",
+          sheet: {
+            ...sheets.blankSheet(),
+            name: "Неуловимый с очень длинным именем",
+            nature: "Defender",
+          },
+        };
+        const writes = [];
         await page.route("**/api/**", (route) => {
+          if (
+            route.request().method() !== "GET" &&
+            new URL(route.request().url()).pathname === "/api/heroes"
+          )
+            writes.push(route.request().postDataJSON());
           const path = new URL(route.request().url()).pathname;
           return route.fulfill({
             json:
@@ -252,7 +275,13 @@ test(
                 : path === "/api/campaigns"
                   ? { campaigns: [campaign] }
                   : path === "/api/heroes"
-                    ? { heroes: [hero] }
+                    ? {
+                        heroes: new URL(route.request().url()).searchParams.has(
+                          "campaign",
+                        )
+                          ? [hero, otherHero]
+                          : [hero],
+                      }
                     : path === "/api/activity"
                       ? { events: [], cursor: "0" }
                       : { players: [] },
@@ -263,10 +292,102 @@ test(
         );
         await page.goto(base);
         await page.getByRole("button", { name: /Continue game/ }).click();
+        const tile = page.getByRole("button", {
+          name: `${otherHero.sheet.name} · ${otherHero.player}`,
+          exact: true,
+        });
+        for (const width of [390, 820, 1280]) {
+          await page.setViewportSize({ width, height: 1000 });
+          await expect(tile).toBeVisible();
+          await expect(tile).toHaveCSS("color", "rgb(52, 60, 51)");
+          for (const selector of ["h3", "small"]) {
+            const dimensions = await tile.locator(selector).evaluate((el) => ({
+              whiteSpace: getComputedStyle(el).whiteSpace,
+              overflow: getComputedStyle(el).textOverflow,
+              height: el.getBoundingClientRect().height,
+              lineHeight:
+                parseFloat(getComputedStyle(el).lineHeight) ||
+                parseFloat(getComputedStyle(el).fontSize) * 1.5,
+            }));
+            assert.equal(dimensions.whiteSpace, "nowrap");
+            assert.equal(dimensions.overflow, "ellipsis");
+            assert.ok(dimensions.height <= dimensions.lineHeight + 1);
+          }
+        }
+        await tile.focus();
+        await page.keyboard.press("Enter");
+        const sheetDialog = page.getByRole("dialog", {
+          name: "Player sheets",
+          exact: true,
+        });
+        await expect(
+          sheetDialog.getByLabel("Character", { exact: true }),
+        ).toHaveValue(otherHero.id);
+        await expect(sheetDialog.locator(".hero-caption h2")).toHaveText(
+          otherHero.sheet.name,
+        );
+        const injury = sheetDialog.getByRole("button", {
+          name: "Injury 2",
+          exact: true,
+        });
+        if (isMaster) {
+          await expect(injury).toBeEnabled();
+          await expect(
+            sheetDialog.getByRole("button", {
+              name: "Edit character",
+              exact: true,
+            }),
+          ).toBeVisible();
+        } else {
+          await expect(sheetDialog).toContainText("Read-only.");
+          await expect(injury).toBeDisabled();
+          await expect(
+            sheetDialog.getByRole("button", {
+              name: "Increase Hold",
+              exact: true,
+            }),
+          ).toBeDisabled();
+          await expect(
+            sheetDialog.getByRole("button", {
+              name: "Add equipment",
+              exact: true,
+            }),
+          ).toBeDisabled();
+          await expect(
+            sheetDialog.getByRole("button", {
+              name: "Edit character",
+              exact: true,
+            }),
+          ).toHaveCount(0);
+          await expect(
+            sheetDialog.getByRole("button", { name: /^Roll / }),
+          ).toHaveCount(0);
+          await sheetDialog
+            .locator("summary")
+            .filter({ hasText: "Background" })
+            .click();
+          await expect(
+            sheetDialog.getByRole("button", {
+              name: "Increase Advancements",
+              exact: true,
+            }),
+          ).toBeDisabled();
+          await sheetDialog
+            .getByLabel("Character", { exact: true })
+            .selectOption(hero.id);
+          await expect(sheetDialog.locator(".hero-caption h2")).toHaveText(
+            hero.sheet.name,
+          );
+          assert.deepEqual(writes, []);
+        }
+        await sheetDialog
+          .getByRole("button", { name: "Close dialog", exact: true })
+          .click();
+        await expect(tile).toBeFocused();
         await page.getByLabel("Game menu", { exact: true }).click();
         await expect(
           page.getByRole("button", { name: "Player sheets", exact: true }),
-        ).toHaveCount(isMaster ? 1 : 0);
+        ).toHaveCount(1);
         await expect(
           page.getByRole("button", { name: "Transfer campaign", exact: true }),
         ).toHaveCount(isMaster ? 1 : 0);
@@ -282,6 +403,88 @@ test(
           ).toBeVisible();
         }
         await page.close();
+      }
+    } finally {
+      await browser.close();
+    }
+  },
+);
+
+test(
+  "transfer popup keeps translated fields and actions separated on phones and desktop",
+  { timeout: 60000 },
+  async () => {
+    const browser = await chromium.launch({
+      channel: "chrome",
+      headless: true,
+    });
+    try {
+      const page = await browser.newPage();
+      const campaign = {
+        id: "woods",
+        owner_id: "master",
+        name: "За Темными Горами",
+        members: 2,
+        member_list: [
+          { id: "master", name: "Master" },
+          { id: "next", name: "Roman Razorionov" },
+        ],
+      };
+      await page.route("**/api/**", (route) =>
+        route.fulfill({
+          json: {
+            user: { id: "master", name: "Master" },
+            heroes: [],
+            campaigns: [campaign],
+          },
+        }),
+      );
+      await page.goto(base);
+      await page.getByRole("button", { name: /My campaigns/ }).click();
+      for (const locale of ["ru", "de", "en"]) {
+        await page.locator(".language-select").selectOption(locale);
+        await page.locator(".campaign-options summary").click();
+        const items = page.locator(".campaign-options .game-menu-items button");
+        for (const item of await items.all())
+          await expect(item.locator("svg")).toHaveCount(1);
+        await items.nth(1).click();
+        const dialog = page.locator(".campaign-transfer-dialog");
+        await dialog.locator("select").selectOption("next");
+        for (const width of [320, 390, 820, 1280]) {
+          await page.setViewportSize({ width, height: 1000 });
+          const metrics = await dialog.evaluate((el) => {
+            const label = el
+              .querySelector(".transfer-player-field span")
+              .getBoundingClientRect();
+            const select = el.querySelector("select").getBoundingClientRect();
+            const note = el
+              .querySelector(".transfer-consequences")
+              .getBoundingClientRect();
+            const buttons = [
+              ...el.querySelectorAll(".form-actions button"),
+            ].map((b) => b.getBoundingClientRect().toJSON());
+            return {
+              overflow: el.scrollWidth > el.clientWidth + 1,
+              fieldGap: select.top - label.bottom,
+              noteGap: note.top - select.bottom,
+              buttons,
+            };
+          });
+          assert.equal(
+            metrics.overflow,
+            false,
+            `${locale} popup overflows at ${width}`,
+          );
+          assert.ok(metrics.fieldGap >= 8);
+          assert.ok(metrics.noteGap >= 16);
+          if (width <= 480)
+            assert.ok(metrics.buttons[1].bottom <= metrics.buttons[0].top - 8);
+          if (locale === "ru" && [390, 1280].includes(width))
+            await dialog.screenshot({
+              path: `test-results/campaign-transfer-ru-${width}.png`,
+            });
+        }
+        await dialog.locator(".modal-title button").click();
       }
     } finally {
       await browser.close();

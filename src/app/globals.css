@@ -2014,11 +2014,11 @@ form .inline-check {
 .campaign-options {
   margin-left: auto;
 }
-.campaign-options > summary {
+.game-menu.campaign-options > summary {
   color: var(--ink);
   font-size: 24px;
 }
-.campaign-options[open] > summary {
+.game-menu.campaign-options[open] > summary {
   color: #fff6df;
 }
 .campaign-sheets-dialog {
@@ -3617,5 +3617,56 @@ select.language-select:not([multiple]):not([size]) {
   .scene-app .brand-logo {
     width: 120px;
     height: 40px;
+  }
+}
+
+/* Campaign ownership is a deliberate action with a readable review step. */
+.campaign-transfer-dialog .modal-title {
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+.transfer-campaign-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 24px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.transfer-campaign-name svg,
+.game-menu-items button svg {
+  flex-shrink: 0;
+}
+.transfer-player-field {
+  display: grid;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.transfer-player-field select {
+  width: 100%;
+  min-width: 0;
+  font-weight: 400;
+}
+.transfer-consequences {
+  margin: 20px 0 24px;
+  padding: 16px;
+  border-left: 3px solid var(--line);
+  background: var(--soft);
+  border-radius: 4px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.campaign-transfer-dialog .form-actions {
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+  gap: 12px;
+}
+@media (max-width: 480px) {
+  .campaign-transfer-dialog .form-actions {
+    flex-direction: column-reverse;
+  }
+  .campaign-transfer-dialog .form-actions .btn {
+    width: 100%;
   }
 }

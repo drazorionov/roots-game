@@ -27,8 +27,10 @@ export default function ActiveGame({
   children,
   heading,
   enabled = true,
+  openSheet,
 }: {
   enabled?: boolean;
+  openSheet?: (hero: Hero) => void;
   campaign?: Campaign;
   hero: Hero;
   children: ReactNode;
@@ -56,6 +58,7 @@ export default function ActiveGame({
           campaign={campaign}
           hero={hero}
           onlinePlayers={onlinePlayers}
+          openSheet={openSheet}
         />
         {children}
         <footer className="campaign-footer">
@@ -119,10 +122,12 @@ function CampaignRoster({
   campaign,
   hero,
   onlinePlayers,
+  openSheet,
 }: {
   campaign?: Campaign;
   hero: Hero;
   onlinePlayers?: Player[];
+  openSheet?: (hero: Hero) => void;
 }) {
   const { t } = useTranslation();
   const [party, setParty] = useState<Hero[]>([]);
@@ -221,9 +226,14 @@ function CampaignRoster({
             const online = onlinePlayers?.some(
               (player) => player.id === member.owner_id,
             );
+            const Tile = campaign && openSheet ? "button" : "article";
             return (
-              <article
+              <Tile
                 key={member.id}
+                type={Tile === "button" ? "button" : undefined}
+                onClick={
+                  Tile === "button" ? () => openSheet?.(member) : undefined
+                }
                 className={`session-tile party-card ${own ? "own-character" : ""}`}
                 aria-label={`${sheet.name} · ${own ? t("You") : member.player}`}
               >
@@ -263,7 +273,7 @@ function CampaignRoster({
                     ))}
                   </div>
                 </div>
-              </article>
+              </Tile>
             );
           })}
         </div>
