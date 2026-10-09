@@ -1300,7 +1300,7 @@
   align-items: start;
 }
 .equipment-grid {
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 310px), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
   align-items: start;
   margin-bottom: 16px;
 }
@@ -1354,12 +1354,12 @@
   flex-shrink: 0;
 }
 .coin-tile {
-  grid-column: 1 / -1;
-  background: #ede1b7;
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
   align-items: center;
-  gap: 8px 16px;
+  align-content: start;
+  gap: 14px 10px;
+  min-height: 180px;
 }
 .coin-tile .coin-icon {
   width: 36px;
@@ -1367,17 +1367,22 @@
   margin: 0;
 }
 .coin-tile .sheet-counter {
-  flex-direction: row;
-  align-items: center;
-  gap: 16px;
-  padding: 0;
+  display: contents;
 }
 .coin-tile .sheet-counter > span {
-  font-family: var(--heading-font);
-  font-size: 18px;
+  font-size: 15px;
+  font-weight: 700;
+}
+.coin-tile .sheet-counter > div {
+  grid-column: 1 / -1;
+  justify-content: space-between;
+}
+.coin-tile .sheet-counter output {
+  flex: 1;
 }
 .coin-tile p,
 .coin-tile small {
+  grid-column: 1 / -1;
   font-size: 12px;
   line-height: 1.5;
   color: var(--muted);
@@ -1480,17 +1485,6 @@
   }
   .equipment-grid .weapon-rolls {
     flex-wrap: wrap;
-  }
-  .coin-tile .sheet-counter > div {
-    gap: 4px;
-  }
-  .coin-tile .sheet-counter > div > button {
-    width: 32px;
-    height: 38px;
-  }
-  .coin-tile .sheet-counter output {
-    min-width: 34px;
-    font-size: 19px;
   }
   .background-grid {
     grid-template-columns: 1fr;
@@ -2076,13 +2070,6 @@
 @media (max-width: 540px) {
   .equipment-harm-grid {
     grid-template-columns: 1fr;
-  }
-  .equipment-grid .coin-tile {
-    gap: 8px 12px;
-  }
-  .coin-tile > p,
-  .coin-tile > small {
-    flex-basis: 100%;
   }
   .gear-card-body {
     gap: 12px;
