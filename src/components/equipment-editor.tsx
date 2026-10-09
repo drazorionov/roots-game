@@ -14,10 +14,12 @@ import {
 } from "@/lib/equipment";
 import { useTranslation } from "@/lib/i18n";
 import RuleHelp from "./rule-help";
+import SheetCounter from "./sheet-counter";
 import {
   EquipmentArt,
   EquipmentLibrary,
   SpecialTagHelp,
+  WeaponSkillLibrary,
 } from "./equipment-library";
 
 export default function EquipmentEditor({
@@ -39,6 +41,15 @@ export default function EquipmentEditor({
 }) {
   const { t } = useTranslation();
   const [draft, setDraft] = useState(initial);
+  const rangeChoices = [
+    ...ranges,
+    ...splitRanges(initial.range).filter(
+      (range) =>
+        !ranges.some(
+          (standard) => standard.toLowerCase() === range.toLowerCase(),
+        ),
+    ),
+  ];
   const formRef = useRef<HTMLFormElement>(null);
   useEffect(() => {
     formRef.current?.scrollIntoView({ block: "start" });
@@ -164,7 +175,7 @@ export default function EquipmentEditor({
             <RuleHelp name="Range" />
           </legend>
           <div className="range-options">
-            {ranges.map((range) => (
+            {rangeChoices.map((range) => (
               <label className="inline-check" key={range}>
                 <input
                   type="checkbox"
@@ -177,19 +188,8 @@ export default function EquipmentEditor({
               </label>
             ))}
           </div>
-          <label>
-            {t("Range settings")}
-            <input
-              name="range"
-              aria-label={t("Range")}
-              maxLength={80}
-              value={draft.range}
-              onChange={(e) => set("range", e.target.value)}
-              placeholder={t("No range, or comma-separated ranges")}
-            />
-          </label>
         </fieldset>
-        <div className="form-grid">
+        <div className="equipment-harm-grid">
           <label>
             {t("Harm type")}
             <select
@@ -207,19 +207,14 @@ export default function EquipmentEditor({
               ))}
             </select>
           </label>
-          <div className="rule-field">
-            <RuleHelp name="Weapon harm" />
-            <input
-              aria-label={t("Weapon harm")}
-              name="harm"
-              type="number"
-              min={0}
-              max={4}
-              required
-              value={draft.harm}
-              onChange={(e) => set("harm", Number(e.target.value))}
-            />
-          </div>
+          <SheetCounter
+            label={t("Weapon harm")}
+            help={<RuleHelp name="Weapon harm" />}
+            value={draft.harm}
+            max={4}
+            busy={busy}
+            change={(harm) => set("harm", harm)}
+          />
         </div>
         <label>
           {t("Harm conditions & effects")}
@@ -260,6 +255,9 @@ export default function EquipmentEditor({
             </span>
           ))}
         </div>
+        {!existing && draft.kind === "weapon" && (
+          <WeaponSkillLibrary learned={learned} />
+        )}
         <details className="tag-picker">
           <summary>
             {t("Weapon skill tags")} <span>{draft.skillTags.length}</span>

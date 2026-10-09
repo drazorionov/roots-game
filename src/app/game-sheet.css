@@ -1289,7 +1289,8 @@
   align-items: start;
 }
 .equipment-grid {
-  align-items: stretch;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 310px), 1fr));
+  align-items: start;
   margin-bottom: 16px;
 }
 .equipment-grid .live-gear,
@@ -1307,14 +1308,6 @@
   display: flex;
   flex-direction: column;
 }
-.equipment-grid .live-gear > div:first-child {
-  flex-wrap: wrap;
-  gap: 8px;
-}
-.equipment-grid .live-gear > div:first-child strong {
-  flex: 1;
-  flex-basis: calc(100% - 40px);
-}
 .gear-facts,
 .equipment-grid .weapon-facts {
   display: flex;
@@ -1324,40 +1317,58 @@
   margin: 12px 0 0;
 }
 .equipment-grid .gear-wear {
-  margin-top: auto;
-  padding-top: 14px;
-  flex-wrap: wrap;
-}
-.equipment-grid .gear-wear .pip {
-  width: 24px;
-  height: 28px;
-  min-width: 24px;
-}
-.coin-tile {
-  background: #ede1b7;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: stretch;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #c3b48f;
 }
-.coin-icon {
-  width: 64px;
-  height: 64px;
-  margin-bottom: 8px;
+.gear-wear-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+}
+.gear-wear-pips {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 36px));
+  gap: 4px;
+}
+.equipment-grid .gear-wear .pip {
+  width: 100%;
+  height: 40px;
+  min-width: 0;
+  flex-shrink: 0;
+}
+.coin-tile {
+  grid-column: 1 / -1;
+  background: #ede1b7;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+}
+.coin-tile .coin-icon {
+  width: 36px;
+  height: 36px;
+  margin: 0;
 }
 .coin-tile .sheet-counter {
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 12px;
-  width: 100%;
+  flex-direction: row;
+  align-items: center;
+  gap: 16px;
+  padding: 0;
 }
 .coin-tile .sheet-counter > span {
   font-family: var(--heading-font);
-  font-size: 21px;
+  font-size: 18px;
 }
 .coin-tile p,
 .coin-tile small {
   font-size: 12px;
-  line-height: 1.6;
+  line-height: 1.5;
   color: var(--muted);
 }
 .character-info-grid {
@@ -1444,7 +1455,6 @@
     flex-direction: column;
     gap: 4px;
   }
-  .equipment-grid,
   .feature-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
@@ -1483,9 +1493,9 @@
 }
 
 .equipment-add-tile {
-  flex-direction: column;
-  align-self: stretch;
-  min-height: 130px;
+  flex-direction: row;
+  align-self: start;
+  min-height: 72px;
   border-style: dashed;
   background: #f4edda66;
   color: #657647;
@@ -1780,9 +1790,11 @@
   color: var(--muted);
   font-size: 11px;
 }
-.owned-equipment-art {
-  height: 155px;
-  margin: 6px 0;
+.gear-card-body .owned-equipment-art {
+  width: 80px;
+  height: 104px;
+  margin: 0;
+  align-self: center;
 }
 .equipment-kind {
   color: var(--muted);
@@ -1944,5 +1956,124 @@
   }
   .chosen-tags .rule-name {
     min-height: 36px;
+  }
+}
+
+/* Keep card actions, artwork, properties and wear in distinct compact rows. */
+.equipment-grid .live-gear > .gear-card-heading {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+.gear-card-heading strong {
+  min-width: 0;
+  line-height: 1.35;
+}
+.gear-card-heading .rule-name {
+  text-align: left;
+}
+.gear-card-actions {
+  display: flex;
+  gap: 2px;
+}
+.gear-card-actions .icon-btn {
+  width: 36px;
+  height: 44px;
+  padding: 6px;
+}
+.gear-card-body {
+  display: grid;
+  grid-template-columns: 80px minmax(0, 1fr);
+  align-items: center;
+  gap: 16px;
+  margin: 12px 0 4px;
+}
+.gear-card-properties {
+  min-width: 0;
+}
+.gear-card-properties:only-child {
+  grid-column: 1 / -1;
+}
+.gear-card-properties .equipment-kind {
+  display: block;
+  font-size: 12px;
+}
+.gear-card-properties .gear-facts {
+  margin-top: 6px;
+  gap: 4px 12px;
+}
+.gear-card-properties .weapon-facts {
+  display: grid;
+  margin-top: 8px;
+  gap: 4px;
+  color: var(--ink);
+}
+.equipment-grid .live-gear .chosen-tags {
+  margin: 10px 0 4px;
+}
+.equipment-grid .live-gear > p {
+  margin: 8px 0 0;
+}
+.equipment-harm-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(160px, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+.equipment-editor label,
+.equipment-editor .rule-field {
+  margin-bottom: 0;
+  min-width: 0;
+  gap: 8px;
+  font-size: 14px;
+  line-height: 22px;
+}
+.equipment-harm-grid .sheet-counter {
+  flex-direction: column;
+  align-items: stretch;
+  padding: 0;
+  gap: 8px;
+}
+.equipment-harm-grid .sheet-counter > span {
+  display: flex;
+  align-items: center;
+  min-height: 22px;
+  font-size: 14px;
+  font-weight: 550;
+}
+.equipment-harm-grid .sheet-counter > span > .rule-name {
+  padding: 0;
+  line-height: 22px;
+  text-align: left;
+}
+.equipment-harm-grid .sheet-counter > div {
+  height: 48px;
+}
+.equipment-harm-grid .sheet-counter output {
+  flex: 1;
+}
+.equipment-harm-grid .sheet-counter > div > button {
+  width: 48px;
+}
+.equipment-editor .equipment-range {
+  padding: 8px 12px;
+}
+.equipment-editor .range-options {
+  gap: 4px 16px;
+}
+@media (max-width: 540px) {
+  .equipment-harm-grid {
+    grid-template-columns: 1fr;
+  }
+  .equipment-grid .coin-tile {
+    gap: 8px 12px;
+  }
+  .coin-tile > p,
+  .coin-tile > small {
+    flex-basis: 100%;
+  }
+  .gear-card-body {
+    gap: 12px;
   }
 }

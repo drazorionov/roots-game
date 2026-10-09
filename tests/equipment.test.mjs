@@ -135,6 +135,7 @@ test(
         );
       await expect(page.locator(".field-sheet")).toBeVisible();
       await expect(page.locator(".equipment-catalogue")).toHaveCount(0);
+      await expect(page.locator(".weapon-skill-library")).toHaveCount(0);
       await page
         .getByRole("button", { name: "Add equipment", exact: true })
         .click();
@@ -152,9 +153,17 @@ test(
       await expect(editor.getByLabel("Harm type", { exact: true })).toHaveValue(
         "exhaustion",
       );
-      await expect(editor.getByLabel("Range", { exact: true })).toHaveValue(
-        "Far",
-      );
+      await expect(
+        editor.getByRole("checkbox", { name: "Far", exact: true }),
+      ).toBeChecked();
+      await expect(editor.locator('input[name="range"]')).toHaveCount(0);
+      const beforeReference = await saved();
+      const skills = editor.locator(".weapon-skill-library");
+      await skills.locator("summary").click();
+      await skills.getByLabel("Search weapon skills").fill("Cleave");
+      await expect(skills.locator("article")).toHaveCount(1);
+      await expect(skills.locator("article")).toContainText("3 wear");
+      assert.deepEqual(await saved(), beforeReference);
       await expect(editor.locator(".selected-tag-effects")).toContainText(
         "poisoned until cured",
       );
@@ -170,7 +179,9 @@ test(
       await editor
         .getByLabel("Harm type", { exact: true })
         .selectOption("wear");
-      await editor.getByLabel("Weapon harm", { exact: true }).fill("2");
+      await editor
+        .getByRole("button", { name: "Increase Weapon harm", exact: true })
+        .click();
       await editor.getByLabel("Close", { exact: true }).check();
       await editor
         .getByLabel("Harm conditions & effects", { exact: true })
@@ -217,12 +228,7 @@ test(
       assert.deepEqual(state.equipment[0].specialTags, ["poison", "sharp"]);
       assert.deepEqual(state.equipment[0].skillTags, ["Cleave"]);
       assert.deepEqual(state.weaponSkillIds, ["Parry"]);
-      await page.locator(".weapon-skill-library > summary").click();
-      const skills = page.locator(".weapon-skill-library");
-      await skills.getByLabel("Search weapon skills").fill("Cleave");
-      await expect(skills.locator("article")).toHaveCount(1);
-      await expect(skills.locator("article")).toContainText("3 wear");
-      assert.deepEqual(await saved(), state);
+      await expect(page.locator(".weapon-skill-library")).toHaveCount(0);
       await page
         .getByRole("button", { name: "Add equipment", exact: true })
         .click();
@@ -263,6 +269,7 @@ test(
       ).toHaveAttribute("aria-pressed", "true");
       mkdirSync("/tmp/root-equipment", { recursive: true });
       await expect(page.locator(".equipment-catalogue")).toHaveCount(0);
+      await expect(page.locator(".weapon-skill-library")).toHaveCount(0);
       await page.locator(".gear-panel").scrollIntoViewIfNeeded();
       await page.screenshot({
         path: "/tmp/root-equipment/desktop.png",
@@ -291,6 +298,150 @@ test(
           .click();
       }
       assert.deepEqual(errors, []);
+    } finally {
+      await browser.close();
+    }
+  },
+);
+
+test(
+  "equipment layout keeps wear together and harm controls aligned in every locale",
+  { timeout: 60000 },
+  async () => {
+    const browser = await chromium.launch({
+      channel: "chrome",
+      headless: true,
+    });
+    try {
+      const page = await browser.newPage({
+        viewport: { width: 1280, height: 1000 },
+      });
+      const sheet = sheets.sheetSchema.parse({
+        ...rules.newCharacterSheet(),
+        name: "Layout Scout",
+        equipment: [
+          {
+            ...equipment.newEquipment("longsword"),
+            name: "Сабля уРоняна",
+            value: 80,
+            maxWear: 6,
+            skillTags: ["Cleave", "Hurl"],
+            details: "Старая семейная катана, при этом сильно крепкая",
+          },
+          {
+            ...equipment.newEquipment("staff"),
+            name: "Eight-box staff",
+            maxWear: 8,
+          },
+        ],
+      });
+      await page.addInitScript((sheet) => {
+        sessionStorage.setItem("root-quick-sheet", JSON.stringify(sheet));
+        sessionStorage.setItem("root-quick-active", "1");
+      }, sheet);
+      await page.goto(process.env.TEST_BASE_URL || "http://127.0.0.1:3000");
+      for (const locale of ["en", "ru", "de"]) {
+        await page.locator(".language-select").selectOption(locale);
+        for (const width of [1280, 768, 390, 320]) {
+          await page.setViewportSize({ width, height: 1000 });
+          await expect(
+            page.locator(".gear-panel .weapon-skill-library"),
+          ).toHaveCount(0);
+          const geometry = await page
+            .locator(".gear-panel")
+            .evaluate((panel) => ({
+              overflow: document.documentElement.scrollWidth > innerWidth,
+              tracks: [...panel.querySelectorAll(".gear-wear-pips")].map(
+                (track) =>
+                  [...track.children].map(
+                    (pip) => pip.getBoundingClientRect().top,
+                  ),
+              ),
+              images: [...panel.querySelectorAll(".owned-equipment-art")].map(
+                (img) => img.getBoundingClientRect().height,
+              ),
+            }));
+          assert.equal(
+            geometry.overflow,
+            false,
+            `${locale} ${width} card overflow`,
+          );
+          for (const row of geometry.tracks)
+            assert.ok(
+              row.every((y) => Math.abs(y - row[0]) < 1),
+              `${locale} ${width} split wear row`,
+            );
+          assert.ok(geometry.images.every((height) => height <= 110));
+          if (locale === "en" && [1280, 390].includes(width))
+            await page
+              .locator(".gear-panel")
+              .screenshot({
+                path: `/tmp/root-equipment/cards-fixed-${width}.png`,
+              });
+          await page
+            .locator(".live-gear")
+            .first()
+            .locator(".gear-card-actions button")
+            .first()
+            .click();
+          const editor = page.locator(".equipment-editor");
+          await expect(editor.locator(".equipment-range input")).toHaveCount(3);
+          await expect(
+            editor.locator('.equipment-range input:not([type="checkbox"])'),
+          ).toHaveCount(0);
+          const controls = await editor
+            .locator(".equipment-harm-grid")
+            .evaluate((grid) => {
+              const select = grid
+                .querySelector("select")
+                .getBoundingClientRect();
+              const counter = grid
+                .querySelector(".sheet-counter > div")
+                .getBoundingClientRect();
+              const title = grid
+                .querySelector(".sheet-counter > span")
+                .getBoundingClientRect();
+              return {
+                selectY: select.y,
+                counterY: counter.y,
+                selectHeight: select.height,
+                counterHeight: counter.height,
+                titleHeight: title.height,
+              };
+            });
+          assert.equal(controls.selectHeight, controls.counterHeight);
+          if (width >= 768)
+            assert.ok(
+              Math.abs(controls.selectY - controls.counterY) < 1,
+              `${locale} ${width} misaligned harm controls`,
+            );
+          assert.ok(
+            controls.titleHeight <= 23,
+            `${locale} ${width} wrapped harm title`,
+          );
+          const dropdowns = await page
+            .locator("select:visible")
+            .evaluateAll((selects) =>
+              selects.map((select) => ({
+                appearance: getComputedStyle(select).appearance,
+                arrow: getComputedStyle(select).backgroundImage,
+                padding: parseFloat(getComputedStyle(select).paddingRight),
+              })),
+            );
+          for (const dropdown of dropdowns) {
+            assert.equal(dropdown.appearance, "none");
+            assert.ok(dropdown.arrow.includes("svg"));
+            assert.ok(dropdown.padding >= 24);
+          }
+          if (locale === "en" && [768, 390].includes(width))
+            await editor
+              .locator(".equipment-harm-grid")
+              .screenshot({
+                path: `/tmp/root-equipment/harm-fixed-${width}.png`,
+              });
+          await editor.locator(".form-actions button[type=button]").click();
+        }
+      }
     } finally {
       await browser.close();
     }

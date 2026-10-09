@@ -76,7 +76,7 @@ test(
       await page
         .getByLabel("Item name", { exact: true })
         .fill("Workshop sword");
-      await page.getByLabel("Range", { exact: true }).fill("close");
+      await page.getByRole("checkbox", { name: "Close", exact: true }).check();
       await page.getByLabel("Value", { exact: true }).fill("2");
       await page
         .getByRole("button", { name: "Add equipment", exact: true })
@@ -97,7 +97,7 @@ test(
       );
       assert.equal(stored.coin, book.value - 2);
       assert.equal(stored.equipment[0].kind, "weapon");
-      assert.equal(stored.equipment[0].range, "close");
+      assert.equal(stored.equipment[0].range, "Close");
       assert.equal(
         stored.reputation.find((f) => f.faction === "Marquisate").prestige,
         2,
@@ -178,6 +178,37 @@ test(
           }
           await steps
             .getByRole("button", { name: new RegExp(t("Identity")) })
+            .click();
+          await page
+            .locator(".optional-details > summary")
+            .filter({ hasText: t("Custom attributes") })
+            .click();
+          const selectsFit = await page
+            .locator(".attribute-inputs select")
+            .evaluateAll((selects) =>
+              selects.every((select) => {
+                const style = getComputedStyle(select);
+                const canvas = document.createElement("canvas");
+                const context = canvas.getContext("2d");
+                context.font = style.font;
+                const textWidth = context.measureText(
+                  select.selectedOptions[0].text,
+                ).width;
+                return (
+                  select.clientWidth -
+                    parseFloat(style.paddingLeft) -
+                    parseFloat(style.paddingRight) >=
+                    textWidth && style.appearance === "none"
+                );
+              }),
+            );
+          assert.ok(
+            selectsFit,
+            `${locale} ${device} attribute dropdown text overlaps its arrow`,
+          );
+          await page
+            .locator(".optional-details > summary")
+            .filter({ hasText: t("Custom attributes") })
             .click();
           await page.screenshot({
             path: `test-results/builder-${locale}-${device}.png`,

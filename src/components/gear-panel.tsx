@@ -20,11 +20,7 @@ import RuleHelp from "./rule-help";
 import { CoinIcon } from "./game-icons";
 import SheetCounter from "./sheet-counter";
 import EquipmentEditor from "./equipment-editor";
-import {
-  EquipmentArt,
-  SpecialTagHelp,
-  WeaponSkillLibrary,
-} from "./equipment-library";
+import { EquipmentArt, SpecialTagHelp } from "./equipment-library";
 import { newEquipment, harmLabels, splitRanges } from "@/lib/equipment";
 export type UpdateSheet = (patch: Partial<Sheet>) => Promise<boolean>;
 export default function GearPanel({
@@ -111,7 +107,6 @@ export default function GearPanel({
           )}
         </div>
       </div>
-      <WeaponSkillLibrary learned={effectiveWeapons(sheet)} />
       <div className="equipment-grid">
         <article className="coin-tile">
           <CoinIcon />
@@ -136,7 +131,7 @@ export default function GearPanel({
         </article>
         {sheet.equipment.map((item, i) => (
           <article className={`live-gear gear-${item.kind}`} key={i}>
-            <div>
+            <div className="gear-card-heading">
               <span className="gear-kind-icon" aria-hidden="true">
                 {item.kind === "weapon" ? (
                   <Swords size={20} />
@@ -152,67 +147,76 @@ export default function GearPanel({
                   summary={item.details || rulesSummary(item.kind)}
                 />
               </strong>
-              <button
-                className="icon-btn"
-                aria-label={t("Edit {item}", { item: item.name })}
-                disabled={busy}
-                onClick={() => {
-                  begin(i);
-                }}
-              >
-                <Edit3 size={16} />
-              </button>
-              <button
-                className="icon-btn"
-                aria-label={t("Remove {item}", {
-                  item: item.name || t("item"),
-                })}
-                disabled={busy}
-                onClick={() => {
-                  if (window.confirm(t("Remove this piece of equipment?")))
-                    void update({
-                      equipment: sheet.equipment.filter((_, j) => j !== i),
-                    }).then((ok) => {
-                      if (ok) setEditing(null);
-                    });
-                }}
-              >
-                <Trash2 size={16} />
-              </button>
+              <div className="gear-card-actions">
+                <button
+                  className="icon-btn"
+                  aria-label={t("Edit {item}", { item: item.name })}
+                  disabled={busy}
+                  onClick={() => {
+                    begin(i);
+                  }}
+                >
+                  <Edit3 size={16} />
+                </button>
+                <button
+                  className="icon-btn"
+                  aria-label={t("Remove {item}", {
+                    item: item.name || t("item"),
+                  })}
+                  disabled={busy}
+                  onClick={() => {
+                    if (window.confirm(t("Remove this piece of equipment?")))
+                      void update({
+                        equipment: sheet.equipment.filter((_, j) => j !== i),
+                      }).then((ok) => {
+                        if (ok) setEditing(null);
+                      });
+                  }}
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
             </div>
-            <EquipmentArt id={item.visualId} className="owned-equipment-art" />
-            <small className="equipment-kind">
-              {t(item.kind === "weapon" ? "Weapon" : "Item")}
-            </small>
-            <div className="gear-facts">
-              <span>
-                <RuleHelp name="Load" />: {item.load}
-              </span>
-              <span>
-                <RuleHelp name="Value" />: {item.value}
-              </span>
-            </div>
-            {(item.kind === "weapon" ||
-              (item.kind === "item" && item.harmType !== "none") ||
-              item.range) && (
-              <div className="weapon-facts">
-                <span>
-                  <RuleHelp name="Weapon harm" />:{" "}
-                  {item.harmType === "special" || item.harmType === "none"
-                    ? ""
-                    : item.harm}{" "}
-                  {t(harmLabels[item.harmType])}
-                </span>
-                {item.range && (
+            <div className="gear-card-body">
+              <EquipmentArt
+                id={item.visualId}
+                className="owned-equipment-art"
+              />
+              <div className="gear-card-properties">
+                <small className="equipment-kind">
+                  {t(item.kind === "weapon" ? "Weapon" : "Item")}
+                </small>
+                <div className="gear-facts">
                   <span>
-                    <RuleHelp name="Range" />:{" "}
-                    {splitRanges(item.range)
-                      .map((range) => t(range))
-                      .join(", ")}
+                    <RuleHelp name="Load" />: {item.load}
                   </span>
+                  <span>
+                    <RuleHelp name="Value" />: {item.value}
+                  </span>
+                </div>
+                {(item.kind === "weapon" ||
+                  (item.kind === "item" && item.harmType !== "none") ||
+                  item.range) && (
+                  <div className="weapon-facts">
+                    <span>
+                      <RuleHelp name="Weapon harm" />:{" "}
+                      {item.harmType === "special" || item.harmType === "none"
+                        ? ""
+                        : item.harm}{" "}
+                      {t(harmLabels[item.harmType])}
+                    </span>
+                    {item.range && (
+                      <span>
+                        <RuleHelp name="Range" />:{" "}
+                        {splitRanges(item.range)
+                          .map((range) => t(range))
+                          .join(", ")}
+                      </span>
+                    )}
+                  </div>
                 )}
               </div>
-            )}
+            </div>
             {item.harmDetails && <p>{item.harmDetails}</p>}
             <div className="chosen-tags">
               {item.skillTags.map((name) => (
@@ -257,45 +261,49 @@ export default function GearPanel({
                 const wear = secondary ? item.secondaryWear : item.wear;
                 return (
                   <div className="gear-wear" key={String(secondary)}>
-                    <span>
-                      {secondary ? (
-                        t("Second item wear")
-                      ) : (
-                        <RuleHelp name="Wear" />
+                    <div className="gear-wear-heading">
+                      <span>
+                        {secondary ? (
+                          t("Second item wear")
+                        ) : (
+                          <RuleHelp name="Wear" />
+                        )}
+                      </span>
+                      <small>
+                        {wear}/{capacity}
+                      </small>
+                    </div>
+                    <div className="gear-wear-pips">
+                      {Array.from({ length: capacity }, (_, j) => j + 1).map(
+                        (n) => (
+                          <button
+                            key={n}
+                            className={`pip ${wear >= n ? "filled" : ""}`}
+                            aria-label={t(
+                              secondary
+                                ? "{item}: second item wear {value}"
+                                : "{item}: wear {value}",
+                              { item: item.name, value: n },
+                            )}
+                            aria-pressed={wear >= n}
+                            disabled={busy}
+                            onClick={() =>
+                              void update({
+                                equipment: sheet.equipment.map((x, j) =>
+                                  j === i
+                                    ? {
+                                        ...x,
+                                        [secondary ? "secondaryWear" : "wear"]:
+                                          wear === n ? n - 1 : n,
+                                      }
+                                    : x,
+                                ),
+                              })
+                            }
+                          />
+                        ),
                       )}
-                    </span>
-                    {Array.from({ length: capacity }, (_, j) => j + 1).map(
-                      (n) => (
-                        <button
-                          key={n}
-                          className={`pip ${wear >= n ? "filled" : ""}`}
-                          aria-label={t(
-                            secondary
-                              ? "{item}: second item wear {value}"
-                              : "{item}: wear {value}",
-                            { item: item.name, value: n },
-                          )}
-                          aria-pressed={wear >= n}
-                          disabled={busy}
-                          onClick={() =>
-                            void update({
-                              equipment: sheet.equipment.map((x, j) =>
-                                j === i
-                                  ? {
-                                      ...x,
-                                      [secondary ? "secondaryWear" : "wear"]:
-                                        wear === n ? n - 1 : n,
-                                    }
-                                  : x,
-                              ),
-                            })
-                          }
-                        />
-                      ),
-                    )}
-                    <small>
-                      {wear}/{capacity}
-                    </small>
+                    </div>
                   </div>
                 );
               })}
