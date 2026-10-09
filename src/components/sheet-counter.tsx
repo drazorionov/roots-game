@@ -1,8 +1,10 @@
 "use client";
+import type { ReactNode } from "react";
 import { Minus, Plus } from "lucide-react";
 import { useTranslation } from "@/lib/i18n";
 export default function SheetCounter({
   label,
+  help,
   value,
   min = 0,
   max = 99,
@@ -10,6 +12,7 @@ export default function SheetCounter({
   change,
 }: {
   label: string;
+  help?: ReactNode;
   value: number;
   min?: number;
   max?: number;
@@ -19,7 +22,7 @@ export default function SheetCounter({
   const { t } = useTranslation();
   return (
     <div className="sheet-counter">
-      <span>{label}</span>
+      <span>{help ?? label}</span>
       <div>
         <button
           type="button"

@@ -135,6 +135,7 @@ export const sheetSchema = z
   });
 export type Sheet = z.infer<typeof sheetSchema>;
 export type Hero = {
+  source_hero_id?: string | null;
   id: string;
   campaign_id: string | null;
   owner_id: string;

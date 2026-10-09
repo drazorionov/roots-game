@@ -471,22 +471,21 @@ test(
         .filter({ hasText: "Character info & moves" })
         .click();
       await page
-        .locator(".move-reminder")
-        .filter({ hasText: "Pleasant Facade" })
-        .locator("summary")
+        .getByRole("button", { name: "Pleasant Facade", exact: true })
         .click();
-      await expect(page.locator(".move-reminder[open]")).toContainText(
-        "Flatter",
-      );
+      await expect(page.locator(".rule-dialog")).toContainText("Flatter");
+      await page.keyboard.press("Escape");
       await page
         .locator(".sheet-subsection > summary")
         .filter({ hasText: "Background" })
         .click();
       await mutate(() =>
-        page.locator(".drive-check").filter({ hasText: "Chaos" }).click(),
+        page
+          .getByRole("button", { name: "Mark Chaos fulfilled", exact: true })
+          .click(),
       );
       await expect(
-        page.locator(".drive-check").filter({ hasText: "Chaos" }),
+        page.getByRole("button", { name: "Mark Chaos fulfilled", exact: true }),
       ).toBeDisabled();
 
       await mutate(() =>
@@ -564,6 +563,14 @@ test(
       const uiCampaign = (
         await request("campaigns", "GET", undefined, owner.cookie)
       ).data.campaigns.find((c) => c.name === "Willow’s campaign");
+      const baseSaved = saved;
+      saved = (
+        await request("heroes", "GET", undefined, owner.cookie)
+      ).data.heroes.find(
+        (h) =>
+          h.source_hero_id === baseSaved.id && h.campaign_id === uiCampaign.id,
+      );
+      assert.notEqual(saved.id, baseSaved.id);
       await page.reload();
       await page.getByRole("button", { name: /Continue game/ }).click();
       await expect(
@@ -730,7 +737,7 @@ test(
       assert.equal(
         (await request("heroes", "GET", undefined, guest.cookie)).data.heroes
           .length,
-        1,
+        2,
       );
       assert.equal(
         (
@@ -762,10 +769,27 @@ test(
       const lockedPage = await context.newPage();
       await lockedPage.goto(`${base}/characters/edit?id=${saved.id}`);
       await expect(lockedPage.locator(".locked-editor")).toContainText(
-        "Character setup is locked",
+        "This campaign copy has locked setup",
       );
       await expect(lockedPage.locator(".character-builder")).toHaveCount(0);
       await lockedPage.close();
+      const basePage = await context.newPage();
+      await basePage.goto(`${base}/characters/edit?id=${baseSaved.id}`);
+      await expect(basePage.locator(".character-builder")).toBeVisible();
+      await basePage.getByLabel("Name", { exact: true }).fill("Willow Base");
+      await basePage
+        .getByRole("button", { name: "Save character", exact: true })
+        .click();
+      await expect(
+        basePage.getByRole("heading", { name: "Willow Base", exact: true }),
+      ).toBeVisible();
+      assert.equal(
+        (
+          await request("heroes", "GET", undefined, owner.cookie)
+        ).data.heroes.find((h) => h.id === saved.id).sheet.name,
+        "Willow Browser",
+      );
+      await basePage.close();
       const ownerPresence = await request(
         "presence",
         "POST",

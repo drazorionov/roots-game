@@ -14,6 +14,19 @@ await sql.transaction([
   sql`ALTER TABLE heroes ALTER COLUMN campaign_id DROP NOT NULL`,
   sql`ALTER TABLE heroes DROP CONSTRAINT IF EXISTS heroes_campaign_id_fkey`,
   sql`ALTER TABLE heroes ADD CONSTRAINT heroes_campaign_id_fkey FOREIGN KEY(campaign_id) REFERENCES campaigns(id) ON DELETE SET NULL`,
+  // Split legacy assigned sheets once; later runs must not recreate deleted bases.
+  sql`DO $$
+    DECLARE hero record; base_id uuid;
+    BEGIN
+      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = current_schema() AND table_name = 'heroes' AND column_name = 'source_hero_id') THEN
+        ALTER TABLE heroes ADD COLUMN source_hero_id uuid REFERENCES heroes(id) ON DELETE SET NULL;
+        FOR hero IN SELECT * FROM heroes WHERE campaign_id IS NOT NULL LOOP
+          INSERT INTO heroes (owner_id, sheet) VALUES (hero.owner_id, hero.sheet) RETURNING id INTO base_id;
+          UPDATE heroes SET source_hero_id = base_id WHERE id = hero.id;
+        END LOOP;
+      END IF;
+    END $$`,
+  sql`CREATE UNIQUE INDEX IF NOT EXISTS heroes_campaign_source_idx ON heroes(campaign_id, source_hero_id)`,
   sql`CREATE INDEX IF NOT EXISTS heroes_campaign_idx ON heroes(campaign_id)`,
   sql`CREATE INDEX IF NOT EXISTS memberships_user_idx ON memberships(user_id)`,
   sql`CREATE TABLE IF NOT EXISTS rate_limits (key text PRIMARY KEY, attempts integer NOT NULL, reset_at timestamptz NOT NULL)`,

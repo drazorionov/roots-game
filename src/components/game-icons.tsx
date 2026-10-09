@@ -112,3 +112,34 @@ export function DieFace({ value }: { value: number }) {
     </svg>
   );
 }
+
+// Original ink-and-ochre coin stack, matching the sheet's woodland symbols.
+export function CoinIcon() {
+  return (
+    <svg
+      className="coin-icon"
+      viewBox="0 0 64 64"
+      fill="none"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <g
+        stroke="#493c29"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M8 39v10c0 6 32 6 32 0V39" fill="#bb873e" />
+        <ellipse cx="24" cy="39" rx="16" ry="6" fill="#e4bc68" />
+        <path d="M9 45c6 5 23 6 30 0m-25 0v5m9-3v6m9-7v5" />
+        <path d="M28 31v10c0 6 29 6 29 0V31" fill="#b8833c" />
+        <ellipse cx="42.5" cy="31" rx="14.5" ry="6" fill="#efd18a" />
+        <path d="m34 37v6m9-6v8m8-9v6" />
+        <circle cx="28" cy="22" r="15" fill="#d9a84d" />
+        <circle cx="28" cy="22" r="11" stroke="#f4d994" />
+        <path d="m28 13-6 9 6 9 6-9Z" fill="#f5dda0" />
+        <path d="m28 17-2 5 2 5m-20-7-3-2m39-7 3-4M46 51l3 3" />
+      </g>
+    </svg>
+  );
+}

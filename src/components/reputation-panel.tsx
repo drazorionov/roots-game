@@ -1,11 +1,12 @@
 "use client";
-import { Fragment, useId, useState } from "react";
+import { Fragment } from "react";
 import Image from "next/image";
 import { Flag } from "lucide-react";
 import { useTranslation } from "@/lib/i18n";
-import { factions, factionIcon } from "@/lib/factions";
+import { factionIcon } from "@/lib/factions";
 import { type Sheet } from "@/lib/sheet";
 import { type UpdateSheet } from "./gear-panel";
+import RuleHelp from "./rule-help";
 import SheetCounter from "./sheet-counter";
 
 export function ReputationPanel({
@@ -18,14 +19,6 @@ export function ReputationPanel({
   update: UpdateSheet;
 }) {
   const { t } = useTranslation();
-  const [name, setName] = useState("");
-  const listId = useId();
-  const hintId = useId();
-  const canonicalName =
-    factions.find((f) => t(f.name) === name.trim())?.name ?? name.trim();
-  const duplicate = sheet.reputation.some(
-    (f) => f.faction.toLowerCase() === canonicalName.toLowerCase(),
-  );
 
   function change(
     index: number,
@@ -42,11 +35,14 @@ export function ReputationPanel({
   return (
     <section className="play-panel reputation-panel">
       <h3>{t("Reputation")}</h3>
-      <p className="field-hint" id={hintId}>
-        {t(
-          "Mark boxes outward from zero. Tap a marked box to erase it and the marks beyond it. Circle your standing when the table resolves a change.",
-        )}
-      </p>
+      <details className="reputation-notes" open>
+        <summary>{t("Starting reputation")}</summary>
+        <p className="field-hint">
+          {t(
+            "For a new character: mark 2 prestige with the faction you served most, and 1 notoriety with your enemy.",
+          )}
+        </p>
+      </details>
       <div className="reputation-ledger">
         {sheet.reputation.map((f, i) => {
           const icon = factionIcon(f.faction);
@@ -95,7 +91,6 @@ export function ReputationPanel({
               key={`${i}-${f.faction}`}
               role="group"
               aria-label={t(f.faction)}
-              aria-describedby={hintId}
             >
               <div className="reputation-faction">
                 {icon ? (
@@ -122,7 +117,7 @@ export function ReputationPanel({
               <div className="reputation-tracks">
                 <div className="reputation-negative">
                   <span className="reputation-track-label">
-                    {t("Notoriety")} <small>{f.notoriety}/9</small>
+                    <RuleHelp name="Notoriety" /> <small>{f.notoriety}/9</small>
                   </span>
                   <div className="reputation-track-buttons">
                     {[-3, -2, -1].map((n) => (
@@ -138,7 +133,7 @@ export function ReputationPanel({
                 <div className="reputation-zero">{standing(0)}</div>
                 <div className="reputation-positive">
                   <span className="reputation-track-label">
-                    {t("Prestige")} <small>{f.prestige}/15</small>
+                    <RuleHelp name="Prestige" /> <small>{f.prestige}/15</small>
                   </span>
                   <div className="reputation-track-buttons">
                     {[1, 2, 3].map((n) => (
@@ -173,67 +168,6 @@ export function ReputationPanel({
           );
         })}
       </div>
-      <details className="reputation-notes">
-        <summary>{t("Starting reputation")}</summary>
-        <p className="field-hint">
-          {t(
-            "For a new character: mark 2 prestige with the faction you served most, and 1 notoriety with your enemy.",
-          )}
-        </p>
-      </details>
-      <form
-        className="faction-form"
-        onSubmit={async (e) => {
-          e.preventDefault();
-          if (
-            busy ||
-            !canonicalName ||
-            duplicate ||
-            sheet.reputation.length >= 12
-          )
-            return;
-          if (
-            await update({
-              reputation: [
-                ...sheet.reputation,
-                {
-                  faction: canonicalName,
-                  standing: 0,
-                  prestige: 0,
-                  notoriety: 0,
-                },
-              ],
-            })
-          )
-            setName("");
-        }}
-      >
-        <label>
-          {t("Faction name")}
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            maxLength={80}
-            required
-            list={listId}
-          />
-        </label>
-        <datalist id={listId}>
-          {factions
-            .filter((f) => !sheet.reputation.some((r) => r.faction === f.name))
-            .map((f) => (
-              <option key={f.name} value={t(f.name)} />
-            ))}
-        </datalist>
-        <button
-          className="btn"
-          disabled={
-            busy || !canonicalName || duplicate || sheet.reputation.length >= 12
-          }
-        >
-          {t("Add faction")}
-        </button>
-      </form>
     </section>
   );
 }

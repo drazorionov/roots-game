@@ -104,21 +104,33 @@ test(
         prestige: 2,
         notoriety: 0,
       });
-      await panel
-        .getByLabel("Faction name", { exact: true })
-        .fill("Lizard Cult");
-      await panel
-        .getByRole("button", { name: "Add faction", exact: true })
-        .click();
+      await expect(
+        panel.getByRole("button", { name: "Add faction", exact: true }),
+      ).toHaveCount(0);
+      const starting = await panel.locator(".reputation-notes").boundingBox();
+      const ledger = await panel.locator(".reputation-ledger").boundingBox();
+      assert.ok(
+        starting.y + starting.height <= ledger.y,
+        "Starting reputation precedes the tracks",
+      );
+      // Preserve already-saved factions even though adding them from the sheet is removed.
+      await page.evaluate(() => {
+        const sheet = JSON.parse(sessionStorage.getItem("root-quick-sheet"));
+        sheet.reputation.push(
+          { faction: "Lizard Cult", standing: 0, prestige: 0, notoriety: 0 },
+          {
+            faction: "My very long custom woodland faction name",
+            standing: 0,
+            prestige: 0,
+            notoriety: 0,
+          },
+        );
+        sessionStorage.setItem("root-quick-sheet", JSON.stringify(sheet));
+      });
+      await page.reload();
       await expect(
         panel.locator('.faction-icon[src^="/art/factions/lizard-cult.webp"]'),
       ).toHaveCount(1);
-      await panel
-        .getByLabel("Faction name", { exact: true })
-        .fill("My very long custom woodland faction name");
-      await panel
-        .getByRole("button", { name: "Add faction", exact: true })
-        .click();
       await expect(panel.locator(".faction-icon-fallback")).toHaveCount(1);
       for (const width of [1280, 768, 390, 320]) {
         await page.setViewportSize({ width, height: 1000 });

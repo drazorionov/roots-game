@@ -1,6 +1,15 @@
 "use client";
 import { useTranslation } from "@/lib/i18n";
-import { Dices } from "lucide-react";
+import {
+  Dices,
+  BookOpen,
+  KeyRound,
+  Swords,
+  Compass,
+  MapPin,
+  Users,
+  ScrollText,
+} from "lucide-react";
 import { type Sheet, stats } from "@/lib/sheet";
 import {
   allMoves,
@@ -8,6 +17,9 @@ import {
   effectiveFeats,
   effectiveWeapons,
 } from "@/lib/playbooks";
+import RuleHelp from "./rule-help";
+import { rules } from "@/lib/rules";
+import { playbookData } from "@/lib/playbooks";
 import SheetCounter from "./sheet-counter";
 import { type UpdateSheet } from "./gear-panel";
 export function MovesPanel({
@@ -27,11 +39,6 @@ export function MovesPanel({
   return (
     <section className="play-panel">
       <h3>{t("Playbook moves")}</h3>
-      <p className="field-hint">
-        {t(
-          "Short reminders. Apply costs and situational effects when the move triggers.",
-        )}
-      </p>
       {!sheet.moveIds.length && (
         <p className="field-hint">
           {t(
@@ -41,50 +48,90 @@ export function MovesPanel({
           )}
         </p>
       )}
-      {sheet.moveIds.map((name) => {
-        const move = allMoves.find((x) => x.name === name);
-        return (
-          <details
-            className="move-reminder"
-            key={name}
-            open={expanded || undefined}
-          >
-            <summary>
-              {t(name)}
-              {move?.stat && <span className="pill">{t(move.stat)}</span>}
-            </summary>
-            <p>{move ? t(move.summary) : name}</p>
-            {move?.stat && roll && (
-              <button
-                className="btn small move-roll"
-                aria-label={t("Roll {move}", { move: t(name) })}
-                disabled={busy}
-                onClick={() => roll(move.stat!)}
-              >
-                <Dices size={15} />
-                {t("Roll {stat}", { stat: t(move.stat) })}
-              </button>
-            )}
-          </details>
-        );
-      })}
+      <div className="feature-grid move-grid">
+        {sheet.moveIds.map((name) => {
+          const move = allMoves.find((x) => x.name === name);
+          return (
+            <article className="feature-tile move-tile" key={name}>
+              <BookOpen className="feature-icon" aria-hidden="true" />
+              <h4>
+                <RuleHelp
+                  name={name}
+                  summary={move?.summary}
+                  page={
+                    (Object.values(playbookData).find((book) =>
+                      book.moves.some((entry) => entry.name === name),
+                    )?.page ?? 1) + 2
+                  }
+                />
+              </h4>
+              <p className={expanded ? "" : "feature-preview"}>
+                {move ? t(move.summary) : name}
+              </p>
+              {move?.stat && roll && (
+                <button
+                  className="btn small move-roll"
+                  aria-label={t("Roll {move}", { move: t(name) })}
+                  disabled={busy}
+                  onClick={() => roll(move.stat!)}
+                >
+                  <Dices size={15} />
+                  {t("Roll {stat}", { stat: t(move.stat) })}
+                </button>
+              )}
+            </article>
+          );
+        })}
+      </div>
       {sheet.moves && (
         <div className="written-note">
           <h4>{t("Move notes")}</h4>
           <p>{sheet.moves}</p>
         </div>
       )}
-      <h4>{t("Roguish feats")}</h4>
-      <div className="skill-tags">
-        {effectiveFeats(sheet).map((n) => (
-          <span key={n}>{t(n)}</span>
+      <h4>
+        <RuleHelp name="Roguish feats" />
+      </h4>
+      <div className="feature-grid skill-grid">
+        {effectiveFeats(sheet).map((name) => (
+          <article className="feature-tile" key={name}>
+            <KeyRound className="feature-icon" aria-hidden="true" />
+            <h4>
+              <RuleHelp
+                name={name}
+                summary={
+                  rules[name]
+                    ? `${t(rules[name].summary)}\n\n${t(rules["Roguish feats"].summary)}`
+                    : undefined
+                }
+                page={115}
+              />
+            </h4>
+            <p className="feature-preview">{t(rules[name]?.summary || name)}</p>
+          </article>
         ))}
       </div>
       {sheet.feats && <p className="written-note">{sheet.feats}</p>}
-      <h4>{t("Weapon skills")}</h4>
-      <div className="skill-tags">
-        {effectiveWeapons(sheet).map((n) => (
-          <span key={n}>{t(n)}</span>
+      <h4>
+        <RuleHelp name="Weapon skills" />
+      </h4>
+      <div className="feature-grid skill-grid">
+        {effectiveWeapons(sheet).map((name) => (
+          <article className="feature-tile" key={name}>
+            <Swords className="feature-icon" aria-hidden="true" />
+            <h4>
+              <RuleHelp
+                name={name}
+                summary={
+                  rules[name]
+                    ? `${t(rules[name].summary)}\n\n${t(rules["Weapon skills"].summary)}`
+                    : undefined
+                }
+                page={rules[name]?.page}
+              />
+            </h4>
+            <p className="feature-preview">{t(rules[name]?.summary || name)}</p>
+          </article>
         ))}
       </div>
       {sheet.weaponSkills && (
@@ -115,41 +162,48 @@ export function BackgroundPanel({
           </button>
         )}
       </div>
-      <h4>{t("Drives")}</h4>
-      <p className="field-hint">
-        {t(
-          "Mark each fulfilled drive once per session. Each mark adds one advancement.",
-        )}
-      </p>
-      {sheet.driveIds.map((name) => (
-        <button
-          className="drive-check"
-          key={name}
-          disabled={
-            busy || sheet.driveMarks.includes(name) || sheet.advancement >= 100
-          }
-          aria-pressed={sheet.driveMarks.includes(name)}
-          onClick={() =>
-            void update({
-              driveMarks: [...sheet.driveMarks, name],
-              advancement: sheet.advancement + 1,
-            })
-          }
-        >
-          <span
-            className={`pip ${sheet.driveMarks.includes(name) ? "filled" : ""}`}
-          >
-            {sheet.driveMarks.includes(name) ? "✓" : "+"}
-          </span>
-          <span>
-            <strong>{t(name)}</strong>
-            <small>{t(driveHints[name] || "")}</small>
-          </span>
-        </button>
-      ))}
+      <h4>
+        <RuleHelp name="Drives" />
+      </h4>
+      <div className="feature-grid drive-grid">
+        {sheet.driveIds.map((name) => (
+          <article className="feature-tile" key={name}>
+            <Compass className="feature-icon" aria-hidden="true" />
+            <h4>
+              <RuleHelp name={name} summary={driveHints[name]} page={108} />
+            </h4>
+            <p>{t(driveHints[name] || "")}</p>
+            <button
+              className="drive-check"
+              key={name}
+              disabled={
+                busy ||
+                sheet.driveMarks.includes(name) ||
+                sheet.advancement >= 100
+              }
+              aria-label={t("Mark {drive} fulfilled", { drive: t(name) })}
+              aria-pressed={sheet.driveMarks.includes(name)}
+              onClick={() =>
+                void update({
+                  driveMarks: [...sheet.driveMarks, name],
+                  advancement: sheet.advancement + 1,
+                })
+              }
+            >
+              <span
+                className={`pip ${sheet.driveMarks.includes(name) ? "filled" : ""}`}
+              >
+                {sheet.driveMarks.includes(name) ? "✓" : "+"}
+              </span>
+              <span>{t("Mark fulfilled")}</span>
+            </button>
+          </article>
+        ))}
+      </div>
       {sheet.drives && <p className="written-note">{sheet.drives}</p>}
       <SheetCounter
         label={t("Advancements")}
+        help={<RuleHelp name="Advancements" />}
         value={sheet.advancement}
         max={100}
         busy={busy}
@@ -171,21 +225,32 @@ export function BackgroundPanel({
       >
         {t("Start new session")}
       </button>
-      {[
-        ["Where do you call home?", sheet.background.home],
-        ["Why are you a vagabond?", sheet.background.motivation],
-        ["Whom did you leave behind?", sheet.background.leftBehind],
-        ["Connections", sheet.bonds],
-        ["Notes", sheet.biography],
-      ].map(
-        ([label, value]) =>
-          value && (
-            <div className="written-note" key={label}>
-              <h4>{t(label)}</h4>
-              <p>{value}</p>
-            </div>
-          ),
-      )}
+      <div className="feature-grid background-grid">
+        {[
+          ["Where do you call home?", sheet.background.home],
+          ["Why are you a vagabond?", sheet.background.motivation],
+          ["Whom did you leave behind?", sheet.background.leftBehind],
+          ["Connections", sheet.bonds],
+          ["Notes", sheet.biography],
+        ].map(
+          ([label, value]) =>
+            value && (
+              <article className="feature-tile" key={label}>
+                {label === "Connections" ? (
+                  <Users className="feature-icon" aria-hidden="true" />
+                ) : label === "Where do you call home?" ? (
+                  <MapPin className="feature-icon" aria-hidden="true" />
+                ) : (
+                  <ScrollText className="feature-icon" aria-hidden="true" />
+                )}
+                <h4>
+                  <RuleHelp name={label} />
+                </h4>
+                <p>{value}</p>
+              </article>
+            ),
+        )}
+      </div>
     </section>
   );
 }

@@ -12,6 +12,8 @@ import {
 import { type Sheet } from "@/lib/sheet";
 import { effectiveStats, playbookData } from "@/lib/playbooks";
 import { useTranslation } from "@/lib/i18n";
+import RuleHelp from "./rule-help";
+import { CoinIcon } from "./game-icons";
 import SheetCounter from "./sheet-counter";
 export type UpdateSheet = (patch: Partial<Sheet>) => Promise<boolean>;
 export default function GearPanel({
@@ -83,143 +85,187 @@ export default function GearPanel({
   }
   return (
     <section className="play-panel gear-panel">
-      <div className="panel-heading">
-        <h3>{t("Equipment")}</h3>
-        <span className="pill">
-          {t("Total load:")} {load}
-        </span>
-      </div>
-      <div className="load-strip">
-        <span>{t("Unburdened up to {value}", { value: burdened })}</span>
-        <span>{t("Maximum {value}", { value: burdened * 2 })}</span>
-      </div>
-      {load > burdened && (
-        <p className="field-hint">
-          {t(load > burdened * 2 ? "Over maximum load." : "Burdened")}
-        </p>
-      )}
-      <SheetCounter
-        label={t("Coin")}
-        value={sheet.coin}
-        max={9999}
-        busy={busy}
-        change={(coin) => {
-          void update({ coin });
-        }}
-      />
-      {!sheet.equipment.length && (
-        <p className="field-hint">
-          {t("Starting equipment value: {value}", {
-            value: playbookData[sheet.playbook]?.value || 0,
-          })}
-        </p>
-      )}
-      {sheet.equipment.map((item, i) => (
-        <div className={`live-gear gear-${item.kind}`} key={i}>
-          <div>
-            <span className="gear-kind-icon" aria-hidden="true">
-              {item.kind === "weapon" ? (
-                <Swords size={20} />
-              ) : item.kind === "armor" ? (
-                <Shield size={20} />
-              ) : (
-                <Package size={20} />
-              )}
-            </span>
-            <strong>{item.name || t("item")}</strong>
-            <span>
-              {t("Load")}: {item.load}
-            </span>
-            <button
-              className="icon-btn"
-              aria-label={t("Edit {item}", { item: item.name })}
-              disabled={busy}
-              onClick={() => {
-                setKind(item.kind);
-                setItemSnapshot(JSON.stringify(item));
-                setEditing(i);
-                setError("");
-              }}
-            >
-              <Edit3 size={16} />
-            </button>
-            <button
-              className="icon-btn"
-              aria-label={t("Remove {item}", { item: item.name || t("item") })}
-              disabled={busy}
-              onClick={() => {
-                if (window.confirm(t("Remove this piece of equipment?")))
-                  void update({
-                    equipment: sheet.equipment.filter((_, j) => j !== i),
-                  }).then((ok) => {
-                    if (ok) setEditing(null);
-                  });
-              }}
-            >
-              <Trash2 size={16} />
-            </button>
-          </div>
-          {item.kind === "weapon" && (
-            <div className="weapon-facts">
-              <span>
-                {t("Weapon harm")}: {item.harm}
-              </span>
-              {item.range && (
-                <span>
-                  {t("Range")}: {item.range}
-                </span>
-              )}
-            </div>
+      <h3 className="gear-section-title">{t("Equipment")}</h3>
+      <div className="equipment-overview">
+        <p>
+          {t(
+            "Carry valuable gear here. Track its load, value, and wear; weapon tags and range determine which moves it supports.",
           )}
-          {item.details && <p>{item.details}</p>}
-          {item.kind === "weapon" && roll && (
-            <div className="weapon-rolls">
-              <button
-                className="text-link"
-                disabled={busy}
-                onClick={() => roll("Might")}
-              >
-                <Dices size={15} />
-                {t("Melee · Might")}
-              </button>
-              <button
-                className="text-link"
-                disabled={busy}
-                onClick={() => roll("Finesse")}
-              >
-                <Dices size={15} />
-                {t("Ranged · Finesse")}
-              </button>
-            </div>
+        </p>
+        <div className="load-strip">
+          <span>
+            <RuleHelp name="Load" />: <strong>{load}</strong>
+          </span>
+          <span>{t("Unburdened up to {value}", { value: burdened })}</span>
+          <span>{t("Maximum {value}", { value: burdened * 2 })}</span>
+          {load > burdened && (
+            <strong>
+              {t(load > burdened * 2 ? "Over maximum load." : "Burdened")}
+            </strong>
           )}
-          <div className="gear-wear">
-            <span>{t("Wear")}</span>
-            {Array.from({ length: item.maxWear }, (_, j) => j + 1).map((n) => (
-              <button
-                key={n}
-                className={`pip ${item.wear >= n ? "filled" : ""}`}
-                aria-label={t("{item}: wear {value}", {
-                  item: item.name,
-                  value: n,
-                })}
-                aria-pressed={item.wear >= n}
-                disabled={busy}
-                onClick={() =>
-                  void update({
-                    equipment: sheet.equipment.map((x, j) =>
-                      j === i ? { ...x, wear: x.wear === n ? n - 1 : n } : x,
-                    ),
-                  })
-                }
-              />
-            ))}
-            <small>
-              {item.wear}/{item.maxWear}
-            </small>
-          </div>
         </div>
-      ))}
-      {editing !== null ? (
+      </div>
+      <div className="equipment-grid">
+        <article className="coin-tile">
+          <CoinIcon />
+          <SheetCounter
+            label={t("Coin")}
+            help={<RuleHelp name="Coin" />}
+            value={sheet.coin}
+            max={9999}
+            busy={busy}
+            change={(coin) => {
+              void update({ coin });
+            }}
+          />
+          <p>{t("Unspent Value, ready for the road.")}</p>
+          {!sheet.equipment.length && (
+            <small>
+              {t("Starting equipment value: {value}", {
+                value: playbookData[sheet.playbook]?.value || 0,
+              })}
+            </small>
+          )}
+        </article>
+        {sheet.equipment.map((item, i) => (
+          <article className={`live-gear gear-${item.kind}`} key={i}>
+            <div>
+              <span className="gear-kind-icon" aria-hidden="true">
+                {item.kind === "weapon" ? (
+                  <Swords size={20} />
+                ) : item.kind === "armor" ? (
+                  <Shield size={20} />
+                ) : (
+                  <Package size={20} />
+                )}
+              </span>
+              <strong>
+                <RuleHelp
+                  name={item.name || t("item")}
+                  summary={item.details || rulesSummary(item.kind)}
+                />
+              </strong>
+              <button
+                className="icon-btn"
+                aria-label={t("Edit {item}", { item: item.name })}
+                disabled={busy}
+                onClick={() => {
+                  setKind(item.kind);
+                  setItemSnapshot(JSON.stringify(item));
+                  setEditing(i);
+                  setError("");
+                }}
+              >
+                <Edit3 size={16} />
+              </button>
+              <button
+                className="icon-btn"
+                aria-label={t("Remove {item}", {
+                  item: item.name || t("item"),
+                })}
+                disabled={busy}
+                onClick={() => {
+                  if (window.confirm(t("Remove this piece of equipment?")))
+                    void update({
+                      equipment: sheet.equipment.filter((_, j) => j !== i),
+                    }).then((ok) => {
+                      if (ok) setEditing(null);
+                    });
+                }}
+              >
+                <Trash2 size={16} />
+              </button>
+            </div>
+            <div className="gear-facts">
+              <span>
+                <RuleHelp name="Load" />: {item.load}
+              </span>
+              <span>
+                <RuleHelp name="Value" />: {item.value}
+              </span>
+            </div>
+            {item.kind === "weapon" && (
+              <div className="weapon-facts">
+                <span>
+                  <RuleHelp name="Weapon harm" />: {item.harm}
+                </span>
+                {item.range && (
+                  <span>
+                    <RuleHelp name="Range" />: {t(item.range)}
+                  </span>
+                )}
+              </div>
+            )}
+            {item.details && <p>{item.details}</p>}
+            {item.kind === "weapon" && roll && (
+              <div className="weapon-rolls">
+                <button
+                  className="text-link"
+                  disabled={busy}
+                  onClick={() => roll("Might")}
+                >
+                  <Dices size={15} />
+                  {t("Melee · Might")}
+                </button>
+                <button
+                  className="text-link"
+                  disabled={busy}
+                  onClick={() => roll("Finesse")}
+                >
+                  <Dices size={15} />
+                  {t("Ranged · Finesse")}
+                </button>
+              </div>
+            )}
+            <div className="gear-wear">
+              <span>
+                <RuleHelp name="Wear" />
+              </span>
+              {Array.from({ length: item.maxWear }, (_, j) => j + 1).map(
+                (n) => (
+                  <button
+                    key={n}
+                    className={`pip ${item.wear >= n ? "filled" : ""}`}
+                    aria-label={t("{item}: wear {value}", {
+                      item: item.name,
+                      value: n,
+                    })}
+                    aria-pressed={item.wear >= n}
+                    disabled={busy}
+                    onClick={() =>
+                      void update({
+                        equipment: sheet.equipment.map((x, j) =>
+                          j === i
+                            ? { ...x, wear: x.wear === n ? n - 1 : n }
+                            : x,
+                        ),
+                      })
+                    }
+                  />
+                ),
+              )}
+              <small>
+                {item.wear}/{item.maxWear}
+              </small>
+            </div>
+          </article>
+        ))}
+        {editing === null && (
+          <button
+            className="btn equipment-add-tile"
+            disabled={busy || sheet.equipment.length >= 30}
+            onClick={() => {
+              setKind("gear");
+              setEditing(-1);
+              setError("");
+            }}
+          >
+            <Plus size={24} />
+            {t("Add equipment")}
+          </button>
+        )}
+      </div>
+      {editing !== null && (
         <form className="quick-gear-form" key={editing} onSubmit={save}>
           <fieldset disabled={busy}>
             <label>
@@ -338,20 +384,15 @@ export default function GearPanel({
             </p>
           )}
         </form>
-      ) : (
-        <button
-          className="btn"
-          disabled={busy || sheet.equipment.length >= 30}
-          onClick={() => {
-            setKind("gear");
-            setEditing(-1);
-            setError("");
-          }}
-        >
-          <Plus size={16} />
-          {t("Add equipment")}
-        </button>
       )}
     </section>
   );
+}
+
+function rulesSummary(kind: string) {
+  return kind === "weapon"
+    ? "A weapon’s range and tags determine which attacks it supports. Check the move before rolling."
+    : kind === "armor"
+      ? "Armor can absorb injury as wear when its tags allow it. Check its tags for limits and special protection."
+      : "Valuable equipment has its own load, value, tags, and wear. Record its special features in the item’s details.";
 }

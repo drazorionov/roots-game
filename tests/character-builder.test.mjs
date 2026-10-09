@@ -112,9 +112,7 @@ test(
       await expect(
         page.locator(".equipment-section .gear-panel"),
       ).toBeVisible();
-      await expect(
-        page.locator(".sheet-subsection .move-reminder"),
-      ).toHaveCount(3);
+      await expect(page.locator(".sheet-subsection .move-tile")).toHaveCount(3);
       await page
         .getByRole("button", { name: "Melee · Might", exact: true })
         .click();
@@ -135,7 +133,11 @@ test(
         .getByRole("button", { name: "Save character", exact: true })
         .click();
       await expect(
-        page.getByRole("heading", { name: "Juniper the Smith", exact: true }),
+        page.getByRole("heading", {
+          name: "Juniper the Smith",
+          exact: true,
+          level: 2,
+        }),
       ).toBeVisible();
       await expect(
         page.getByRole("button", { name: "injury 2", exact: true }),

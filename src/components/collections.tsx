@@ -270,7 +270,7 @@ export function CharacterCollection({
         <p className="assignment-note">
           <LockKeyhole size={17} />
           {t(
-            "Joining a campaign locks character setup. Finish your choices before joining; play tracking stays available.",
+            "Joining creates a separate campaign copy with locked setup. Your base character stays editable in My characters. Changes to either copy stay separate.",
           )}
         </p>
       )}
@@ -311,14 +311,8 @@ export function CharacterCollection({
                   {t(h.sheet.species)} · {t(h.sheet.playbook)}
                 </span>
                 <small>
-                  {choosing && h.campaign_id && h.campaign_id !== campaign?.id
-                    ? t("Move from {campaign}", {
-                        campaign:
-                          campaigns.find((c) => c.id === h.campaign_id)?.name ||
-                          t("Campaign"),
-                      })
-                    : campaigns.find((c) => c.id === h.campaign_id)?.name ||
-                      t("No campaign yet")}
+                  {campaigns.find((c) => c.id === h.campaign_id)?.name ||
+                    t("No campaign yet")}
                 </small>
                 {h.campaign_id && (
                   <span className="setup-lock-tag">

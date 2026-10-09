@@ -830,7 +830,7 @@ export default function CharacterEditor({
                 <p className="assignment-note">
                   <LockKeyhole size={18} />
                   {t(
-                    "Joining {campaign} locks your character setup. Review your choices now. Harm, rolls, equipment, and session progress stay available.",
+                    "Joining {campaign} saves a separate copy with locked setup. Your base character stays editable in My characters; campaign progress only changes the copy.",
                     { campaign: campaignName },
                   )}
                 </p>

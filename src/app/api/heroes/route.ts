@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
@@ -38,6 +39,7 @@ export async function POST(req: Request) {
       })
       .parse(await req.json());
     const sql = db();
+    let copying = false;
     if (data.id) {
       const existing =
         await sql`SELECT sheet, campaign_id FROM heroes WHERE id = ${data.id} AND owner_id = ${user.id} AND version = ${data.version ?? 0}`;
@@ -49,31 +51,38 @@ export async function POST(req: Request) {
           },
           { status: 409 },
         );
+      copying = !existing[0].campaign_id && !!data.campaignId;
       if (
         existing[0].campaign_id &&
-        (!data.campaignId ||
+        (data.campaignId !== existing[0].campaign_id ||
           !sameCharacterSetup(sheetSchema.parse(existing[0].sheet), data.sheet))
       )
         return NextResponse.json(
           {
             error:
-              "Character setup is locked while assigned to a campaign. You can still track harm, rolls, equipment, and session progress.",
+              "This campaign copy has locked setup. Your base character stays editable in My characters. You can still track harm, rolls, equipment, and session progress.",
           },
           { status: 403 },
         );
     }
-    const save = data.id
-      ? sql`UPDATE heroes SET sheet = ${JSON.stringify(data.sheet)}::jsonb, campaign_id = ${data.campaignId}, version = version + 1, updated_at = now() WHERE id = ${data.id} AND owner_id = ${user.id} AND version = ${data.version ?? 0} AND (${data.campaignId}::uuid IS NULL OR EXISTS (SELECT 1 FROM memberships WHERE campaign_id = ${data.campaignId} AND user_id = ${user.id})) RETURNING *`
-      : sql`INSERT INTO heroes (campaign_id, owner_id, sheet) SELECT ${data.campaignId}, ${user.id}, ${JSON.stringify(data.sheet)}::jsonb WHERE ${data.campaignId}::uuid IS NULL OR EXISTS (SELECT 1 FROM memberships WHERE campaign_id = ${data.campaignId} AND user_id = ${user.id}) RETURNING *`;
-    // Lock membership before saving, in the same order as leaving a campaign.
-    const rows = data.campaignId
-      ? (
-          await sql.transaction([
-            sql`SELECT campaign_id FROM memberships WHERE campaign_id = ${data.campaignId} AND user_id = ${user.id} FOR KEY SHARE`,
-            save,
-          ])
-        )[1]
-      : await save;
+    // Campaign sheets are snapshots. Never assign or update the base in place.
+    const baseId = !data.id && data.campaignId ? randomUUID() : null;
+    const save = copying
+      ? sql`INSERT INTO heroes (campaign_id, owner_id, sheet, source_hero_id) SELECT ${data.campaignId}, owner_id, sheet, id FROM heroes WHERE id = ${data.id} AND owner_id = ${user.id} AND campaign_id IS NULL AND version = ${data.version ?? 0} AND EXISTS (SELECT 1 FROM memberships WHERE campaign_id = ${data.campaignId} AND user_id = ${user.id}) ON CONFLICT (campaign_id, source_hero_id) DO UPDATE SET source_hero_id = EXCLUDED.source_hero_id RETURNING *`
+      : data.id
+        ? sql`UPDATE heroes SET sheet = ${JSON.stringify(data.sheet)}::jsonb, version = version + 1, updated_at = now() WHERE id = ${data.id} AND owner_id = ${user.id} AND version = ${data.version ?? 0} AND campaign_id IS NOT DISTINCT FROM ${data.campaignId}::uuid AND (${data.campaignId}::uuid IS NULL OR EXISTS (SELECT 1 FROM memberships WHERE campaign_id = ${data.campaignId} AND user_id = ${user.id})) RETURNING *`
+        : baseId
+          ? sql`WITH base AS (INSERT INTO heroes (id, owner_id, sheet) SELECT ${baseId}, ${user.id}, ${JSON.stringify(data.sheet)}::jsonb WHERE EXISTS (SELECT 1 FROM memberships WHERE campaign_id = ${data.campaignId} AND user_id = ${user.id}) RETURNING *) INSERT INTO heroes (campaign_id, owner_id, sheet, source_hero_id) SELECT ${data.campaignId}, owner_id, sheet, id FROM base RETURNING *`
+          : sql`INSERT INTO heroes (owner_id, sheet) VALUES (${user.id}, ${JSON.stringify(data.sheet)}::jsonb) RETURNING *`;
+    // Serialize campaign saves with departure; creating a base and copy is atomic.
+    const results = data.campaignId
+      ? await sql.transaction([
+          sql`SELECT campaign_id FROM memberships WHERE campaign_id = ${data.campaignId} AND user_id = ${user.id} FOR KEY SHARE`,
+          save,
+          sql`SELECT * FROM heroes WHERE id = ${baseId} AND owner_id = ${user.id}`,
+        ])
+      : null;
+    const rows = results ? results[1] : await save;
     if (!rows[0])
       return NextResponse.json(
         {
@@ -82,7 +91,12 @@ export async function POST(req: Request) {
         },
         { status: 409 },
       );
-    return NextResponse.json({ hero: { ...rows[0], player: user.name } });
+    return NextResponse.json({
+      hero: { ...rows[0], player: user.name },
+      ...(results?.[2][0]
+        ? { baseHero: { ...results[2][0], player: user.name } }
+        : {}),
+    });
   } catch (error) {
     return NextResponse.json(
       {

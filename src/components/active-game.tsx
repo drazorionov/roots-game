@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, type ReactNode } from "react";
-import { MapPin, RefreshCw } from "lucide-react";
+import { MapPin, RefreshCw, LockKeyhole } from "lucide-react";
 import { api } from "@/lib/client-api";
 import { useTranslation } from "@/lib/i18n";
 import {
@@ -9,6 +9,7 @@ import {
   harmTracks,
   harmCapacity,
 } from "@/lib/sheet";
+import { setupRemaining } from "@/lib/playbooks";
 import { Portrait } from "./art";
 import { MasterPortrait } from "./notebook-doodles";
 import CampaignPresence, { type Player } from "./campaign-presence";
@@ -26,8 +27,10 @@ export default function ActiveGame({
   children: ReactNode;
   heading?: ReactNode;
 }) {
+  const { t } = useTranslation();
   const [onlinePlayers, setOnlinePlayers] = useState<Player[] | undefined>();
   if (!enabled) return children;
+  const remaining = hero.campaign_id ? [] : setupRemaining(hero.sheet);
   return (
     <div className="active-game">
       <div className="session-heading">
@@ -47,6 +50,58 @@ export default function ActiveGame({
         onlinePlayers={onlinePlayers}
       />
       {children}
+      <footer className="campaign-footer">
+        {remaining.length > 0 && (
+          <details className="setup-checklist">
+            <summary>
+              {t("Finish setup")} · {remaining.length}
+            </summary>
+            <ul>
+              {remaining.map((message) => (
+                <li key={message}>{t(message)}</li>
+              ))}
+            </ul>
+          </details>
+        )}
+        {hero.campaign_id && (
+          <p className="setup-locked-note">
+            <LockKeyhole size={16} aria-hidden="true" />
+            <span>
+              {t("Setup locked")} ·{" "}
+              {t(
+                "Harm, rolls, equipment, and session progress stay available.",
+              )}
+            </span>
+          </p>
+        )}
+        <p>
+          {t(
+            "Tap a name for rules; use dice to roll and symbols to mark harm.",
+          )}
+        </p>
+        <p>
+          {t(
+            "Attribute rolls include forward and ongoing. Forward is cleared after one roll; hold is spent manually.",
+          )}
+        </p>
+        <p>
+          {t(
+            "Mark boxes outward from zero. Tap a marked box to erase it and the marks beyond it. Circle your standing when the table resolves a change.",
+          )}
+        </p>
+        <p>
+          {t(
+            "Mark each fulfilled drive once per session. Each mark adds one advancement.",
+          )}
+        </p>
+        <p>
+          {t(
+            campaign
+              ? "Changes save automatically."
+              : "Saved only in this browser tab.",
+          )}
+        </p>
+      </footer>
     </div>
   );
 }

@@ -248,6 +248,12 @@ test(
       fail = false;
       await page.getByRole("button", { name: "Retry", exact: true }).click();
       await expect(page.locator(".party-card")).toHaveCount(2);
+      await expect(page.locator(".field-sheet .setup-locked-note")).toHaveCount(
+        0,
+      );
+      await expect(
+        page.locator(".campaign-footer .setup-locked-note"),
+      ).toContainText("Setup locked");
       const companion = page
         .locator(".party-card")
         .filter({ hasText: "Moss Underbough" });

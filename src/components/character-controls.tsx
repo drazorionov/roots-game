@@ -3,7 +3,8 @@ import { useRef, useState } from "react";
 import {
   Check,
   Edit3,
-  LockKeyhole,
+  Leaf,
+  PawPrint,
   Swords,
   BookOpen,
   Flag,
@@ -18,9 +19,10 @@ import {
   harmTracks,
   harmCapacity,
 } from "@/lib/sheet";
-import { effectiveStats, natureHints, setupRemaining } from "@/lib/playbooks";
+import { effectiveStats, natureHints, playbookData } from "@/lib/playbooks";
 import { Portrait } from "./art";
 import { NotebookDoodle } from "./notebook-doodles";
+import RuleHelp from "./rule-help";
 import SheetCounter from "./sheet-counter";
 import AttributeIcon from "./attribute-icon";
 import { HarmMark, DiceIcon } from "./game-icons";
@@ -46,8 +48,7 @@ export default function CharacterControls({
   const setupLocked = !!hero.campaign_id;
   const [roll, setRoll] = useState<AttributeRoll | null>(null);
   const sheet = hero.sheet,
-    attributes = effectiveStats(sheet),
-    remaining = setupRemaining(sheet);
+    attributes = effectiveStats(sheet);
   async function update(patch: Partial<Sheet>) {
     if (locked.current) return false;
     locked.current = true;
@@ -140,13 +141,12 @@ export default function CharacterControls({
               </div>
               <NotebookDoodle kind="harm" />
             </div>
-            <p className="field-hint">
-              {t("Tap a symbol to mark or clear harm.")}
-            </p>
             {harmTracks.map((track) => (
               <div className={`condition-track ${track}`} key={track}>
                 <div className="condition-label">
-                  <strong>{t(track)}</strong>
+                  <strong>
+                    <RuleHelp name={track} />
+                  </strong>
                   <span>
                     {sheet[track]} / {harmCapacity(sheet, track)}
                   </span>
@@ -186,6 +186,7 @@ export default function CharacterControls({
                 <SheetCounter
                   key={key}
                   label={t(["Hold", "Forward", "Ongoing"][i])}
+                  help={<RuleHelp name={["Hold", "Forward", "Ongoing"][i]} />}
                   value={sheet[key]}
                   min={key === "hold" ? 0 : -3}
                   max={key === "hold" ? 99 : 3}
@@ -196,11 +197,6 @@ export default function CharacterControls({
                 />
               ))}
             </div>
-            <p className="field-hint">
-              {t(
-                "Attribute rolls include forward and ongoing. Forward is cleared after one roll; hold is spent manually.",
-              )}
-            </p>
           </section>
         </div>
       </div>
@@ -217,24 +213,25 @@ export default function CharacterControls({
         </div>
         <div className="attribute-rolls">
           {stats.map((stat) => (
-            <button
-              type="button"
-              className="attribute-roll"
-              key={stat}
-              aria-label={t("Roll {stat}", { stat: t(stat) })}
-              disabled={busy}
-              onClick={() => void rollAttribute(stat)}
-            >
+            <div className="attribute-roll" key={stat}>
               <AttributeIcon stat={stat} />
-              <span>{t(stat)}</span>
-              <strong>
-                {attributes[stat] >= 0 ? "+" : ""}
-                {attributes[stat]}
-              </strong>
-              <span className="attribute-dice">
-                <DiceIcon />
-              </span>
-            </button>
+              <RuleHelp name={stat} />
+              <button
+                type="button"
+                className="attribute-roll-action"
+                aria-label={t("Roll {stat}", { stat: t(stat) })}
+                disabled={busy}
+                onClick={() => void rollAttribute(stat)}
+              >
+                <strong>
+                  {attributes[stat] >= 0 ? "+" : ""}
+                  {attributes[stat]}
+                </strong>
+                <span className="attribute-dice">
+                  <DiceIcon />
+                </span>
+              </button>
+            </div>
           ))}
         </div>
       </section>
@@ -269,54 +266,51 @@ export default function CharacterControls({
             <BookOpen size={19} />
             {t("Character info & moves")}
           </summary>
-          {sheet.description && (
-            <p className="character-description">{sheet.description}</p>
-          )}
-          {setupLocked && (
-            <div className="setup-locked-note">
-              <LockKeyhole size={16} />
-              <span>
-                {t("Setup locked")} ·{" "}
-                {t(
-                  "Harm, rolls, equipment, and session progress stay available.",
-                )}
-              </span>
-            </div>
-          )}
-          {!setupLocked && remaining.length > 0 && (
-            <div className="setup-checklist">
-              <strong>
-                {t("Finish setup")} · {remaining.length}
-              </strong>
-              <ul>
-                {remaining.map((message) => (
-                  <li key={message}>{t(message)}</li>
-                ))}
-              </ul>
-              <button className="text-link" onClick={() => edit()}>
-                {t("Continue character setup")}
-              </button>
-            </div>
-          )}
-          {sheet.nature && (
-            <div className="nature-card">
+          <div className="feature-grid character-info-grid">
+            <article className="feature-tile">
+              <BookOpen className="feature-icon" aria-hidden="true" />
+              <small>{t("Playbook")}</small>
               <h4>
-                {t("Nature")} · {t(sheet.nature)}
+                <RuleHelp
+                  name={sheet.playbook}
+                  summary={playbookData[sheet.playbook]?.summary}
+                  page={playbookData[sheet.playbook]?.page}
+                />
               </h4>
               <p>
-                {natureHints[sheet.nature]
-                  ? t(natureHints[sheet.nature])
-                  : sheet.nature}
+                {t(playbookData[sheet.playbook]?.summary || sheet.playbook)}
               </p>
-              <button
-                className="btn small"
-                disabled={busy || sheet.exhaustion === 0}
-                onClick={() => void update({ exhaustion: 0 })}
-              >
-                {t("Fulfill nature: clear exhaustion")}
-              </button>
-            </div>
-          )}
+            </article>
+            <article className="feature-tile">
+              <PawPrint className="feature-icon" aria-hidden="true" />
+              <small>{t("Species")}</small>
+              <h4>{t(sheet.species)}</h4>
+              {sheet.pronouns && <p>{sheet.pronouns}</p>}
+              {sheet.description && <p>{sheet.description}</p>}
+            </article>
+            {sheet.nature && (
+              <article className="feature-tile nature-tile">
+                <Leaf className="feature-icon" aria-hidden="true" />
+                <small>
+                  <RuleHelp name="Nature" />
+                </small>
+                <h4>
+                  <RuleHelp
+                    name={sheet.nature}
+                    summary={natureHints[sheet.nature]}
+                  />
+                </h4>
+                <p>{t(natureHints[sheet.nature] || sheet.nature)}</p>
+                <button
+                  className="btn small"
+                  disabled={busy || sheet.exhaustion === 0}
+                  onClick={() => void update({ exhaustion: 0 })}
+                >
+                  {t("Fulfill nature: clear exhaustion")}
+                </button>
+              </article>
+            )}
+          </div>
           <MovesPanel
             setupLocked={setupLocked}
             sheet={sheet}
@@ -351,13 +345,7 @@ export default function CharacterControls({
                 : "Character sheet saved.",
             )}
           </>
-        ) : (
-          t(
-            saveLocal
-              ? "Saved only in this browser tab."
-              : "Changes save automatically.",
-          )
-        )}
+        ) : null}
       </div>
       {error && (
         <p className="error" role="alert">

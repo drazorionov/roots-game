@@ -157,13 +157,22 @@ function WoodlandWorkspace() {
   const draftCampaign = useRef<string | null>(null);
   const hero = quickMode ? quickHero : heroes.find((h) => h.id === selected);
   const campaign = campaigns.find((c) => c.id === hero?.campaign_id);
-  const shown = heroes.filter(
-    (h) => !campaignFilter || h.campaign_id === campaignFilter,
+  const shown = heroes.filter((h) =>
+    campaignFilter ? h.campaign_id === campaignFilter : !h.campaign_id,
   );
   const resumable = heroes.find(
     (h) => h.id === resumeId && campaigns.some((c) => c.id === h.campaign_id),
   );
   const gameCampaign = campaigns.find((c) => c.id === gameCampaignId);
+  const campaignHeroes = heroes.filter((h) => h.campaign_id === gameCampaignId);
+  const selectableHeroes = [
+    ...campaignHeroes,
+    ...heroes.filter(
+      (h) =>
+        !h.campaign_id &&
+        !campaignHeroes.some((copy) => copy.source_hero_id === h.id),
+    ),
+  ];
   const activeGame =
     !creating &&
     (quickMode
@@ -546,6 +555,7 @@ function WoodlandWorkspace() {
       version: creatingCharacter ? undefined : editing?.version,
       sheet,
     });
+    if (data.baseHero) updated(data.baseHero);
     updated(data.hero);
     setSelected(data.hero.id);
     setCampaignFilter("");
@@ -562,7 +572,7 @@ function WoodlandWorkspace() {
   async function saveCharacter(sheet: Sheet, joinCampaign = false) {
     if (editingAssigned) {
       setError(
-        "Character setup is locked while assigned to a campaign. You can still track harm, rolls, equipment, and session progress.",
+        "This campaign copy has locked setup. Your base character stays editable in My characters. You can still track harm, rolls, equipment, and session progress.",
       );
       return;
     }
@@ -833,7 +843,7 @@ function WoodlandWorkspace() {
                   <p>
                     {t(
                       editingAssigned
-                        ? "Character setup is locked while assigned to a campaign. You can still track harm, rolls, equipment, and session progress."
+                        ? "This campaign copy has locked setup. Your base character stays editable in My characters. You can still track harm, rolls, equipment, and session progress."
                         : "This character is not available. Sign in with its owner account.",
                     )}
                   </p>
@@ -1061,7 +1071,7 @@ function WoodlandWorkspace() {
           />
         ) : (
           <CharacterCollection
-            heroes={tab === "play" ? heroes : shown}
+            heroes={tab === "play" ? selectableHeroes : shown}
             campaigns={campaigns}
             choosing={tab === "play"}
             campaign={gameCampaign}
