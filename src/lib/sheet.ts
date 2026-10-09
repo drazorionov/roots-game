@@ -84,6 +84,41 @@ export const equipmentSchema = z
       });
   });
 export type Equipment = z.infer<typeof equipmentSchema>;
+const addedReputationFactions = [
+  { name: "Grand Duchy", aliases: ["underground duchy"] },
+  { name: "Riverfolk Company", aliases: [] },
+  { name: "Lizard Cult", aliases: [] },
+  { name: "Corvid Conspiracy", aliases: [] },
+];
+const reputationLimit = 12 + addedReputationFactions.length;
+const reputationEntrySchema = z.object({
+  faction: z.string().max(80),
+  standing: z.number().int().min(-3).max(3),
+  prestige: z.number().int().min(0).max(15),
+  notoriety: z.number().int().min(0).max(15),
+});
+export function withReputationFactions(
+  reputation: z.infer<typeof reputationEntrySchema>[],
+) {
+  const missing = addedReputationFactions.filter(
+    ({ name, aliases }) =>
+      !reputation.some(({ faction }) => {
+        const normalized = faction.trim().toLowerCase();
+        return normalized === name.toLowerCase() || aliases.includes(normalized);
+      }),
+  );
+  return missing.length
+    ? [
+        ...reputation,
+        ...missing.map(({ name }) => ({
+          faction: name,
+          standing: 0,
+          prestige: 0,
+          notoriety: 0,
+        })),
+      ]
+    : reputation;
+}
 export const sheetSchema = z
   .object({
     name: z.string().trim().min(1).max(80),
@@ -110,15 +145,11 @@ export const sheetSchema = z
     weaponSkills: note,
     equipment: z.array(equipmentSchema).max(30),
     reputation: z
-      .array(
-        z.object({
-          faction: z.string().max(80),
-          standing: z.number().int().min(-3).max(3),
-          prestige: z.number().int().min(0).max(15),
-          notoriety: z.number().int().min(0).max(15),
-        }),
-      )
-      .max(12),
+      .array(reputationEntrySchema)
+      .max(reputationLimit)
+      .transform(withReputationFactions)
+      // Leave room for all twelve legacy entries plus the added factions.
+      .pipe(z.array(reputationEntrySchema).max(reputationLimit)),
     advancement: z.number().int().min(0).max(100),
     moveIds: selections,
     driveIds: selections,
@@ -219,6 +250,7 @@ export function blankSheet(): Sheet {
       "Marquisate",
       "Eyrie Dynasties",
       "Woodland Alliance",
+      ...addedReputationFactions.map(({ name }) => name),
     ].map((faction) => ({ faction, standing: 0, prestige: 0, notoriety: 0 })),
     advancement: 0,
   };

@@ -33,7 +33,7 @@ export async function GET(req: Request) {
       );
     }
     const events =
-      await sql`SELECT id, sequence::text, player, character, kind, changes, roll, created_at FROM game_activity WHERE campaign_id = ${campaignId} AND sequence > ${after}::bigint ORDER BY sequence LIMIT 100`;
+      await sql`SELECT id, sequence::text, player, character, portrait, kind, changes, roll, created_at FROM game_activity WHERE campaign_id = ${campaignId} AND sequence > ${after}::bigint ORDER BY sequence LIMIT 100`;
     return NextResponse.json(
       { events, cursor: events.at(-1)?.sequence ?? after },
       { headers: { "Cache-Control": "no-store" } },
@@ -63,8 +63,8 @@ export async function POST(req: Request) {
     const sql = db();
     const [, events] = await sql.transaction([
       sql`SELECT c.id FROM campaigns c JOIN memberships m ON m.campaign_id = c.id WHERE c.id = ${data.campaignId} AND m.user_id = ${user.id} FOR UPDATE OF c`,
-      sql`INSERT INTO game_activity (id, campaign_id, player, character, kind, roll)
-        SELECT ${data.id}, h.campaign_id, ${user.name}, h.sheet ->> 'name', 'roll', ${JSON.stringify(data.roll)}::jsonb
+      sql`INSERT INTO game_activity (id, campaign_id, player, character, portrait, kind, roll)
+        SELECT ${data.id}, h.campaign_id, ${user.name}, h.sheet ->> 'name', jsonb_build_object('species', h.sheet ->> 'species', 'playbook', h.sheet ->> 'playbook'), 'roll', ${JSON.stringify(data.roll)}::jsonb
         FROM heroes h JOIN memberships m ON m.campaign_id = h.campaign_id AND m.user_id = ${user.id}
         WHERE h.id = ${data.heroId} AND h.owner_id = ${user.id} AND h.campaign_id = ${data.campaignId}
         ON CONFLICT (id) DO NOTHING RETURNING id`,

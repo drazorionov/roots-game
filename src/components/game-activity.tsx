@@ -7,7 +7,8 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { Dices, ScrollText, X } from "lucide-react";
+import { Dices, ScrollText, UserRound, X } from "lucide-react";
+import { Portrait } from "./art";
 import { api } from "@/lib/client-api";
 import { useTranslation } from "@/lib/i18n";
 import {
@@ -141,6 +142,7 @@ export default function GameActivityFeed({
     id: crypto.randomUUID(),
     player: hero.player,
     character: hero.sheet.name,
+    portrait: { species: hero.sheet.species, playbook: hero.sheet.playbook },
     created_at: new Date().toISOString(),
   });
   return (
@@ -190,12 +192,23 @@ export default function GameActivityFeed({
               className={`activity-popup activity-${event.kind}`}
               key={event.id}
             >
-              <span className="activity-symbol" aria-hidden="true">
-                {event.kind === "roll" ? (
-                  <Dices size={19} />
+              <span className="activity-avatar" aria-hidden="true">
+                {event.portrait?.species && event.portrait?.playbook ? (
+                  <Portrait
+                    species={event.portrait.species}
+                    playbook={event.portrait.playbook}
+                    sizes="48px"
+                  />
                 ) : (
-                  <ScrollText size={18} />
+                  <UserRound size={26} />
                 )}
+                <span className="activity-symbol">
+                  {event.kind === "roll" ? (
+                    <Dices size={12} />
+                  ) : (
+                    <ScrollText size={12} />
+                  )}
+                </span>
               </span>
               <div className="activity-copy">
                 <div className="activity-meta">

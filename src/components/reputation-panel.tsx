@@ -4,7 +4,7 @@ import Image from "next/image";
 import { Flag } from "lucide-react";
 import { useTranslation } from "@/lib/i18n";
 import { factionIcon } from "@/lib/factions";
-import { type Sheet } from "@/lib/sheet";
+import { type Sheet, withReputationFactions } from "@/lib/sheet";
 import { type UpdateSheet } from "./gear-panel";
 import RuleHelp from "./rule-help";
 import SheetCounter from "./sheet-counter";
@@ -20,6 +20,7 @@ export function ReputationPanel({
   update: UpdateSheet;
 }) {
   const { t } = useTranslation();
+  const reputation = withReputationFactions(sheet.reputation);
 
   function change(
     index: number,
@@ -27,7 +28,7 @@ export function ReputationPanel({
     value: number,
   ) {
     void update({
-      reputation: sheet.reputation.map((f, i) =>
+      reputation: reputation.map((f, i) =>
         i === index ? { ...f, [key]: value } : f,
       ),
     });
@@ -45,7 +46,7 @@ export function ReputationPanel({
         </p>
       </details>
       <div className="reputation-ledger">
-        {sheet.reputation.map((f, i) => {
+        {reputation.map((f, i) => {
           const icon = factionIcon(f.faction);
           function standing(value: number) {
             return (

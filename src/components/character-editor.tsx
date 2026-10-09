@@ -20,6 +20,7 @@ import {
   stats,
   harmTracks,
   harmCapacity,
+  withReputationFactions,
   type Sheet,
 } from "@/lib/sheet";
 import {
@@ -53,12 +54,11 @@ export default function CharacterEditor({
   markDirty: () => void;
 }) {
   const { t } = useTranslation();
-  const [sheet, setSheet] = useState<Sheet>(() =>
-    structuredClone(initial || newCharacterSheet()),
-  );
-  const [baseline] = useState(() =>
-    JSON.stringify(initial || newCharacterSheet()),
-  );
+  const [sheet, setSheet] = useState<Sheet>(() => {
+    const starting = structuredClone(initial || newCharacterSheet());
+    return { ...starting, reputation: withReputationFactions(starting.reputation) };
+  });
+  const [baseline] = useState(() => JSON.stringify(sheet));
   const [step, setStep] = useState(initialStep),
     [localError, setLocalError] = useState("");
   const top = useRef<HTMLDivElement>(null);

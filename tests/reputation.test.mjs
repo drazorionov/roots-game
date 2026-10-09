@@ -23,6 +23,30 @@ test(
         .click();
       await page.getByLabel("Name", { exact: true }).fill("Reputation Scout");
       await page
+        .locator(".wizard-steps")
+        .getByRole("button", { name: /Background/ })
+        .click();
+      const additions = [
+        "Grand Duchy",
+        "Riverfolk Company",
+        "Lizard Cult",
+        "Corvid Conspiracy",
+      ];
+      for (const faction of additions) {
+        await page
+          .getByLabel("Which faction did you serve?", { exact: true })
+          .selectOption(faction);
+        await page
+          .getByLabel("Which faction is your enemy?", { exact: true })
+          .selectOption(faction);
+      }
+      await page
+        .getByLabel("Which faction did you serve?", { exact: true })
+        .selectOption("Grand Duchy");
+      await page
+        .getByLabel("Which faction is your enemy?", { exact: true })
+        .selectOption("Riverfolk Company");
+      await page
         .getByRole("button", { name: "Save character", exact: true })
         .click();
       const panel = page.locator(".reputation-panel");
@@ -31,7 +55,46 @@ test(
           name: `Denizens: ${track} ${value}`,
           exact: true,
         });
-      await expect(panel.locator(".reputation-row")).toHaveCount(4);
+      await expect(panel.locator(".reputation-row")).toHaveCount(8);
+      for (const faction of additions) {
+        await expect(
+          panel.getByRole("group", { name: faction, exact: true }),
+        ).toBeVisible();
+      }
+      await expect(
+        panel.getByRole("button", {
+          name: "Grand Duchy: Prestige 2",
+          exact: true,
+        }),
+      ).toHaveAttribute("aria-pressed", "true");
+      await expect(
+        panel.getByRole("button", {
+          name: "Riverfolk Company: Notoriety 1",
+          exact: true,
+        }),
+      ).toHaveAttribute("aria-pressed", "true");
+      await panel
+        .getByRole("button", { name: "Lizard Cult: Prestige 3", exact: true })
+        .click();
+      await panel
+        .getByRole("button", {
+          name: "Corvid Conspiracy: Notoriety 2",
+          exact: true,
+        })
+        .click();
+      await page.reload();
+      await expect(
+        panel.getByRole("button", {
+          name: "Corvid Conspiracy: Notoriety 2",
+          exact: true,
+        }),
+      ).toHaveAttribute("aria-pressed", "true");
+      await expect(
+        panel.getByRole("button", {
+          name: "Lizard Cult: Prestige 3",
+          exact: true,
+        }),
+      ).toHaveAttribute("aria-pressed", "true");
       for (const id of [
         "denizens",
         "marquisate",
@@ -117,7 +180,12 @@ test(
       await page.evaluate(() => {
         const sheet = JSON.parse(sessionStorage.getItem("root-quick-sheet"));
         sheet.reputation.push(
-          { faction: "Lizard Cult", standing: 0, prestige: 0, notoriety: 0 },
+          {
+            faction: "Keepers in Iron",
+            standing: 0,
+            prestige: 0,
+            notoriety: 0,
+          },
           {
             faction: "My very long custom woodland faction name",
             standing: 0,

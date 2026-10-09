@@ -17,6 +17,7 @@ export type GameActivity = {
   sequence?: string;
   player: string;
   character: string;
+  portrait?: { species: string; playbook: string } | null;
   created_at: string;
   kind: "change" | "roll";
   changes?: SheetChange[];

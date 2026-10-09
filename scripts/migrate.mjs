@@ -57,6 +57,7 @@ await sql.transaction([
     created_at timestamptz NOT NULL DEFAULT now()
   )`,
   sql`CREATE INDEX IF NOT EXISTS game_activity_campaign_sequence_idx ON game_activity(campaign_id, sequence)`,
+  sql`ALTER TABLE game_activity ADD COLUMN IF NOT EXISTS portrait jsonb`,
   // Serialize event insertion per campaign so polling cursors cannot skip an
   // uncommitted event with a lower sequence. Roll writes take the same lock.
   sql`CREATE OR REPLACE FUNCTION log_game_sheet_change() RETURNS trigger LANGUAGE plpgsql AS $$
@@ -69,8 +70,8 @@ await sql.transaction([
         INTO changed FROM jsonb_each(NEW.sheet) entry WHERE OLD.sheet -> entry.key IS DISTINCT FROM entry.value;
       IF changed IS NOT NULL THEN
         PERFORM id FROM campaigns WHERE id = NEW.campaign_id FOR UPDATE;
-        INSERT INTO game_activity (id, campaign_id, player, character, kind, changes)
-          SELECT gen_random_uuid()::text, NEW.campaign_id, u.name, COALESCE(NEW.sheet ->> 'name', 'Character'), 'change', changed
+        INSERT INTO game_activity (id, campaign_id, player, character, portrait, kind, changes)
+          SELECT gen_random_uuid()::text, NEW.campaign_id, u.name, COALESCE(NEW.sheet ->> 'name', 'Character'), jsonb_build_object('species', NEW.sheet ->> 'species', 'playbook', NEW.sheet ->> 'playbook'), 'change', changed
           FROM users u WHERE u.id = NEW.owner_id;
       END IF;
       RETURN NEW;

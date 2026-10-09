@@ -2314,7 +2314,7 @@
 .activity-popup {
   position: relative;
   display: grid;
-  grid-template-columns: 29px minmax(0, 1fr) 28px;
+  grid-template-columns: 48px minmax(0, 1fr) 28px;
   align-items: start;
   gap: 8px;
   padding: 12px 8px 12px 12px;
@@ -2328,18 +2328,38 @@
 .activity-roll {
   border-left-color: var(--rust);
 }
-.activity-symbol {
-  width: 29px;
-  height: 29px;
+.activity-avatar {
+  position: relative;
+  width: 48px;
+  height: 48px;
   display: grid;
   place-items: center;
   border-radius: 50%;
+  border: 1px solid var(--line);
   background: #435a4712;
+  color: var(--green);
+}
+.activity-avatar .portrait {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: inherit;
+}
+.activity-symbol {
+  position: absolute;
+  right: -3px;
+  bottom: -3px;
+  width: 21px;
+  height: 21px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--panel);
   color: var(--green);
 }
 .activity-roll .activity-symbol {
   color: var(--rust);
-  background: #a9563812;
 }
 .activity-meta {
   display: flex;
@@ -2424,7 +2444,7 @@
     height: 32px;
   }
   .activity-popup {
-    grid-template-columns: 29px minmax(0, 1fr) 32px;
+    grid-template-columns: 48px minmax(0, 1fr) 32px;
   }
   .activity-toolbar button {
     min-height: 34px;

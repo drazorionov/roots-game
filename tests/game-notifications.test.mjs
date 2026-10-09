@@ -96,6 +96,17 @@ test(
       await expect(page.locator(".activity-popup")).toContainText(
         "Injury: 0 → 2",
       );
+      await expect(page.locator(".activity-avatar img")).toHaveAttribute(
+        "alt",
+        "Fox · Ranger",
+      );
+      await expect
+        .poll(() =>
+          page
+            .locator(".activity-avatar img")
+            .evaluate((img) => img.complete && img.naturalWidth > 0),
+        )
+        .toBe(true);
       await page
         .getByRole("button", { name: "Increase Hold", exact: true })
         .click();
@@ -123,6 +134,9 @@ test(
         .click();
       await expect(page.getByRole("dialog")).toHaveCount(0);
       await expect(page.locator(".activity-roll").first()).toBeVisible();
+      await expect(
+        page.locator(".activity-roll .activity-avatar img"),
+      ).toHaveAttribute("alt", "Fox · Ranger");
       await expect(page.locator(".activity-roll")).toContainText(
         /Charm · [1-6] \+ [1-6] [−+] \d+ =/,
       );
@@ -225,6 +239,7 @@ test(
         id: "change-one",
         player: "Morgan",
         character: "Moss",
+        portrait: { species: "Otter", playbook: "Tinker" },
         kind: "change",
         created_at: new Date().toISOString(),
         changes: [{ field: "coin", before: 4, after: 2 }],
@@ -236,6 +251,27 @@ test(
       await expect(page.locator(".activity-popup")).toContainText(
         "Coin: 4 → 2",
       );
+      await expect(page.locator(".activity-avatar img")).toHaveAttribute(
+        "alt",
+        "Otter · Tinker",
+      );
+      events.push({
+        id: "legacy-change",
+        player: "Older player",
+        character: "Legacy hero",
+        kind: "change",
+        created_at: new Date().toISOString(),
+        changes: [{ field: "coin", before: 1, after: 2 }],
+      });
+      await page.evaluate(() =>
+        document.dispatchEvent(new Event("visibilitychange")),
+      );
+      const legacy = page
+        .locator(".activity-popup")
+        .filter({ hasText: "Legacy hero" });
+      await expect(legacy).toBeVisible();
+      await expect(legacy.locator(".activity-avatar")).toBeVisible();
+      await expect(legacy.locator(".portrait")).toHaveCount(0);
       await page.getByRole("button", { name: "Hide all", exact: true }).click();
       await page.evaluate(() =>
         document.dispatchEvent(new Event("visibilitychange")),

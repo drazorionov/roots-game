@@ -24,6 +24,8 @@ Initial account loading combines authentication, characters, and campaigns in on
 
 ## Development
 
+Game activity notifications show the acting hero's portrait alongside a dice or character-change badge. Shared events retain their species and playbook snapshot; older events without portrait details use a neutral avatar. Run `npm run db:migrate` before deploying the notification portrait update.
+
 Requires Node.js 20.9+, npm, and Neon Postgres (production uses Node 24).
 
 ```sh

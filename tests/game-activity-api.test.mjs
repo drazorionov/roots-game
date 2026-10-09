@@ -41,6 +41,7 @@ test(
         async function () {},
       ).constructor;
       await new AsyncFunction("sql", body)(sql);
+      await new AsyncFunction("sql", body)(sql);
       const { activity } = loadRoutes(sql);
       const people = ["Rowan", "Moss", "Outsider"].map((name) => ({
         name,
@@ -57,7 +58,7 @@ test(
       for (const person of [owner, member])
         await sql`INSERT INTO memberships (campaign_id,user_id) VALUES (${campaign.id},${person.id})`;
       const [hero] =
-        await sql`INSERT INTO heroes (owner_id,campaign_id,sheet) VALUES (${owner.id},${campaign.id},'{"name":"Rowan","coin":0}') RETURNING id`;
+        await sql`INSERT INTO heroes (owner_id,campaign_id,sheet) VALUES (${owner.id},${campaign.id},'{"name":"Rowan","species":"Fox","playbook":"Ranger","coin":0}') RETURNING id`;
       const request = async (
         person,
         method = "GET",
@@ -84,11 +85,15 @@ test(
         events: [],
         cursor: "0",
       });
-      await sql`UPDATE heroes SET sheet='{"name":"Rowan","coin":2}', version=version+1 WHERE id=${hero.id}`;
+      await sql`UPDATE heroes SET sheet=jsonb_set(sheet,'{coin}','2'), version=version+1 WHERE id=${hero.id}`;
       await sql`UPDATE heroes SET sheet=sheet, version=version+1 WHERE id=${hero.id}`;
       let feed = await request(member, "GET", undefined, "0");
       assert.equal(feed.data.events.length, 1);
       assert.equal(feed.data.events[0].player, "Rowan");
+      assert.deepEqual(feed.data.events[0].portrait, {
+        species: "Fox",
+        playbook: "Ranger",
+      });
       assert.deepEqual(feed.data.events[0].changes, [
         { field: "coin", before: 0, after: 2 },
       ]);
@@ -97,6 +102,7 @@ test(
         id: randomUUID(),
         campaignId: campaign.id,
         heroId: hero.id,
+        portrait: { species: "Otter", playbook: "Tinker" },
         roll: {
           label: "Might",
           source: "Test sword",
@@ -126,6 +132,11 @@ test(
       assert.equal(feed.data.events.length, 1);
       assert.equal(feed.data.events[0].id, roll.id);
       assert.deepEqual(feed.data.events[0].roll, roll.roll);
+      assert.deepEqual(
+        feed.data.events[0].portrait,
+        { species: "Fox", playbook: "Ranger" },
+        "portrait comes from the saved hero, not the request",
+      );
       assert.equal(
         (await request(member, "GET", undefined, feed.data.cursor)).data.events
           .length,
@@ -147,6 +158,11 @@ test(
             index === 0 ||
             BigInt(row.sequence) > BigInt(rows[index - 1].sequence),
         ),
+      );
+      await sql`DELETE FROM heroes WHERE id=${hero.id}`;
+      assert.deepEqual(
+        (await request(member, "GET", undefined, "0")).data.events[0].portrait,
+        { species: "Fox", playbook: "Ranger" },
       );
       await sql`DELETE FROM memberships WHERE campaign_id=${campaign.id} AND user_id=${member.id}`;
       assert.equal((await request(member, "GET", undefined, "0")).status, 403);
