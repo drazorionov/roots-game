@@ -22,15 +22,19 @@ import { rules } from "@/lib/rules";
 import { playbookData } from "@/lib/playbooks";
 import SheetCounter from "./sheet-counter";
 import { type UpdateSheet } from "./gear-panel";
+import WeaponSkillRoll from "./weapon-skill-roll";
+import type { RollWeaponSkill } from "@/lib/weapon-rolls";
 export function MovesPanel({
   sheet,
   roll,
+  rollSkill,
   busy = false,
   expanded = false,
   setupLocked = false,
 }: {
   sheet: Sheet;
   roll?: (stat: (typeof stats)[number]) => void;
+  rollSkill?: RollWeaponSkill;
   busy?: boolean;
   expanded?: boolean;
   setupLocked?: boolean;
@@ -115,7 +119,7 @@ export function MovesPanel({
       <h4>
         <RuleHelp name="Weapon skills" />
       </h4>
-      <div className="feature-grid skill-grid">
+      <div className="feature-grid skill-grid weapon-skills">
         {effectiveWeapons(sheet).map((name) => (
           <article className="feature-tile" key={name}>
             <Swords className="feature-icon" aria-hidden="true" />
@@ -131,6 +135,15 @@ export function MovesPanel({
               />
             </h4>
             <p className="feature-preview">{t(rules[name]?.summary || name)}</p>
+            {rollSkill && (
+              <WeaponSkillRoll
+                name={name}
+                sheet={sheet}
+                busy={busy}
+                roll={rollSkill}
+                showName={false}
+              />
+            )}
           </article>
         ))}
       </div>

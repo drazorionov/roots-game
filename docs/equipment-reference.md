@@ -21,6 +21,8 @@ Skill tags do not teach character skills. The reference is available only while 
 
 All new interface labels, card names, and tag definitions are localized in English, Russian, and German. Existing translations supply the weapon-skill definitions. The small WebP illustrations are included in Quick game’s offline asset preparation.
 
+During play, learned weapon skills have attribute-style dice controls in Character info & moves and on weapons with matching skill tags. Rolls use the skill’s attribute plus Forward and Ongoing, clear Forward once, and show the move name, hit tier, and rules. Paired Fighting uses a selected +0–+3 bonus instead of an attribute; Long-Shot is a modifier to another far-range move and has no standalone roll. Weapon suitability, range, costs, choices, and harm remain tabletop decisions.
+
 ## Verification
 
 `tests/equipment.test.mjs` checks deck integrity, artwork and translations, legacy parsing, harm validation, independent paired wear, catalogue filtering, saving/reloading, coin payment and rejection, visual changes without property loss, tag persistence without learned-skill changes, read-only reference browsing, and tablet/phone overflow. Related character-builder, quick-game, active-game, and rule-help tests cover the existing flows.

@@ -22,6 +22,8 @@ import SheetCounter from "./sheet-counter";
 import EquipmentEditor from "./equipment-editor";
 import { EquipmentArt, SpecialTagHelp } from "./equipment-library";
 import { newEquipment, harmLabels, splitRanges } from "@/lib/equipment";
+import WeaponSkillRoll from "./weapon-skill-roll";
+import type { RollWeaponSkill } from "@/lib/weapon-rolls";
 export type UpdateSheet = (patch: Partial<Sheet>) => Promise<boolean>;
 export default function GearPanel({
   sheet,
@@ -29,9 +31,11 @@ export default function GearPanel({
   update,
   starting = false,
   roll,
+  rollSkill,
 }: {
   starting?: boolean;
   roll?: (stat: "Might" | "Finesse") => void;
+  rollSkill?: RollWeaponSkill;
   sheet: Sheet;
   busy: boolean;
   update: UpdateSheet;
@@ -42,6 +46,7 @@ export default function GearPanel({
   const [initial, setInitial] = useState<Equipment>(() => newEquipment());
   const [saving, setSaving] = useState(false);
   const busy = parentBusy || saving;
+  const learnedSkills = effectiveWeapons(sheet);
   const [itemSnapshot, setItemSnapshot] = useState("");
   const load = sheet.equipment.reduce((n, x) => n + x.load, 0),
     burdened = 4 + effectiveStats(sheet).Might;
@@ -219,11 +224,12 @@ export default function GearPanel({
             </div>
             {item.harmDetails && <p>{item.harmDetails}</p>}
             <div className="chosen-tags">
-              {item.skillTags.map((name) => (
-                <span key={name}>
-                  <RuleHelp name={name} />
-                </span>
-              ))}
+              {!(item.kind === "weapon" && rollSkill) &&
+                item.skillTags.map((name) => (
+                  <span key={name}>
+                    <RuleHelp name={name} />
+                  </span>
+                ))}
               {item.specialTags.map((id) => (
                 <span key={id}>
                   <SpecialTagHelp id={id} />
@@ -250,6 +256,21 @@ export default function GearPanel({
                   <Dices size={15} />
                   {t("Ranged · Finesse")}
                 </button>
+              </div>
+            )}
+            {item.kind === "weapon" && rollSkill && (
+              <div className="weapon-special-actions">
+                {item.skillTags
+                  .filter((name) => learnedSkills.includes(name))
+                  .map((name) => (
+                    <WeaponSkillRoll
+                      key={name}
+                      name={name}
+                      sheet={sheet}
+                      busy={busy}
+                      roll={rollSkill}
+                    />
+                  ))}
               </div>
             )}
             {([false, true] as const)

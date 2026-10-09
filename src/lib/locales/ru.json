@@ -839,5 +839,9 @@
   "Metal boss": "Металлический умбон",
   "When you engage in melee with an opponent, mark wear to inflict exhaustion in addition to all other harm.": "Вступая в ближний бой, отметьте износ, чтобы в дополнение к остальному урону нанести истощение.",
   "Filter equipment type": "Фильтр по типу снаряжения",
-  "Choosing a card fills its default settings. Customize them below before adding the item.": "Выбор карточки заполняет параметры по умолчанию. Измените их ниже перед добавлением предмета."
+  "Choosing a card fills its default settings. Customize them below before adding the item.": "Выбор карточки заполняет параметры по умолчанию. Измените их ниже перед добавлением предмета.",
+  "Enhances another far-range move. Roll that move with Might.": "Усиливает другой приём на дальней дистанции. Используйте для его броска Мощь.",
+  "Paired Fighting bonus": "Бонус парного боя",
+  "Move bonus": "Бонус приёма",
+  "Check the move’s requirements. Apply its costs, choices, and harm at the table.": "Проверьте условия приёма. Учитывайте его затраты, варианты выбора и вред за игровым столом."
 }

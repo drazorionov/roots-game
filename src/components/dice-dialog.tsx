@@ -4,10 +4,12 @@ import { X } from "lucide-react";
 import { useTranslation } from "@/lib/i18n";
 import type { stats } from "@/lib/sheet";
 import { DiceIcon, DieFace } from "./game-icons";
+import { rules } from "@/lib/rules";
 
 export type AttributeRoll = {
   returnFocus: HTMLElement | null;
-  stat: (typeof stats)[number];
+  stat: (typeof stats)[number] | null;
+  action?: string;
   dice: number[];
   attribute: number;
   forward: number;
@@ -64,7 +66,9 @@ export default function DiceDialog({
       }}
     >
       <div className="modal-title">
-        <span className="eyebrow">{t("Roll an attribute")}</span>
+        <span className="eyebrow">
+          {t(roll.action ? "Weapon skills" : "Roll an attribute")}
+        </span>
         <button
           className="icon-btn"
           onClick={close}
@@ -74,7 +78,8 @@ export default function DiceDialog({
         </button>
       </div>
       <h2 id="dice-title">
-        {t(roll.stat)} <span>{signed(roll.attribute)}</span>
+        {t(roll.action ?? roll.stat ?? "Move bonus")}{" "}
+        <span>{signed(roll.attribute)}</span>
       </h2>
       <p className="dice-invitation">{t("Let the Woodland decide.")}</p>
       <div className={`dice-tray ${rolling ? "is-rolling" : "is-settled"}`}>
@@ -117,7 +122,7 @@ export default function DiceDialog({
       </div>
       <div className="dice-modifiers">
         <span>
-          {t(roll.stat)} <b>{signed(roll.attribute)}</b>
+          {t(roll.stat ?? "Move bonus")} <b>{signed(roll.attribute)}</b>
         </span>
         <span>
           {t("Forward")} <b>{signed(roll.forward)}</b>
@@ -130,6 +135,16 @@ export default function DiceDialog({
         <p className="field-hint">
           {t("Forward used for this roll and cleared.")}
         </p>
+      )}
+      {roll.action && rules[roll.action] && (
+        <div className="dice-action-rules">
+          <p>{t(rules[roll.action].summary)}</p>
+          <p className="field-hint">
+            {t(
+              "Check the move’s requirements. Apply its costs, choices, and harm at the table.",
+            )}
+          </p>
+        </div>
       )}
       <button className="btn primary full" onClick={close}>
         <DiceIcon />

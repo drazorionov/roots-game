@@ -839,5 +839,9 @@
   "Metal boss": "Metallbuckel",
   "When you engage in melee with an opponent, mark wear to inflict exhaustion in addition to all other harm.": "Markiere beim Nahkampf mit einem Gegner Verschleiß, um zusätzlich zu allem anderen Schaden Erschöpfung zu verursachen.",
   "Filter equipment type": "Ausrüstungstyp filtern",
-  "Choosing a card fills its default settings. Customize them below before adding the item.": "Die gewählte Karte übernimmt ihre Standardwerte. Passe sie unten an, bevor du den Gegenstand hinzufügst."
+  "Choosing a card fills its default settings. Customize them below before adding the item.": "Die gewählte Karte übernimmt ihre Standardwerte. Passe sie unten an, bevor du den Gegenstand hinzufügst.",
+  "Enhances another far-range move. Roll that move with Might.": "Verstärkt einen anderen Fernkampfzug. Würfle diesen Zug mit Macht.",
+  "Paired Fighting bonus": "Bonus für Paarkampf",
+  "Move bonus": "Zugbonus",
+  "Check the move’s requirements. Apply its costs, choices, and harm at the table.": "Prüft die Voraussetzungen des Zuges. Wendet Kosten, Auswahlmöglichkeiten und Schaden am Spieltisch an."
 }

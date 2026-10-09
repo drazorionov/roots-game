@@ -77,10 +77,15 @@ export default function CharacterControls({
       setBusy(false);
     }
   }
-  async function rollAttribute(stat: (typeof stats)[number]) {
+  async function rollAttribute(
+    stat: (typeof stats)[number] | null,
+    action?: string,
+    bonus = 0,
+  ) {
     if (locked.current) return;
     const returnFocus = document.activeElement as HTMLElement | null;
-    const modifier = attributes[stat] + sheet.forward + sheet.ongoing;
+    const attribute = stat ? attributes[stat] : bonus;
+    const modifier = attribute + sheet.forward + sheet.ongoing;
     if (sheet.forward && !(await update({ forward: 0 }))) return;
     const d6 = () => {
       const bytes = new Uint8Array(1);
@@ -93,8 +98,9 @@ export default function CharacterControls({
     setRoll({
       returnFocus,
       stat,
+      action,
       dice,
-      attribute: attributes[stat],
+      attribute,
       forward: sheet.forward,
       ongoing: sheet.ongoing,
       modifier,
@@ -251,6 +257,9 @@ export default function CharacterControls({
           busy={busy}
           update={update}
           roll={(stat) => void rollAttribute(stat)}
+          rollSkill={(stat, action, bonus) =>
+            void rollAttribute(stat, action, bonus)
+          }
         />
       </section>
       <div className="character-details">
@@ -316,6 +325,9 @@ export default function CharacterControls({
             sheet={sheet}
             busy={busy}
             roll={(stat) => void rollAttribute(stat)}
+            rollSkill={(stat, action, bonus) =>
+              void rollAttribute(stat, action, bonus)
+            }
           />
         </details>
         <details className="sheet-subsection">
