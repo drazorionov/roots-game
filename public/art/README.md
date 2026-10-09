@@ -25,3 +25,9 @@ The `portraits/cartoon/` collection covers the app's 9 playbooks × 10 species. 
 Files use the naming convention `{playbook}-{species}.webp`, with lowercase English identifiers. The 1024 × 1024 WebP exports preserve transparency and use quality 90; full-resolution original PNGs remain in the local generated-images library. [prompts.json](portraits/prompts.json) contains every exact generation prompt. [The gallery](portraits/index.html) supports filtering by class and species and downloading individual images.
 
 The character list, editor, and play sheet select images from both the species and playbook. Custom values outside the built-in lists retain the code-native fallback illustration.
+
+## Faction icons
+
+`factions/` contains ten original transparent character-bust icons made with the built-in imagegen tool. The supplied faction chart informed the species, costumes, colors, and squat cartoon proportions. The final direction uses oversized circular eyes, sparse black outlines, and flat muted colors; the earlier naturalistic head studies are not used in the app. Each local WebP is 256 × 256 with alpha preserved. Exact prompts are recorded in [factions/prompts.json](factions/prompts.json).
+
+These cover the ten factions in the supplied RPG handout: Denizens, Marquisate, Eyrie Dynasties, Woodland Alliance, Grand Duchy, Riverfolk Company, Lizard Cult, Corvid Conspiracy, Keepers in Iron, and The Hundreds. The icons accompany the editable reputation ledger and are cached for quick-game offline use. These are original fan-companion illustrations, not official game artwork.

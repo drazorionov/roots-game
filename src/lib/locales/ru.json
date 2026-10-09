@@ -596,5 +596,15 @@
   "Party characters": "Персонажи отряда",
   "Online": "В сети",
   "Offline": "Не в сети",
-  "Status unknown": "Статус неизвестен"
+  "Status unknown": "Статус неизвестен",
+  "Mark boxes outward from zero. Tap a marked box to erase it and the marks beyond it. Circle your standing when the table resolves a change.": "Отмечайте клетки от нуля. Нажмите отмеченную клетку, чтобы стереть её и все отметки дальше от нуля. Выберите значение репутации после решения за столом.",
+  "{faction}: Standing {value}": "{faction}: Репутация {value}",
+  "{faction}: {track} {value}": "{faction}: {track} {value}",
+  "This sheet has more than 9 notoriety marks. The saved value is preserved; resolve it with your table.": "В листе больше 9 отметок дурной славы. Сохранённое значение не изменено; обсудите его за столом.",
+  "Grand Duchy": "Великое герцогство",
+  "Riverfolk Company": "Речное братство",
+  "Lizard Cult": "Культ пресмыкающихся",
+  "Corvid Conspiracy": "Вороний сговор",
+  "Keepers in Iron": "Стражи в железе",
+  "The Hundreds": "Сотни"
 }

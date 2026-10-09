@@ -596,5 +596,15 @@
   "Party characters": "Gruppencharaktere",
   "Online": "Online",
   "Offline": "Offline",
-  "Status unknown": "Status unbekannt"
+  "Status unknown": "Status unbekannt",
+  "Mark boxes outward from zero. Tap a marked box to erase it and the marks beyond it. Circle your standing when the table resolves a change.": "Markiere Kästchen von null aus nach außen. Tippe auf ein markiertes Kästchen, um es und alle weiter außen zu löschen. Wähle den Rufwert, wenn eure Runde eine Änderung beschließt.",
+  "{faction}: Standing {value}": "{faction}: Rufwert {value}",
+  "{faction}: {track} {value}": "{faction}: {track} {value}",
+  "This sheet has more than 9 notoriety marks. The saved value is preserved; resolve it with your table.": "Dieser Bogen hat mehr als 9 Verrufmarkierungen. Der gespeicherte Wert bleibt erhalten; klärt ihn mit eurer Runde.",
+  "Grand Duchy": "Großherzogtum",
+  "Riverfolk Company": "Flussvolk-Kompanie",
+  "Lizard Cult": "Echsenkult",
+  "Corvid Conspiracy": "Krähenverschwörung",
+  "Keepers in Iron": "Wächter in Eisen",
+  "The Hundreds": "Die Hundertschaften"
 }

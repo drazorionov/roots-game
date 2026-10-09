@@ -489,14 +489,9 @@ test(
         page.locator(".drive-check").filter({ hasText: "Chaos" }),
       ).toBeDisabled();
 
-      await page
-        .locator(".faction-card")
-        .filter({ hasText: "Denizens" })
-        .locator("summary")
-        .click();
       await mutate(() =>
         page
-          .getByRole("button", { name: "Increase Prestige", exact: true })
+          .getByRole("button", { name: "Denizens: Prestige 1", exact: true })
           .click(),
       );
       saved = (

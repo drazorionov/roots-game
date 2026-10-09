@@ -1,3 +1,5 @@
+import { factions } from "./factions";
+
 export async function prepareQuickOffline(): Promise<boolean> {
   if (process.env.NODE_ENV !== "production" || !("serviceWorker" in navigator))
     return false;
@@ -14,6 +16,7 @@ export async function prepareQuickOffline(): Promise<boolean> {
       ...[
         ...document.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]'),
       ].map((l) => l.href),
+      ...factions.map((f) => `/art/factions/${f.icon}.webp`),
       "/art/game-watchtower.webp",
       "/art/characters-armory.webp",
       "/art/paper-grain.svg",
