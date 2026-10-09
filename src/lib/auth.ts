@@ -7,6 +7,7 @@ import {
 } from "node:crypto";
 import { promisify } from "node:util";
 import { db } from "./db";
+import { isAdminEmail } from "./admin";
 const scrypt = promisify(scryptCb);
 export const digest = (s: string) =>
   createHash("sha256").update(s).digest("hex");
@@ -24,12 +25,25 @@ export async function getUser() {
   const token = (await cookies()).get("root-session")?.value;
   if (!token) return null;
   const rows =
-    await db()`SELECT u.id, u.name, u.email FROM users u JOIN sessions s ON s.user_id = u.id WHERE s.token_hash = ${digest(token)} AND s.expires_at > now()`;
-  return rows[0] ?? null;
+    await db()`SELECT u.id, u.name, u.email FROM users u JOIN sessions s ON s.user_id = u.id WHERE s.token_hash = ${digest(token)} AND s.expires_at > now() AND u.banned_at IS NULL`;
+  const user = rows[0];
+  return user
+    ? {
+        id: user.id as string,
+        name: user.name as string,
+        email: user.email as string,
+        isAdmin: isAdminEmail(user.email),
+      }
+    : null;
 }
-export async function startSession(id: string) {
+export async function startSession(id: string, expectedPasswordHash: string) {
   const token = randomBytes(32).toString("hex");
-  await db()`INSERT INTO sessions (token_hash, user_id, expires_at) VALUES (${digest(token)}, ${id}, now() + interval '30 days')`;
+  const sql = db();
+  const [, rows] = await sql.transaction([
+    sql`SELECT id FROM users WHERE id = ${id} FOR UPDATE`,
+    sql`INSERT INTO sessions (token_hash, user_id, expires_at) SELECT ${digest(token)}, id, now() + interval '30 days' FROM users WHERE id = ${id} AND banned_at IS NULL AND password_hash = ${expectedPasswordHash} RETURNING user_id`,
+  ]);
+  if (!rows.length) throw new Error("Account unavailable");
   (await cookies()).set("root-session", token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",

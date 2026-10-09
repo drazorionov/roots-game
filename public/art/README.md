@@ -18,6 +18,8 @@ Use case: illustration-story. Asset type: a single wide decorative illustration 
 
 `characters-armory.webp`, `campaigns-crossroads.webp`, and `game-watchtower.webp` are original 1536 × 1024 illustrations generated with the built-in imagegen tool, optimized as WebP at quality 82. The scenes distinguish character management, campaign management/selection, and the active game while retaining the established ink-and-paper woodland look. Exact prompts are in [screen-prompts.json](screen-prompts.json).
 
+The administration directory uses `admin-archive.webp`, an original woodland council archive generated with the built-in imagegen tool. Its lantern-lit desk and ledger shelves frame a quiet teal clearing behind the user tiles. The local image is optimized to 1536 × 1024 WebP at quality 82. The exact prompt is in [admin-prompt.json](admin-prompt.json).
+
 ## Class and species character portraits
 
 The `portraits/cartoon/` collection covers the app's 9 playbooks × 10 species. Each combination is generated individually with the built-in imagegen tool using the user's attached woodland character illustrations as visual references. The requested direction is oversized heads, squat cartoon proportions, flat earthy colors, sparse rough ink, warrior equipment, and crooked smirks. No official character artwork is copied into the app.

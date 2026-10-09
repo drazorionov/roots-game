@@ -21,6 +21,7 @@ import {
   LogOut,
   ArrowLeft,
   ChevronRight,
+  Shield,
 } from "lucide-react";
 import { useTranslation, translate, type Locale } from "@/lib/i18n";
 import {
@@ -36,6 +37,8 @@ import { useGameTime } from "@/lib/use-game-time";
 import CharacterEditor from "./character-editor";
 import CharacterControls from "./character-controls";
 import ActiveGame from "./active-game";
+import AdminPanel from "./admin-panel";
+import PasswordRecovery from "./password-recovery";
 import { CampaignCollection, CharacterCollection } from "./collections";
 function Modal({
   title,
@@ -101,7 +104,9 @@ function WoodlandWorkspace() {
     [loading, setLoading] = useState(true),
     [heroes, setHeroes] = useState<Hero[]>([]),
     [campaigns, setCampaigns] = useState<Campaign[]>([]),
-    [tab, setTab] = useState<"home" | "characters" | "campaigns" | "play">(
+    [tab, setTab] = useState<
+      "home" | "characters" | "campaigns" | "play" | "admin"
+    >(
       searchParams.get("from") === "play"
         ? "play"
         : characterForm
@@ -121,6 +126,9 @@ function WoodlandWorkspace() {
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [notice, setNotice] = useState("");
+  const [recoveryStep, setRecoveryStep] = useState<
+    "request" | "code" | "password" | null
+  >(null);
   const [quickOfflineReady, setQuickOfflineReady] = useState(false);
   const [quickMode, setQuickMode] = useState(
     searchParams.get("mode") === "quick",
@@ -192,14 +200,17 @@ function WoodlandWorkspace() {
         ? "game-scene"
         : !user
           ? "welcome-scene"
-          : tab === "home"
-            ? "camp-scene"
-            : activeGame
-              ? "game-scene"
-              : tab === "campaigns" ||
-                  (tab === "play" && (gameStep === "campaign" || !gameCampaign))
-                ? "campaigns-scene"
-                : "characters-scene";
+          : tab === "admin"
+            ? "admin-scene"
+            : tab === "home"
+              ? "camp-scene"
+              : activeGame
+                ? "game-scene"
+                : tab === "campaigns" ||
+                    (tab === "play" &&
+                      (gameStep === "campaign" || !gameCampaign))
+                  ? "campaigns-scene"
+                  : "characters-scene";
   const gameTime = useGameTime(scene === "game-scene");
   function exitToMain() {
     if (creating && !leaveCreation()) return;
@@ -629,6 +640,10 @@ function WoodlandWorkspace() {
         email: data.get("email"),
         password: data.get("password"),
       });
+      if (auth.requiresPasswordChange) {
+        setRecoveryStep("password");
+        return;
+      }
       setUser(auth.user);
       try {
         setResumeId(localStorage.getItem(`root-session-${auth.user.id}`) || "");
@@ -739,7 +754,7 @@ function WoodlandWorkspace() {
               DE
             </option>
           </select>
-          {activeGame && (
+          {(activeGame || user?.isAdmin) && (
             <details
               className="game-menu"
               ref={gameMenu}
@@ -751,29 +766,55 @@ function WoodlandWorkspace() {
                   e.currentTarget.open = false;
               }}
             >
-              <summary aria-label={t("Game menu")} title={t("Game menu")}>
+              <summary
+                aria-label={t(activeGame ? "Game menu" : "More options")}
+                title={t(activeGame ? "Game menu" : "More options")}
+              >
                 <MoreHorizontal size={22} />
               </summary>
               <div className="game-menu-items">
-                {!quickMode && campaign && campaign.owner_id !== user?.id && (
-                  <button disabled={busy} onClick={() => askToLeave(campaign)}>
-                    <LogOut size={17} />
-                    {t("Leave game")}
+                {user?.isAdmin && (
+                  <button
+                    onClick={() => {
+                      if (creating && !leaveCreation()) return;
+                      setQuickMode(false);
+                      setTab("admin");
+                      setError("");
+                      if (gameMenu.current) gameMenu.current.open = false;
+                    }}
+                  >
+                    <Shield size={17} />
+                    {t("Administration")}
                   </button>
                 )}
-                <button onClick={exitToMain}>
-                  <Home size={17} />
-                  {t("Exit to main")}
-                </button>
-                <button onClick={restartGame}>
-                  <RotateCcw size={17} />
-                  {t("Restart game")}
-                </button>
-                {!quickMode && (
-                  <button onClick={startNewGame}>
-                    <Compass size={17} />
-                    {t("Start new game")}
-                  </button>
+                {activeGame && (
+                  <>
+                    {!quickMode &&
+                      campaign &&
+                      campaign.owner_id !== user?.id && (
+                        <button
+                          disabled={busy}
+                          onClick={() => askToLeave(campaign)}
+                        >
+                          <LogOut size={17} />
+                          {t("Leave game")}
+                        </button>
+                      )}
+                    <button onClick={exitToMain}>
+                      <Home size={17} />
+                      {t("Exit to main")}
+                    </button>
+                    <button onClick={restartGame}>
+                      <RotateCcw size={17} />
+                      {t("Restart game")}
+                    </button>
+                    {!quickMode && (
+                      <button onClick={startNewGame}>
+                        <Compass size={17} />
+                        {t("Start new game")}
+                      </button>
+                    )}
+                  </>
                 )}
               </div>
             </details>
@@ -936,6 +977,8 @@ function WoodlandWorkspace() {
               {t("Quick game")}
             </button>
           </section>
+        ) : tab === "admin" && user?.isAdmin ? (
+          <AdminPanel back={exitToMain} />
         ) : tab === "home" ? (
           <section className="home-content">
             <p className="eyebrow">{t("Your clearing")}</p>
@@ -1186,80 +1229,130 @@ function WoodlandWorkspace() {
       )}
       {modal === "auth" && (
         <Modal
-          title={t(authMode === "signup" ? "Create an account" : "Sign in")}
-          close={closeModal}
+          title={t(
+            recoveryStep
+              ? "Recover password"
+              : authMode === "signup"
+                ? "Create an account"
+                : "Sign in",
+          )}
+          close={() => {
+            closeModal();
+            setRecoveryStep(null);
+          }}
         >
-          <p className="field-hint">
-            {t(
-              draft
-                ? "Sign in to save your character. Your draft is kept while you sign in."
-                : "Save your characters and access them on any device.",
-            )}
-          </p>
-          <form onSubmit={authenticate}>
-            {authMode === "signup" && (
-              <label>
-                {t("Your name")}
-                <input
-                  name="name"
-                  required
-                  maxLength={60}
-                  autoComplete="name"
-                />
-              </label>
-            )}
-            <label>
-              {t("Email")}
-              <input name="email" type="email" required autoComplete="email" />
-            </label>
-            <label>
-              {t("Password")}
-              <input
-                name="password"
-                type="password"
-                required
-                minLength={8}
-                maxLength={128}
-                autoComplete={
-                  authMode === "signup" ? "new-password" : "current-password"
-                }
-                placeholder={t("At least 8 characters")}
-              />
-            </label>
-            {error && (
-              <p className="error" role="alert">
-                {t(error)}
-              </p>
-            )}
-            <button className="btn primary full" disabled={busy}>
-              {t(
-                busy
-                  ? "Saving…"
-                  : authMode === "signup"
-                    ? "Create an account"
-                    : "Sign in",
-              )}
-            </button>
-            <button
-              className="text-link auth-switch"
-              type="button"
-              onClick={() => {
-                setAuthMode(authMode === "signup" ? "login" : "signup");
+          {recoveryStep ? (
+            <PasswordRecovery
+              initialStep={recoveryStep}
+              back={() => {
+                setRecoveryStep(null);
+                setAuthMode("login");
                 setError("");
               }}
-            >
-              {t(
-                authMode === "signup"
-                  ? "Already have an account?"
-                  : "Create an account",
-              )}
-            </button>
-            <p className="field-hint">
-              {t(
-                "Keep your password safe. Email recovery is not available in this first version.",
-              )}
-            </p>
-          </form>
+            />
+          ) : (
+            <>
+              <p className="field-hint">
+                {t(
+                  draft
+                    ? "Sign in to save your character. Your draft is kept while you sign in."
+                    : "Save your characters and access them on any device.",
+                )}
+              </p>
+              <form onSubmit={authenticate}>
+                {authMode === "signup" && (
+                  <label>
+                    {t("Your name")}
+                    <input
+                      name="name"
+                      required
+                      maxLength={60}
+                      autoComplete="name"
+                    />
+                  </label>
+                )}
+                <label>
+                  {t("Email")}
+                  <input
+                    name="email"
+                    type="email"
+                    required
+                    autoComplete="email"
+                  />
+                </label>
+                <label>
+                  {t("Password")}
+                  <input
+                    name="password"
+                    type="password"
+                    required
+                    minLength={8}
+                    maxLength={128}
+                    autoComplete={
+                      authMode === "signup"
+                        ? "new-password"
+                        : "current-password"
+                    }
+                    placeholder={t("At least 8 characters")}
+                  />
+                </label>
+                {error && (
+                  <p className="error" role="alert">
+                    {t(error)}
+                  </p>
+                )}
+                <button className="btn primary full" disabled={busy}>
+                  {t(
+                    busy
+                      ? "Saving…"
+                      : authMode === "signup"
+                        ? "Create an account"
+                        : "Sign in",
+                  )}
+                </button>
+                <button
+                  className="text-link auth-switch"
+                  type="button"
+                  onClick={() => {
+                    setAuthMode(authMode === "signup" ? "login" : "signup");
+                    setError("");
+                  }}
+                >
+                  {t(
+                    authMode === "signup"
+                      ? "Already have an account?"
+                      : "Create an account",
+                  )}
+                </button>
+                {authMode === "login" && (
+                  <>
+                    <button
+                      className="text-link auth-switch"
+                      type="button"
+                      disabled={busy}
+                      onClick={() => {
+                        setRecoveryStep("request");
+                        setError("");
+                      }}
+                    >
+                      {t("Forgot password?")}
+                    </button>
+                    <button
+                      className="text-link auth-switch"
+                      type="button"
+                      disabled={busy}
+                      onClick={() => {
+                        setRecoveryStep("code");
+                        setError("");
+                      }}
+                    >
+                      {t("Use a temporary code")}
+                    </button>
+                  </>
+                )}
+              </form>
+            </>
+          )}
         </Modal>
       )}
       {modal === "join" && (

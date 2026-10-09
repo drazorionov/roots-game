@@ -179,7 +179,7 @@ export type Campaign = {
   owner_id: string;
   members: number;
 };
-export type User = { id: string; name: string; email: string };
+export type User = { id: string; name: string; email: string; isAdmin?: boolean };
 export function blankSheet(): Sheet {
   return {
     moveIds: [],

@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { z } from "zod";
 import { db } from "@/lib/db";
+import { isAdminEmail, MAX_USERS } from "@/lib/admin";
+import { verifyRecoveryCode } from "@/lib/password-recovery";
 import {
   digest,
   getUser,
@@ -50,6 +52,7 @@ export async function POST(req: Request) {
       );
     const sql = db();
     let user;
+    let passwordHash: string;
     if (data.action === "signup") {
       if (!data.name)
         return NextResponse.json(
@@ -57,9 +60,23 @@ export async function POST(req: Request) {
           { status: 400 },
         );
       const hash = await hashPassword(data.password);
-      const rows =
-        await sql`INSERT INTO users (name, email, password_hash) VALUES (${data.name}, ${data.email}, ${hash}) ON CONFLICT (email) DO NOTHING RETURNING id, name, email`;
+      passwordHash = hash;
+      // Serialize signups; the next statement sees the previous signup's commit.
+      // Banned users and the administrator also occupy a slot.
+      const [, rows, counts] = await sql.transaction([
+        sql`LOCK TABLE users IN SHARE ROW EXCLUSIVE MODE`,
+        sql`INSERT INTO users (name, email, password_hash) SELECT ${data.name}, ${data.email}, ${hash} WHERE (SELECT count(*) FROM users) < ${MAX_USERS} ON CONFLICT (email) DO NOTHING RETURNING id, name, email`,
+        sql`SELECT count(*)::int AS total FROM users`,
+      ]);
       user = rows[0];
+      if (!user && counts[0].total >= MAX_USERS)
+        return NextResponse.json(
+          {
+            error:
+              "The app has reached its limit of 50 users. Please contact the administrator.",
+          },
+          { status: 409 },
+        );
       if (!user)
         return NextResponse.json(
           { error: "Unable to create this account. Try signing in." },
@@ -73,15 +90,32 @@ export async function POST(req: Request) {
         found?.password_hash ??
           "00000000000000000000000000000000:" + "00".repeat(64),
       );
+      if (
+        !valid &&
+        found &&
+        !found.banned_at &&
+        (await verifyRecoveryCode(data.email, data.password))
+      )
+        return NextResponse.json({ requiresPasswordChange: true });
       if (!found || !valid)
         return NextResponse.json(
           { error: "Email or password is incorrect." },
           { status: 401 },
         );
+      if (found.banned_at)
+        return NextResponse.json(
+          {
+            error: "This account is banned. Please contact the administrator.",
+          },
+          { status: 403 },
+        );
       user = { id: found.id, name: found.name, email: found.email };
+      passwordHash = found.password_hash;
     }
-    await startSession(user.id);
-    return NextResponse.json({ user });
+    await startSession(user.id, passwordHash);
+    return NextResponse.json({
+      user: { ...user, isAdmin: isAdminEmail(user.email) },
+    });
   } catch (error) {
     return NextResponse.json(
       {

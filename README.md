@@ -24,7 +24,7 @@ Requires Node.js 20.9+, npm, and Neon Postgres (production uses Node 24).
 ```sh
 npm ci
 cp .env.example .env.local
-# Set DATABASE_URL in .env.local.
+# Set DATABASE_URL and ADMIN_EMAIL in .env.local.
 npm run db:migrate
 npm run dev
 ```
@@ -56,6 +56,24 @@ The application uses `users`, `sessions`, `campaigns`, `memberships`, `heroes`, 
 
 Translations live in `src/lib/locales/{ru,de}.json`. Character data retains stable identifiers regardless of language. Tests check translation coverage and placeholders.
 
-Playbook presets and short move reminders follow the supplied player handouts; [reference notes](docs/playbook-reference.md) explain automatic and manual effects. Password recovery is not available. Offline editing is supported only in Quick game; account-backed characters require a connection. Root belongs to Leder Games; Root: The Roleplaying Game is published by Magpie Games. This is an unofficial fan companion.
+Playbook presets and short move reminders follow the supplied player handouts; [reference notes](docs/playbook-reference.md) explain automatic and manual effects. Password recovery uses emailed single-use codes; configure the sender as described below. Offline editing is supported only in Quick game; account-backed characters require a connection. Root belongs to Leder Games; Root: The Roleplaying Game is published by Magpie Games. This is an unofficial fan companion.
 
 Campaign presence sends a heartbeat every 20 seconds while the game is visible. Campaign members active within 75 seconds count as online; duplicate tabs count once. The endpoint requires authentication, matching origin, and campaign membership. Names are visible only to members of that campaign. Run `npm run db:migrate` before deploying this update.
+
+## Administration
+
+Set the server-only `ADMIN_EMAIL=d.razorionov@gmail.com` environment variable locally and in the deployment environment, then run `npm run db:migrate` before starting the updated app. The administrator signs in with the normal account password; the variable does not create an account or bypass authentication. If it is unset, no account has admin access.
+
+Open **… → Administration** in the header between the language and sign-out controls. The searchable directory shows every user's profile, registration date, ban status, active session count, full character sheets, owned campaigns, and campaign memberships/presence. Password hashes and session tokens are never returned. Admin authorization is checked on the server for every read and action. The administrator cannot ban or purge their own account.
+
+Ban revokes sessions and prevents sign-in and authenticated API access. Unban requires a fresh sign-in. Purge requires typing the account's email and permanently deletes the user, their sessions, memberships, presence, characters, and owned campaigns. Other players retain their characters from those campaigns as unassigned sheets. Abuse-prevention counters expire normally.
+
+Registration permits at most **50 stored accounts total**, including the administrator and banned accounts. Concurrent signups serialize the count and insert in a database transaction. Existing accounts can still sign in at capacity; a purge frees a slot. The migration does not delete accounts if a pre-existing database already exceeds 50; registration stays closed until the count drops below 50.
+
+## Password recovery
+
+Set `RESEND_API_KEY` and `RECOVERY_FROM_EMAIL` in each deployment environment, using a verified Resend sender. Run `npm run db:migrate` before deployment. The [Resend send API](https://resend.com/docs/api-reference/emails/send-email) delivers plain-text recovery messages; credentials remain server-only. Without these variables, requests return a clear configuration error and never change passwords.
+
+The login dialog offers **Forgot password?** and **Use a temporary code**. Admin tiles offer **Send recovery email**, including for the administrator's own account. Codes are sent only to the email saved on the account. Banned accounts cannot recover. Public requests give the same success response for unknown and ineligible accounts. Sending is limited to three requests per email per 15 minutes, with additional requester and verification limits.
+
+A code has 64 bits of cryptographic randomness, is stored only as a SHA-256 hash, expires after 15 minutes, and is consumed atomically. Users can enter it in the login password field or the temporary-code form. Verification creates only a restricted, HttpOnly 10-minute recovery cookie, never an authenticated app session. The next screen requires a new password, after which all existing sessions are revoked and the user signs in normally. A newer recovery request invalidates earlier codes and recovery cookies; bans and purges remove outstanding recovery records. Merely requesting recovery does not change a password or revoke sessions.
