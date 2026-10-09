@@ -327,8 +327,14 @@ test(
           exact: true,
         });
         await expect(
-          sheetDialog.getByLabel("Character", { exact: true }),
-        ).toHaveValue(otherHero.id);
+          sheetDialog.locator(".campaign-sheets-heading"),
+        ).toHaveCount(0);
+        await expect(
+          sheetDialog.locator(".campaign-sheet-toolbar"),
+        ).toHaveCount(0);
+        await expect(sheetDialog.locator(":scope > .field-hint")).toHaveCount(
+          0,
+        );
         await expect(sheetDialog.locator(".hero-caption h2")).toHaveText(
           otherHero.sheet.name,
         );
@@ -348,7 +354,7 @@ test(
             }),
           ).toBeVisible();
         } else {
-          await expect(sheetDialog).toContainText("Read-only.");
+          await expect(sheetDialog).toContainText("Read-only");
           await expect(injury).toBeDisabled();
           await expect(
             sheetDialog.getByRole("button", {
@@ -381,18 +387,9 @@ test(
               exact: true,
             }),
           ).toBeDisabled();
-          await sheetDialog
-            .getByLabel("Character", { exact: true })
-            .selectOption(hero.id);
-          await expect(sheetDialog.locator(".hero-caption h2")).toHaveText(
-            hero.sheet.name,
-          );
           assert.deepEqual(writes, []);
         }
-        await sheetDialog
-          .locator(".campaign-sheets-heading")
-          .getByRole("button", { name: "Back to character", exact: true })
-          .click();
+        await page.getByRole("button", { name: "Back", exact: true }).click();
         await expect(sheetDialog).toHaveCount(0);
         await expect(page.locator(".hero-caption h2")).toHaveText(
           hero.sheet.name,

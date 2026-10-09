@@ -12,6 +12,7 @@ export default function CampaignSheets({
   campaign,
   initialHeroId = "",
   canManage,
+  inGame = false,
   navigationGuard,
   backLabel,
   close,
@@ -20,6 +21,7 @@ export default function CampaignSheets({
   campaign: Campaign;
   initialHeroId?: string;
   canManage: boolean;
+  inGame?: boolean;
   navigationGuard: RefObject<(() => boolean) | null>;
   backLabel: string;
   close: () => void;
@@ -109,83 +111,93 @@ export default function CampaignSheets({
   }
   return (
     <section className="campaign-sheets-page" aria-label={t("Player sheets")}>
-      <header className="campaign-sheets-heading">
-        <div>
-          <h2 ref={heading} tabIndex={-1}>
-            {t("Player sheets")}
-          </h2>
-          <p>{campaign.name}</p>
-        </div>
-        <button className="btn" disabled={busy} onClick={close}>
-          <ArrowLeft size={16} aria-hidden="true" />
-          {backLabel}
-        </button>
-      </header>
-      <p className="field-hint">
-        {t(
-          canManage
-            ? "As campaign master, you can edit every campaign sheet. Personal base characters stay unchanged."
-            : "Read-only. You can view all character sheets in this campaign.",
-        )}
-      </p>
+      {!inGame && (
+        <>
+          <header className="campaign-sheets-heading">
+            <div>
+              <h2 ref={heading} tabIndex={-1}>
+                {t("Player sheets")}
+              </h2>
+              <p>{campaign.name}</p>
+            </div>
+            <button className="btn" disabled={busy} onClick={close}>
+              <ArrowLeft size={16} aria-hidden="true" />
+              {backLabel}
+            </button>
+          </header>
+          <p className="field-hint">
+            {t(
+              canManage
+                ? "As campaign master, you can edit every campaign sheet. Personal base characters stay unchanged."
+                : "Read-only. You can view all character sheets in this campaign.",
+            )}
+          </p>
+        </>
+      )}
       {loading ? (
         <p role="status">{t("Loading…")}</p>
       ) : (
         <>
-          <div className="campaign-sheet-toolbar">
-            <label>
-              {t("Character")}
-              <select
-                aria-label={t("Character")}
-                value={selected}
-                disabled={busy || !!editing || pending.length > 0}
-                onChange={(event) => {
-                  setSelected(event.target.value);
-                  setError("");
-                }}
-              >
-                {!heroes.length && (
-                  <option value="">
-                    {t("No characters in this campaign yet.")}
-                  </option>
-                )}
-                {heroes.map((h) => (
-                  <option key={h.id} value={h.id}>
-                    {h.sheet.name} · {h.player}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <button
-              className="btn"
-              disabled={busy || pending.length > 0}
-              onClick={() => {
-                if (!canLeave()) return;
-                setEditing(null);
-                setDirty(false);
-                setError("");
-                setLoading(true);
-                setAttempt((n) => n + 1);
-              }}
-            >
-              {t("Reload saved sheet")}
-            </button>
-            {editing && (
-              <button
-                className="btn"
-                disabled={busy}
-                onClick={() => {
-                  if (canLeave()) {
+          {(!inGame || editing || error) && (
+            <div className="campaign-sheet-toolbar">
+              {!inGame && (
+                <label>
+                  {t("Character")}
+                  <select
+                    aria-label={t("Character")}
+                    value={selected}
+                    disabled={busy || !!editing || pending.length > 0}
+                    onChange={(event) => {
+                      setSelected(event.target.value);
+                      setError("");
+                    }}
+                  >
+                    {!heroes.length && (
+                      <option value="">
+                        {t("No characters in this campaign yet.")}
+                      </option>
+                    )}
+                    {heroes.map((h) => (
+                      <option key={h.id} value={h.id}>
+                        {h.sheet.name} · {h.player}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+              {(!inGame || error) && (
+                <button
+                  className="btn"
+                  disabled={busy || pending.length > 0}
+                  onClick={() => {
+                    if (!canLeave()) return;
                     setEditing(null);
                     setDirty(false);
                     setError("");
-                  }
-                }}
-              >
-                {t("Back to character")}
-              </button>
-            )}
-          </div>
+                    setLoading(true);
+                    setAttempt((n) => n + 1);
+                  }}
+                >
+                  {t("Reload saved sheet")}
+                </button>
+              )}
+              {editing && (
+                <button
+                  className="btn"
+                  disabled={busy}
+                  onClick={() => {
+                    if (canLeave()) {
+                      setEditing(null);
+                      setDirty(false);
+                      setError("");
+                    }
+                  }}
+                >
+                  {t("Back to character")}
+                </button>
+              )}
+            </div>
+          )}
           {error && (
             <p className="error" role="alert">
               {t(error)}

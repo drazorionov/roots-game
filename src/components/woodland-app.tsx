@@ -940,6 +940,7 @@ function WoodlandWorkspace() {
       key={`${sheetCampaign.id}:${sheetHeroId}`}
       campaign={sheetCampaign}
       initialHeroId={sheetHeroId}
+      inGame={activeGame}
       navigationGuard={sheetNavigationGuard}
       backLabel={t(activeGame ? "Back to character" : "Back")}
       canManage={sheetCampaign.owner_id === user?.id}

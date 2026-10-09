@@ -3689,3 +3689,8 @@ select.language-select:not([multiple]):not([size]) {
     width: 100%;
   }
 }
+
+.campaign-sheets-heading .btn,
+.campaign-sheet-toolbar select {
+  color: var(--ink);
+}
