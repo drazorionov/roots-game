@@ -1,3 +1,4 @@
+import { dismissRollPopup } from "./roll-popup.mjs";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { mkdir } from "node:fs/promises";
@@ -89,7 +90,7 @@ test(
       await rollButton.click();
       const notification = page.locator(".activity-roll").first();
       await expect(notification).toBeVisible();
-      await expect(page.getByRole("dialog")).toHaveCount(0);
+      await expect(page.locator(".dice-dialog")).toBeVisible();
       const stored = await page.evaluate(() =>
         JSON.parse(sessionStorage.getItem("root-quick-sheet")),
       );
@@ -107,7 +108,7 @@ test(
         +match[1] + +match[2] + (match[3] === "+" ? 1 : -1) * +match[4],
       );
       await page.screenshot({ path: "test-results/redesign-dice.png" });
-      await expect(page.getByRole("dialog")).toHaveCount(0);
+      await dismissRollPopup(page);
       await expect(rollButton).toBeFocused();
       await expect(page.locator(".party-card")).toHaveCount(1);
       await expect(page.locator(".party-card progress")).toHaveCount(3);
@@ -139,7 +140,7 @@ test(
       await page.emulateMedia({ reducedMotion: "reduce" });
       await rollButton.click();
       await expect(page.locator(".activity-roll")).toHaveCount(2);
-      await expect(page.getByRole("dialog")).toHaveCount(0);
+      await dismissRollPopup(page);
       await page.reload();
       await expect(
         page.getByRole("button", { name: "Injury 2", exact: true }),

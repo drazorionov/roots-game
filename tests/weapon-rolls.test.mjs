@@ -1,3 +1,4 @@
+import { dismissRollPopup } from "./roll-popup.mjs";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
@@ -99,7 +100,7 @@ test(
         await expect(notification).toContainText(
           `Test sword · Cleave · ${dice.join(" + ")} + ${total === "10" ? 2 : 1} = ${total} · ${result}`,
         );
-        await expect(page.getByRole("dialog")).toHaveCount(0);
+        await dismissRollPopup(page);
         await expect(cleave).toBeFocused();
       }
       const stored = await page.evaluate(() =>
@@ -120,6 +121,7 @@ test(
       await expect(notification).toContainText(
         "Test sword · Paired Fighting · 2 + 3 + 2 = 7",
       );
+      await dismissRollPopup(page);
       await page.getByRole("button", { name: "Hide all", exact: true }).click();
 
       await page.getByText("Character info & moves", { exact: true }).click();
@@ -143,7 +145,7 @@ test(
       await expect(notification).toContainText(
         "Improvise Weapon · 3 + 4 + 0 = 7",
       );
-      await expect(page.getByRole("dialog")).toHaveCount(0);
+      await dismissRollPopup(page);
       await gear.screenshot({
         path: "test-results/weapon-actions-desktop.png",
       });
@@ -186,6 +188,7 @@ test(
       await expect(notification).toContainText(
         "Test sword · Cleave · 5 + 5 + 1 = 11",
       );
+      await dismissRollPopup(page);
       await page.locator(".game-activity").screenshot({
         path: "test-results/weapon-action-result.png",
       });
@@ -204,7 +207,7 @@ test(
         await expect(notification).toContainText(
           `Test sword · ${stat} · 3 + 3 + ${modifier} = ${6 + modifier}`,
         );
-        await expect(page.getByRole("dialog")).toHaveCount(0);
+        await dismissRollPopup(page);
       }
       assert.deepEqual(errors, []);
     } finally {

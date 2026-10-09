@@ -1,3 +1,4 @@
+import { dismissRollPopup } from "./roll-popup.mjs";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
@@ -117,7 +118,7 @@ test(
       await expect(page.locator(".activity-roll").first()).toContainText(
         "Might",
       );
-      await expect(page.getByRole("dialog")).toHaveCount(0);
+      await dismissRollPopup(page);
       await page.getByRole("button", { name: "Injury 2", exact: true }).click();
       await page
         .getByRole("button", { name: "Edit character", exact: true })

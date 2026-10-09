@@ -27,6 +27,7 @@ import RuleHelp from "./rule-help";
 import SheetCounter from "./sheet-counter";
 import AttributeIcon from "./attribute-icon";
 import { HarmBox, DiceIcon } from "./game-icons";
+import DiceDialog, { type AttributeRoll } from "./dice-dialog";
 import { useGameActivity } from "./game-activity";
 import GearPanel from "./gear-panel";
 import { MovesPanel, BackgroundPanel, ReputationPanel } from "./sheet-panels";
@@ -56,6 +57,7 @@ export default function CharacterControls({
   }, [saveQueue, hero]);
   const busy = recovering || (state?.conflict ?? false);
   const setupLocked = !!hero.campaign_id;
+  const [roll, setRoll] = useState<AttributeRoll | null>(null);
   const sheet = state?.hero.sheet ?? hero.sheet,
     attributes = effectiveStats(sheet);
   async function update(patch: Partial<Sheet>) {
@@ -80,8 +82,9 @@ export default function CharacterControls({
     bonus = 0,
     source?: string,
   ) {
-    if (busy) return;
+    if (busy || roll) return;
     const currentSheet = saveQueue?.getSnapshot().hero.sheet ?? sheet;
+    const returnFocus = document.activeElement as HTMLElement | null;
     const attribute = stat ? attributes[stat] : bonus;
     const modifier = attribute + currentSheet.forward + currentSheet.ongoing;
     if (currentSheet.forward) {
@@ -102,6 +105,17 @@ export default function CharacterControls({
       source,
       dice,
       modifier,
+    });
+    setRoll({
+      returnFocus,
+      stat,
+      action,
+      dice,
+      attribute,
+      forward: currentSheet.forward,
+      ongoing: currentSheet.ongoing,
+      modifier,
+      total: dice[0] + dice[1] + modifier,
     });
   }
   return (
@@ -343,6 +357,7 @@ export default function CharacterControls({
           />
         </details>
       </div>
+      {roll && <DiceDialog roll={roll} close={() => setRoll(null)} />}
       <div className="quick-save-status" role="status">
         {state?.saving ? (
           t("Saving…")

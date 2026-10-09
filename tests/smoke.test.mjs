@@ -1,3 +1,4 @@
+import { dismissRollPopup } from "./roll-popup.mjs";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { chromium, expect } from "@playwright/test";
@@ -567,7 +568,7 @@ test(
       await expect(page.locator(".activity-roll").first()).toContainText(
         "Charm",
       );
-      await expect(page.getByRole("dialog")).toHaveCount(0);
+      await dismissRollPopup(page);
       assert.equal(
         (
           await request("heroes", "GET", undefined, owner.cookie)

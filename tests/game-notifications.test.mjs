@@ -1,3 +1,4 @@
+import { dismissRollPopup } from "./roll-popup.mjs";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
@@ -132,7 +133,7 @@ test(
       await page
         .getByRole("button", { name: "Roll Charm", exact: true })
         .click();
-      await expect(page.getByRole("dialog")).toHaveCount(0);
+      await dismissRollPopup(page);
       await expect(page.locator(".activity-roll").first()).toBeVisible();
       await expect(
         page.locator(".activity-roll .activity-avatar img"),
@@ -279,7 +280,7 @@ test(
       await page
         .getByRole("button", { name: "Roll Charm", exact: true })
         .click();
-      await expect(page.getByRole("dialog")).toHaveCount(0);
+      await dismissRollPopup(page);
       await expect(page.locator(".activity-roll").first()).toBeVisible();
       await expect(page.locator(".activity-popup")).toHaveCount(1);
       await expect(page.locator(".activity-share-error")).toContainText(
@@ -323,6 +324,7 @@ test(
       const page = await browser.newPage({
         viewport: { width: 1440, height: 1000 },
         hasTouch: true,
+        reducedMotion: "reduce",
       });
       await page.addInitScript((value) => {
         sessionStorage.setItem("root-quick-sheet", JSON.stringify(value));
@@ -383,7 +385,7 @@ test(
             await expect(page.locator(".activity-roll")).toContainText(
               `${stat} ·`,
             );
-            await expect(page.getByRole("dialog")).toHaveCount(0);
+            await dismissRollPopup(page);
             await page
               .getByRole("button", { name: "Hide all", exact: true })
               .click();
@@ -396,6 +398,7 @@ test(
             await rollButton.focus();
             await page.keyboard.press(key);
             await expect(page.locator(".activity-roll")).toHaveCount(1);
+            await dismissRollPopup(page);
             await expect(rollButton).toBeFocused();
             await page
               .getByRole("button", { name: "Hide all", exact: true })
@@ -408,12 +411,16 @@ test(
         name: "Roll Charm",
         exact: true,
       });
-      for (let i = 0; i < 6; i++) await roll.click();
+      for (let i = 0; i < 6; i++) {
+        await roll.click();
+        await dismissRollPopup(page);
+      }
       const stack = page.locator(".activity-stack");
       await stack.evaluate((element) => {
         element.scrollTop = element.scrollHeight;
       });
       await roll.click();
+      await dismissRollPopup(page);
       await expect
         .poll(() => stack.evaluate((element) => element.scrollTop))
         .toBe(0);

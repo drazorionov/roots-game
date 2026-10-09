@@ -1,3 +1,4 @@
+import { dismissRollPopup } from "./roll-popup.mjs";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { chromium, expect } from "@playwright/test";
@@ -125,7 +126,8 @@ test(
       await expect(page.locator(".activity-roll").first()).toBeVisible({
         timeout: 500,
       });
-      await expect(page.getByRole("dialog")).toHaveCount(0);
+      await expect(page.locator(".dice-dialog")).toBeVisible({ timeout: 500 });
+      await dismissRollPopup(page);
       const forward = page
         .locator(".sheet-counter")
         .filter({
