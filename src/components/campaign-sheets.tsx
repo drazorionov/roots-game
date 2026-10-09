@@ -1,6 +1,6 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
-import { X } from "lucide-react";
+import { useEffect, useRef, useState, type RefObject } from "react";
+import { ArrowLeft } from "lucide-react";
 import { api } from "@/lib/client-api";
 import { useTranslation } from "@/lib/i18n";
 import { useHeroSaves } from "@/lib/use-hero-saves";
@@ -12,19 +12,21 @@ export default function CampaignSheets({
   campaign,
   initialHeroId = "",
   canManage,
-  returnFocus,
+  navigationGuard,
+  backLabel,
   close,
   onSaved,
 }: {
   campaign: Campaign;
   initialHeroId?: string;
   canManage: boolean;
-  returnFocus: HTMLElement | null;
+  navigationGuard: RefObject<(() => boolean) | null>;
+  backLabel: string;
   close: () => void;
   onSaved: (hero: Hero) => void;
 }) {
   const { t } = useTranslation();
-  const dialog = useRef<HTMLDialogElement>(null);
+  const heading = useRef<HTMLHeadingElement>(null);
   const [heroes, setHeroes] = useState<Hero[]>([]);
   const [selected, setSelected] = useState(initialHeroId);
   const [loading, setLoading] = useState(true);
@@ -41,14 +43,15 @@ export default function CampaignSheets({
   const { queueFor, pending } = useHeroSaves(updated);
   const hero = heroes.find((h) => h.id === selected);
   useEffect(() => {
-    const previous = returnFocus;
-    const element = dialog.current;
-    element?.showModal();
+    heading.current?.focus({ preventScroll: true });
+    heading.current?.scrollIntoView({ block: "start" });
+  }, []);
+  useEffect(() => {
+    navigationGuard.current = canLeave;
     return () => {
-      element?.close();
-      requestAnimationFrame(() => previous?.focus());
+      navigationGuard.current = null;
     };
-  }, [returnFocus]);
+  });
   useEffect(() => {
     const controller = new AbortController();
     api(
@@ -105,31 +108,19 @@ export default function CampaignSheets({
     }
   }
   return (
-    <dialog
-      ref={dialog}
-      className="modal campaign-sheets-dialog"
-      aria-label={t("Player sheets")}
-      onCancel={(event) => {
-        event.preventDefault();
-        if (canLeave()) close();
-      }}
-    >
-      <div className="modal-title">
+    <section className="campaign-sheets-page" aria-label={t("Player sheets")}>
+      <header className="campaign-sheets-heading">
         <div>
-          <h2>{t("Player sheets")}</h2>
+          <h2 ref={heading} tabIndex={-1}>
+            {t("Player sheets")}
+          </h2>
           <p>{campaign.name}</p>
         </div>
-        <button
-          className="icon-btn"
-          aria-label={t("Close dialog")}
-          disabled={busy}
-          onClick={() => {
-            if (canLeave()) close();
-          }}
-        >
-          <X size={22} />
+        <button className="btn" disabled={busy} onClick={close}>
+          <ArrowLeft size={16} aria-hidden="true" />
+          {backLabel}
         </button>
-      </div>
+      </header>
       <p className="field-hint">
         {t(
           canManage
@@ -200,7 +191,7 @@ export default function CampaignSheets({
               {t(error)}
             </p>
           )}
-          {editing ? (
+          {editing && canManage ? (
             <CharacterEditor
               key={editing.id}
               initial={editing.sheet}
@@ -230,6 +221,6 @@ export default function CampaignSheets({
           )}
         </>
       )}
-    </dialog>
+    </section>
   );
 }

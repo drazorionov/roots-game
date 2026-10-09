@@ -95,7 +95,7 @@ test(
       await page
         .getByRole("button", { name: "Player sheets", exact: true })
         .click();
-      const manager = page.getByRole("dialog", {
+      const manager = page.getByRole("region", {
         name: "Player sheets",
         exact: true,
       });
@@ -125,6 +125,11 @@ test(
       await manager
         .getByLabel("Name", { exact: true })
         .fill("Conflicted draft");
+      page.once("dialog", (dialog) => dialog.dismiss());
+      await page.getByRole("button", { name: "Home", exact: true }).click();
+      await expect(manager.getByLabel("Name", { exact: true })).toHaveValue(
+        "Conflicted draft",
+      );
       hero = {
         ...hero,
         version: hero.version + 1,
@@ -153,7 +158,7 @@ test(
         await page.setViewportSize({ width, height: 1000 });
         assert.ok(
           await manager.evaluate((el) => el.scrollWidth <= el.clientWidth + 1),
-          `dialog overflow at ${width}`,
+          `page overflow at ${width}`,
         );
       }
       await page.setViewportSize({ width: 390, height: 1000 });
@@ -161,7 +166,8 @@ test(
         path: "test-results/campaign-owner-sheet-phone.png",
       });
       await manager
-        .getByRole("button", { name: "Close dialog", exact: true })
+        .locator(".campaign-sheets-heading")
+        .getByRole("button", { name: "Back", exact: true })
         .click();
       await options.click();
       await page
@@ -316,7 +322,7 @@ test(
         }
         await tile.focus();
         await page.keyboard.press("Enter");
-        const sheetDialog = page.getByRole("dialog", {
+        const sheetDialog = page.getByRole("region", {
           name: "Player sheets",
           exact: true,
         });
@@ -326,6 +332,9 @@ test(
         await expect(sheetDialog.locator(".hero-caption h2")).toHaveText(
           otherHero.sheet.name,
         );
+        await expect(page.getByRole("dialog")).toHaveCount(0);
+        await expect(page.locator(".play-sheet")).toHaveCount(1);
+        await expect(tile).toBeVisible();
         const injury = sheetDialog.getByRole("button", {
           name: "Injury 2",
           exact: true,
@@ -381,9 +390,25 @@ test(
           assert.deepEqual(writes, []);
         }
         await sheetDialog
-          .getByRole("button", { name: "Close dialog", exact: true })
+          .locator(".campaign-sheets-heading")
+          .getByRole("button", { name: "Back to character", exact: true })
           .click();
-        await expect(tile).toBeFocused();
+        await expect(sheetDialog).toHaveCount(0);
+        await expect(page.locator(".hero-caption h2")).toHaveText(
+          hero.sheet.name,
+        );
+        await tile.click();
+        await expect(sheetDialog).toBeVisible();
+        await page
+          .getByRole("button", {
+            name: `${hero.sheet.name} · You`,
+            exact: true,
+          })
+          .click();
+        await expect(sheetDialog).toHaveCount(0);
+        await expect(
+          page.getByRole("button", { name: "Roll Might", exact: true }),
+        ).toBeEnabled();
         await page.getByLabel("Game menu", { exact: true }).click();
         await expect(
           page.getByRole("button", { name: "Player sheets", exact: true }),

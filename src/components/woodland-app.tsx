@@ -152,7 +152,7 @@ function WoodlandWorkspace() {
   const [managedCampaignId, setManagedCampaignId] = useState("");
   const [sheetCampaignId, setSheetCampaignId] = useState("");
   const [sheetHeroId, setSheetHeroId] = useState("");
-  const [sheetTrigger, setSheetTrigger] = useState<HTMLElement | null>(null);
+  const sheetNavigationGuard = useRef<(() => boolean) | null>(null);
   const [transferCampaignId, setTransferCampaignId] = useState("");
   const [transferUserId, setTransferUserId] = useState("");
   const [memberTarget, setMemberTarget] = useState<{
@@ -246,7 +246,14 @@ function WoodlandWorkspace() {
                   ? "campaigns-scene"
                   : "characters-scene";
   const gameTime = useGameTime(scene === "game-scene");
+  function leavePlayerSheets() {
+    if (sheetCampaign && sheetNavigationGuard.current?.() === false)
+      return false;
+    setSheetCampaignId("");
+    return true;
+  }
   function exitToMain() {
+    if (!leavePlayerSheets()) return;
     if (creating && !leaveCreation()) return;
     setQuickMode(false);
     try {
@@ -257,6 +264,10 @@ function WoodlandWorkspace() {
     if (gameMenu.current) gameMenu.current.open = false;
   }
   function backToPreviousScreen() {
+    if (sheetCampaign) {
+      leavePlayerSheets();
+      return;
+    }
     setError("");
     if (tab === "play" && !quickMode) {
       if (activeGame) {
@@ -304,6 +315,7 @@ function WoodlandWorkspace() {
     newCharacter(true);
   }
   function restartGame() {
+    if (!leavePlayerSheets()) return;
     if (gameMenu.current) gameMenu.current.open = false;
     setError("");
     if (quickMode) {
@@ -354,22 +366,25 @@ function WoodlandWorkspace() {
     }
   }
   function askToLeave(c: Campaign) {
+    if (!leavePlayerSheets()) return;
     setError("");
     setLeaveTarget(c);
     if (gameMenu.current) gameMenu.current.open = false;
   }
   function openPlayerSheets(c: Campaign, heroId = "") {
+    if (!leavePlayerSheets()) return;
+    if (activeGame && heroId === hero?.id) return;
     if (pendingSaves.length) {
       setError("Save or reload your unsaved character changes first.");
       return;
     }
     setError("");
-    setSheetTrigger(document.activeElement as HTMLElement | null);
     setSheetHeroId(heroId);
     setSheetCampaignId(c.id);
     if (gameMenu.current) gameMenu.current.open = false;
   }
   function openTransfer(c: Campaign) {
+    if (!leavePlayerSheets()) return;
     setError("");
     setTransferUserId("");
     setTransferCampaignId(c.id);
@@ -482,6 +497,7 @@ function WoodlandWorkspace() {
       } catch {}
   }
   function startNewGame() {
+    if (!leavePlayerSheets()) return;
     if (gameMenu.current) gameMenu.current.open = false;
     setSelected("");
     setGameCampaignId("");
@@ -919,6 +935,22 @@ function WoodlandWorkspace() {
     if (next === "campaign") newCampaign();
     else open(next);
   }
+  const playerSheets = sheetCampaign ? (
+    <CampaignSheets
+      key={`${sheetCampaign.id}:${sheetHeroId}`}
+      campaign={sheetCampaign}
+      initialHeroId={sheetHeroId}
+      navigationGuard={sheetNavigationGuard}
+      backLabel={t(activeGame ? "Back to character" : "Back")}
+      canManage={sheetCampaign.owner_id === user?.id}
+      close={() => {
+        leavePlayerSheets();
+      }}
+      onSaved={(saved) => {
+        if (saved.owner_id === user?.id) updated(saved);
+      }}
+    />
+  ) : null;
   return (
     <div
       className={`simple-app scene-app ${scene} ${!scenic ? "workspace-scene" : ""}`}
@@ -975,6 +1007,7 @@ function WoodlandWorkspace() {
                 {user?.isAdmin && (
                   <button
                     onClick={() => {
+                      if (!leavePlayerSheets()) return;
                       if (creating && !leaveCreation()) return;
                       setQuickMode(false);
                       setTab("admin");
@@ -1043,6 +1076,7 @@ function WoodlandWorkspace() {
               className="icon-btn"
               aria-label={t("Sign out")}
               onClick={async () => {
+                if (!leavePlayerSheets()) return;
                 if (pendingSaves.length) {
                   setError(
                     "Save or reload your unsaved character changes first.",
@@ -1146,6 +1180,8 @@ function WoodlandWorkspace() {
           <p className="loading" role="status">
             {t("Loading…")}
           </p>
+        ) : playerSheets && !activeGame ? (
+          playerSheets
         ) : creating ? (
           <section
             className={`journey-picker creation-page ${creatingCampaign ? "campaign-creation" : "character-creation"}`}
@@ -1342,13 +1378,15 @@ function WoodlandWorkspace() {
               </header>
             }
           >
-            <CharacterControls
-              key={hero!.id}
-              hero={hero!}
-              edit={(step = 0) => editCharacter(hero!, step)}
-              saveLocal={quickMode ? saveQuick : undefined}
-              saveQueue={quickMode ? undefined : queueFor(hero!)}
-            />
+            {playerSheets || (
+              <CharacterControls
+                key={hero!.id}
+                hero={hero!}
+                edit={(step = 0) => editCharacter(hero!, step)}
+                saveLocal={quickMode ? saveQuick : undefined}
+                saveQueue={quickMode ? undefined : queueFor(hero!)}
+              />
+            )}
           </ActiveGame>
         ) : quickMode ? (
           <section className="journey-picker quick-start-page">
@@ -1453,18 +1491,6 @@ function WoodlandWorkspace() {
             </button>
           </div>
         </Modal>
-      )}
-      {sheetCampaign && (
-        <CampaignSheets
-          campaign={sheetCampaign}
-          initialHeroId={sheetHeroId}
-          returnFocus={sheetTrigger}
-          canManage={sheetCampaign.owner_id === user?.id}
-          close={() => setSheetCampaignId("")}
-          onSaved={(saved) => {
-            if (saved.owner_id === user?.id) updated(saved);
-          }}
-        />
       )}
       {transferCampaign && (
         <Modal

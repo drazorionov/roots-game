@@ -2021,11 +2021,28 @@ form .inline-check {
 .game-menu.campaign-options[open] > summary {
   color: #fff6df;
 }
-.campaign-sheets-dialog {
-  width: min(1200px, calc(100vw - 24px));
-  max-width: none;
-  max-height: 92dvh;
-  overflow-y: auto;
+.campaign-sheets-page {
+  min-width: 0;
+  color: var(--ink);
+}
+.campaign-sheets-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.campaign-sheets-heading h2 {
+  scroll-margin-top: 24px;
+}
+.campaign-sheets-heading h2:focus {
+  outline: none;
+}
+.campaign-sheets-heading,
+.campaign-sheets-page > .field-hint,
+.campaign-sheet-toolbar > label {
+  color: #fff6df;
 }
 .campaign-sheet-toolbar {
   display: flex;
@@ -2035,10 +2052,12 @@ form .inline-check {
   margin: 18px 0;
 }
 .campaign-sheet-toolbar label {
+  display: grid;
+  gap: 8px;
   flex: 1 1 220px;
   min-width: 0;
 }
-.campaign-sheets-dialog .wizard-shell {
+.campaign-sheets-page .wizard-shell {
   min-width: 0;
 }
 .game-menu > summary {
