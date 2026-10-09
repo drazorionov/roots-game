@@ -1,6 +1,12 @@
 "use client";
 import { useEffect, useState, type ReactNode } from "react";
-import { MapPin, RefreshCw, LockKeyhole } from "lucide-react";
+import {
+  MapPin,
+  RefreshCw,
+  LockKeyhole,
+  CircleCheck,
+  CircleMinus,
+} from "lucide-react";
 import { api } from "@/lib/client-api";
 import { useTranslation } from "@/lib/i18n";
 import {
@@ -174,11 +180,9 @@ function CampaignRoster({
   // Keep this player's latest saved values ahead of the roster poll.
   const members = [hero, ...party.filter((member) => member.id !== hero.id)];
   const status = (ownerId: string) =>
-    onlinePlayers === undefined
-      ? t("Status unknown")
-      : onlinePlayers.some((player) => player.id === ownerId)
-        ? t("Online")
-        : t("Offline");
+    onlinePlayers?.some((player) => player.id === ownerId)
+      ? t("Online")
+      : t("Offline");
   return (
     <section className="session-party" aria-label={t("Your travelling party")}>
       {campaign?.clearing && (
@@ -231,10 +235,9 @@ function CampaignRoster({
                   />
                   {campaign && (
                     <span
-                      className={`presence-dot ${onlinePlayers === undefined ? "unknown" : online ? "online" : "offline"}`}
+                      className={`presence-dot ${online ? "online" : "offline"}`}
                       title={status(member.owner_id)}
-                      role="img"
-                      aria-label={status(member.owner_id)}
+                      aria-hidden="true"
                     />
                   )}
                 </div>
@@ -243,6 +246,7 @@ function CampaignRoster({
                   <small title={member.player}>
                     {own ? t("You") : member.player}
                   </small>
+                  {campaign && <PresenceLabel online={online} />}
                   <div className="party-conditions">
                     {harmTracks.map((track) => (
                       <div
@@ -268,10 +272,9 @@ function CampaignRoster({
             <div className="master-portrait">
               <MasterPortrait />
               <span
-                className={`presence-dot ${onlinePlayers === undefined ? "unknown" : onlinePlayers.some((p) => p.id === campaign.owner_id) ? "online" : "offline"}`}
+                className={`presence-dot ${onlinePlayers?.some((p) => p.id === campaign.owner_id) ? "online" : "offline"}`}
                 title={status(campaign.owner_id)}
-                role="img"
-                aria-label={status(campaign.owner_id)}
+                aria-hidden="true"
               />
             </div>
             <div className="session-tile-copy">
@@ -279,10 +282,26 @@ function CampaignRoster({
               <h3 title={campaign.master_name}>
                 {campaign.master_name || t("Campaign master")}
               </h3>
+              <PresenceLabel
+                online={onlinePlayers?.some(
+                  (player) => player.id === campaign.owner_id,
+                )}
+              />
             </div>
           </article>
         )}
       </div>
     </section>
+  );
+}
+
+function PresenceLabel({ online }: { online?: boolean }) {
+  const { t } = useTranslation();
+  const Icon = online ? CircleCheck : CircleMinus;
+  return (
+    <span className={`presence-label ${online ? "online" : "offline"}`}>
+      <Icon size={14} aria-hidden="true" />
+      <span>{t(online ? "Online" : "Offline")}</span>
+    </span>
   );
 }

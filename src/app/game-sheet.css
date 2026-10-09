@@ -897,6 +897,25 @@
 .session-heading .campaign-presence p {
   justify-content: flex-end;
 }
+.session-heading .campaign-presence p:first-child {
+  display: inline-flex;
+  max-width: 100%;
+  gap: 8px;
+  padding: 9px 12px;
+  border: 1px solid #b7b5a3;
+  border-radius: 6px;
+  background: #f0ebdc;
+  color: #555447;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.4;
+  box-shadow: 0 2px 8px #17221925;
+}
+.session-heading .campaign-presence[data-state="online"] p:first-child {
+  border-color: #9db487;
+  background: #e5efd9;
+  color: #2e542b;
+}
 .session-heading .online-names {
   display: none;
 }
@@ -996,18 +1015,40 @@
   position: absolute;
   right: 0;
   bottom: 0;
-  width: 10px;
-  height: 10px;
-  border: 2px solid #f0ecdc;
+  width: 15px;
+  height: 15px;
+  border: 3px solid #f0ecdc;
+  box-shadow: 0 0 0 1px #343c3355;
   border-radius: 50%;
   background: #92948a;
 }
 .presence-dot.online {
-  background: #52824d;
+  background: #377239;
 }
-.presence-dot.unknown {
-  background: transparent;
-  border-color: #92948a;
+.presence-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 100%;
+  margin-top: 7px;
+  padding: 4px 7px;
+  border: 1px solid #bab6a5;
+  border-radius: 5px;
+  background: #e8e6dc;
+  color: #55564f;
+  font-size: 11px;
+  font-weight: 750;
+  line-height: 1.3;
+  text-align: left;
+}
+.presence-label.online {
+  border-color: #9bb58a;
+  background: #dcebcf;
+  color: #2d542a;
+}
+.presence-label span {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 .master-tile {
   flex-basis: 190px;
@@ -1257,6 +1298,15 @@
   }
   .master-tile h3 {
     font-size: 13px;
+  }
+  .master-tile .presence-label {
+    padding: 4px 5px;
+    gap: 4px;
+    font-size: 10px;
+  }
+  .master-tile .presence-label svg {
+    width: 12px;
+    height: 12px;
   }
   .roll-heading-note {
     gap: 6px;

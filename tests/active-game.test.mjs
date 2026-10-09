@@ -259,12 +259,10 @@ test(
       await expect(companion).toContainText("Morgan");
       await expect(companion.getByRole("button")).toHaveCount(0);
       await expect(
-        companion.getByRole("img", { name: "Offline", exact: true }),
+        companion.getByText("Offline", { exact: true }),
       ).toBeVisible();
       await expect(
-        page
-          .locator(".own-character")
-          .getByRole("img", { name: "Online", exact: true }),
+        page.locator(".own-character").getByText("Online", { exact: true }),
       ).toBeVisible();
       await expect(page.locator(".master-tile")).toContainText(
         "Oak Storykeeper",
@@ -314,9 +312,9 @@ test(
       await page.evaluate(() =>
         document.dispatchEvent(new Event("visibilitychange")),
       );
-      await expect(
-        page.locator(".own-character .presence-dot"),
-      ).toHaveAttribute("aria-label", "Status unknown");
+      await expect(page.locator(".own-character .presence-label")).toHaveText(
+        "Offline",
+      );
       await expect(page.locator(".hero-caption")).toBeVisible();
       assert.equal(mutations, 0);
     } finally {

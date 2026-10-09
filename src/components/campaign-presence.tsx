@@ -15,7 +15,6 @@ export default function CampaignPresence({
   const [state, setState] = useState<{
     campaignId: string;
     players?: Player[];
-    failed?: boolean;
   }>();
   useEffect(() => {
     let disposed = false;
@@ -39,7 +38,7 @@ export default function CampaignPresence({
         }
       } catch {
         if (!disposed) {
-          setState({ campaignId, failed: true });
+          setState({ campaignId });
           onChange?.(undefined);
         }
       } finally {
@@ -60,15 +59,14 @@ export default function CampaignPresence({
   return (
     <div
       className="campaign-presence"
+      data-state={current?.players?.length ? "online" : "offline"}
       title={t("Players viewing this campaign. Updates every 20 seconds.")}
     >
       <p role="status">
-        <Users size={14} />
-        {current?.failed
-          ? t("Online status unavailable.")
-          : current?.players
-            ? t("Online: {count}", { count: current.players.length })
-            : t("Checking players…")}
+        <Users size={17} aria-hidden="true" />
+        {current?.players
+          ? t("Online: {count}", { count: current.players.length })
+          : t("Offline")}
       </p>
       {!!current?.players?.length && (
         <p className="online-names">
