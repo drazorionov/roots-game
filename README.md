@@ -6,7 +6,7 @@ A simple React + Next.js companion for Root: The Roleplaying Game, designed for 
 
 ## Use the app
 
-- Create or edit a character on a full page with six sections: identity, background, nature and drives, abilities, equipment, and review/connections. A section sidebar supports desktop and iPad; phones use compact section navigation. Nine core playbooks supply starting attributes, nature, drives, moves, feats, and weapon choices. Save an unfinished draft at any step and finish it later.
+- My characters opens the character editor directly. Saving or leaving the editor returns to the character list; playable sheets appear only in campaign and Quick game modes. Create or edit a character on a full page with six sections: identity, background, nature and drives, abilities, equipment, and review/connections. A section sidebar supports desktop and iPad; phones use compact section navigation. Nine core playbooks supply starting attributes, nature, drives, moves, feats, and weapon choices. Save an unfinished draft at any step and finish it later.
 - Choose Quick game on the welcome page for an offline tabletop companion: create a character without an account or campaign. Its sheet stays in session storage in the current browser tab, survives refresh, and is not uploaded. Start online once; “Ready for offline play” confirms the public app assets are cached for offline refresh. Closing the tab ends this temporary game (browser session restoration may restore it).
 - Sign in for persistent characters and online campaigns.
 - Delete your own characters from My characters, or campaigns you created from My campaigns. Both actions ask for confirmation. Deleting a campaign keeps every player’s characters and removes their campaign assignment.

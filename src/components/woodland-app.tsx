@@ -351,7 +351,15 @@ function WoodlandWorkspace() {
   }
   async function pickCharacter(h: Hero) {
     if (tab !== "play") {
-      setSelected(h.id);
+      if (h.campaign_id) {
+        setTab("play");
+        setGameCampaignId(h.campaign_id);
+        setSelected(h.id);
+        remember(h.id);
+        setGameStep("sheet");
+      } else {
+        editCharacter(h);
+      }
       return;
     }
     if (!gameCampaign || busy) return;
@@ -557,7 +565,7 @@ function WoodlandWorkspace() {
     });
     if (data.baseHero) updated(data.baseHero);
     updated(data.hero);
-    setSelected(data.hero.id);
+    setSelected(data.hero.campaign_id ? data.hero.id : "");
     setCampaignFilter("");
     if (tab !== "play") setTab("characters");
     if (tab === "play" && data.hero.campaign_id) {
@@ -978,56 +986,40 @@ function WoodlandWorkspace() {
               </button>
             </div>
           </section>
-        ) : activeGame || (tab === "characters" && hero) ? (
-          <>
-            {!activeGame && (
-              <div className="character-toolbar">
-                <button className="text-link" onClick={() => setSelected("")}>
-                  <ArrowLeft size={16} />
-                  {t("All characters")}
-                </button>
-                <button className="btn small" onClick={startNewGame}>
-                  {t("Start / join a game")}
-                  <ChevronRight size={15} />
-                </button>
-              </div>
-            )}
-            <ActiveGame
-              enabled={activeGame}
+        ) : activeGame ? (
+          <ActiveGame
+            enabled
+            key={hero!.id}
+            hero={hero!}
+            campaign={campaign}
+            heading={
+              <header className="game-heading">
+                <div className="campaign-heading">
+                  <h1>{quickMode ? t("Quick game") : campaign?.name}</h1>
+                  {quickMode && (
+                    <p className="quick-game-note">
+                      {t(
+                        "No account. No campaign. Saved only in this browser tab.",
+                      )}
+                      {quickOfflineReady && (
+                        <span className="offline-ready">
+                          {t("Ready for offline play.")}
+                        </span>
+                      )}
+                    </p>
+                  )}
+                </div>
+              </header>
+            }
+          >
+            <CharacterControls
               key={hero!.id}
               hero={hero!}
-              campaign={activeGame ? campaign : undefined}
-              heading={
-                activeGame ? (
-                  <header className="game-heading">
-                    <div className="campaign-heading">
-                      <h1>{quickMode ? t("Quick game") : campaign?.name}</h1>
-                      {quickMode && (
-                        <p className="quick-game-note">
-                          {t(
-                            "No account. No campaign. Saved only in this browser tab.",
-                          )}
-                          {quickOfflineReady && (
-                            <span className="offline-ready">
-                              {t("Ready for offline play.")}
-                            </span>
-                          )}
-                        </p>
-                      )}
-                    </div>
-                  </header>
-                ) : undefined
-              }
-            >
-              <CharacterControls
-                key={hero!.id}
-                hero={hero!}
-                edit={(step = 0) => editCharacter(hero!, step)}
-                onSaved={updated}
-                saveLocal={quickMode ? saveQuick : undefined}
-              />
-            </ActiveGame>
-          </>
+              edit={(step = 0) => editCharacter(hero!, step)}
+              onSaved={updated}
+              saveLocal={quickMode ? saveQuick : undefined}
+            />
+          </ActiveGame>
         ) : quickMode ? (
           <section className="journey-picker">
             <h1>{t("Quick game")}</h1>

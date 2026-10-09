@@ -132,26 +132,59 @@ test(
         .locator(".character-tile")
         .filter({ hasText: "Edited base" })
         .click();
+      await expect(page).toHaveURL(
+        new RegExp(`/characters/edit\\?id=${original.id}$`),
+      );
+      await expect(page.locator(".character-builder")).toBeVisible();
+      await expect(page.locator(".play-sheet")).toHaveCount(0);
+      await page.reload();
+      await expect(page.getByLabel("Name", { exact: true })).toHaveValue(
+        "Edited base",
+      );
+      await page.locator(".creation-back").click();
+      await expect(page.locator(".character-tile")).toHaveCount(2);
+      await expect(page.locator(".play-sheet")).toHaveCount(0);
       await page
-        .getByRole("button", { name: "Edit character", exact: true })
+        .locator(".character-tile")
+        .filter({ hasText: "Edited base" })
         .click();
       await page.getByLabel("Name", { exact: true }).fill("Menu edit");
       await page
         .getByRole("button", { name: "Save character", exact: true })
         .click();
       await expect(
-        page.getByRole("heading", { name: "Menu edit", exact: true }),
+        page.getByRole("heading", { name: "My characters", exact: true }),
       ).toBeVisible();
+      await expect(
+        page.locator(".character-tile").filter({ hasText: "Menu edit" }),
+      ).toBeVisible();
+      await expect(page.locator(".play-sheet")).toHaveCount(0);
       original = await latest(original.id);
       assert.equal(original.sheet.name, "Menu edit");
       assert.deepEqual(await latest(copy.id), copy);
       await page.locator(".brand").click();
-      await page.getByRole("button", { name: /Start \/ join a game/ }).click();
+      await page.getByRole("button", { name: /My campaigns/ }).click();
       await page
         .locator(".campaign-card")
         .filter({ hasText: "Copy test 1" })
-        .getByRole("button", { name: "Choose campaign", exact: true })
+        .getByRole("button", { name: "My characters", exact: true })
         .click();
+      await page
+        .locator(".character-tile")
+        .filter({ hasText: "Original" })
+        .click();
+      await expect(page.locator(".active-game")).toBeVisible();
+      await expect(page.locator(".campaign-heading h1")).toHaveText(
+        "Copy test 1",
+      );
+      await page.locator(".brand").click();
+      await page.getByRole("button", { name: /Continue game/ }).click();
+      await expect(page.locator(".active-game")).toBeVisible();
+      await page.locator(".game-menu summary").click();
+      await page
+        .getByRole("button", { name: "Restart game", exact: true })
+        .click();
+
       await expect(
         page.locator(".character-tile").filter({ hasText: "Menu edit" }),
       ).toHaveCount(0);

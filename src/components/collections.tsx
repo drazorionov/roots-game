@@ -338,7 +338,9 @@ export function CharacterCollection({
               </span>
               <span className="character-open">
                 {t(
-                  choosing ? "Play as this character" : "Open character sheet",
+                  choosing || h.campaign_id
+                    ? "Play as this character"
+                    : "Edit character",
                 )}
                 <ChevronRight size={17} />
               </span>
