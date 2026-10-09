@@ -1,5 +1,6 @@
 "use client";
 import Image from "next/image";
+import dynamic from "next/dynamic";
 import { usePathname, useSearchParams } from "next/navigation";
 import {
   Suspense,
@@ -34,12 +35,13 @@ import {
 import { api } from "@/lib/client-api";
 import { prepareQuickOffline } from "@/lib/quick-offline";
 import { useGameTime } from "@/lib/use-game-time";
-import CharacterEditor from "./character-editor";
+import { useHeroSaves } from "@/lib/use-hero-saves";
 import CharacterControls from "./character-controls";
 import ActiveGame from "./active-game";
-import AdminPanel from "./admin-panel";
-import PasswordRecovery from "./password-recovery";
+import CharacterEditor from "./character-editor";
 import { CampaignCollection, CharacterCollection } from "./collections";
+const AdminPanel = dynamic(() => import("./admin-panel"));
+const PasswordRecovery = dynamic(() => import("./password-recovery"));
 function Modal({
   title,
   children,
@@ -169,7 +171,12 @@ function WoodlandWorkspace() {
     heroes.find((h) => h.id === editing?.id)?.campaign_id
   );
   const draftCampaign = useRef<string | null>(null);
-  const hero = quickMode ? quickHero : heroes.find((h) => h.id === selected);
+  const { queueFor, pending: pendingSaves } = useHeroSaves(updated);
+  const hero = quickMode
+    ? quickHero
+    : (pendingSaves
+        .find((q) => q.getSnapshot().hero.id === selected)
+        ?.getSnapshot().hero ?? heroes.find((h) => h.id === selected));
   const campaign = campaigns.find((c) => c.id === hero?.campaign_id);
   const shown = heroes.filter((h) =>
     campaignFilter ? h.campaign_id === campaignFilter : !h.campaign_id,
@@ -286,6 +293,10 @@ function WoodlandWorkspace() {
   }
   async function deleteItem() {
     if (!deleteTarget || busy) return;
+    if (pendingSaves.length) {
+      setError("Save or reload your unsaved character changes first.");
+      return;
+    }
     setBusy(true);
     setError("");
     try {
@@ -327,6 +338,10 @@ function WoodlandWorkspace() {
   }
   async function leaveGame() {
     if (!leaveTarget || busy) return;
+    if (pendingSaves.length) {
+      setError("Save or reload your unsaved character changes first.");
+      return;
+    }
     setBusy(true);
     setError("");
     try {
@@ -495,10 +510,14 @@ function WoodlandWorkspace() {
         } catch {}
         if (new URLSearchParams(window.location.search).get("mode") === "quick")
           return;
-        const data = await api("auth");
+        const data = await api("auth?bootstrap=1");
         setUser(data.user);
         if (data.user) {
-          const [h, c] = await Promise.all([api("heroes"), api("campaigns")]);
+          // Older deployments can still answer auth while a new client is loading.
+          const [h, c] =
+            data.heroes && data.campaigns
+              ? [{ heroes: data.heroes }, { campaigns: data.campaigns }]
+              : await Promise.all([api("heroes"), api("campaigns")]);
           setHeroes(h.heroes);
           setCampaigns(c.campaigns);
           try {
@@ -514,27 +533,46 @@ function WoodlandWorkspace() {
   useEffect(() => {
     if (!user || quickMode) return;
     let cancelled = false;
-    const timer = setInterval(async () => {
+    let pending = false;
+    const controller = new AbortController();
+    async function refresh() {
+      if (pending || document.visibilityState !== "visible") return;
+      pending = true;
       try {
         const [data, campaignData] = await Promise.all([
-          api("heroes"),
-          api("campaigns"),
+          api("heroes", "GET", undefined, controller.signal),
+          api("campaigns", "GET", undefined, controller.signal),
         ]);
-        if (!cancelled) setCampaigns(campaignData.campaigns);
         if (!cancelled)
-          setHeroes((current) =>
-            data.heroes.map((h: Hero) => {
-              const old = current.find((x) => x.id === h.id);
-              return old && old.version > h.version ? old : h;
-            }),
+          setCampaigns((current) =>
+            JSON.stringify(current) === JSON.stringify(campaignData.campaigns)
+              ? current
+              : campaignData.campaigns,
           );
+        if (!cancelled)
+          setHeroes((current) => {
+            const next = data.heroes.map((h: Hero) => {
+              const old = current.find((x) => x.id === h.id);
+              return old && old.version >= h.version ? old : h;
+            });
+            return next.length === current.length &&
+              next.every((h: Hero, i: number) => h === current[i])
+              ? current
+              : next;
+          });
       } catch (e) {
         if (!cancelled) setError((e as Error).message);
+      } finally {
+        pending = false;
       }
-    }, 15000);
+    }
+    const timer = setInterval(() => void refresh(), 15000);
+    document.addEventListener("visibilitychange", refresh);
     return () => {
       cancelled = true;
+      controller.abort();
       clearInterval(timer);
+      document.removeEventListener("visibilitychange", refresh);
     };
   }, [user, quickMode]);
   useEffect(() => {
@@ -557,7 +595,7 @@ function WoodlandWorkspace() {
       );
     setHeroes((current) =>
       current.some((x) => x.id === h.id)
-        ? current.map((x) => (x.id === h.id ? h : x))
+        ? current.map((x) => (x.id === h.id && x.version <= h.version ? h : x))
         : [...current, h],
     );
   }
@@ -880,6 +918,12 @@ function WoodlandWorkspace() {
               className="icon-btn"
               aria-label={t("Sign out")}
               onClick={async () => {
+                if (pendingSaves.length) {
+                  setError(
+                    "Save or reload your unsaved character changes first.",
+                  );
+                  return;
+                }
                 try {
                   await api("auth", "DELETE");
                   exitToMain();
@@ -914,6 +958,50 @@ function WoodlandWorkspace() {
         </div>
       </header>
       <main className="simple-main">
+        {pendingSaves
+          .filter((q) => !activeGame || q.getSnapshot().hero.id !== hero?.id)
+          .map((q) => {
+            const state = q.getSnapshot();
+            return (
+              <p
+                key={state.hero.id}
+                role="status"
+                className={state.error ? "error" : "notice"}
+              >
+                {t(
+                  state.error
+                    ? "Unsaved changes for {name}."
+                    : "Saving changes for {name}…",
+                  { name: state.hero.sheet.name },
+                )}{" "}
+                <button
+                  className="text-link"
+                  onClick={() => {
+                    if (creating && !leaveCreation()) return;
+                    setQuickMode(false);
+                    setTab("play");
+                    setGameStep("sheet");
+                    setGameCampaignId(state.hero.campaign_id || "");
+                    setSelected(state.hero.id);
+                    if (creating) window.history.pushState(null, "", "/");
+                  }}
+                >
+                  {t("Return to game")}
+                </button>
+                {state.error && (
+                  <button
+                    className="text-link"
+                    onClick={() => {
+                      if (window.confirm(t("Discard unsaved changes")))
+                        q.discard();
+                    }}
+                  >
+                    {t("Discard unsaved changes")}
+                  </button>
+                )}
+              </p>
+            );
+          })}
         {!loading && !creating && (quickMode || (user && tab !== "home")) && (
           <button
             className="text-link workspace-back"
@@ -1128,8 +1216,8 @@ function WoodlandWorkspace() {
               key={hero!.id}
               hero={hero!}
               edit={(step = 0) => editCharacter(hero!, step)}
-              onSaved={updated}
               saveLocal={quickMode ? saveQuick : undefined}
+              saveQueue={quickMode ? undefined : queueFor(hero!)}
             />
           </ActiveGame>
         ) : quickMode ? (

@@ -124,27 +124,48 @@ function CampaignRoster({
   useEffect(() => {
     if (!campaignId) return;
     let disposed = false;
+    let pending = false;
+    const controller = new AbortController();
     let timer: ReturnType<typeof setTimeout>;
     async function refresh() {
+      if (disposed || pending || document.visibilityState !== "visible") return;
+      clearTimeout(timer);
+      pending = true;
       try {
         const data = await api(
           `heroes?campaign=${encodeURIComponent(campaignId!)}`,
+          "GET",
+          undefined,
+          controller.signal,
         );
         if (!disposed) {
-          setParty(data.heroes);
+          setParty((current) => {
+            const next = (data.heroes as Hero[]).map((h) => {
+              const old = current.find((member) => member.id === h.id);
+              return old && old.version >= h.version ? old : h;
+            });
+            return next.length === current.length &&
+              next.every((h, i) => h === current[i])
+              ? current
+              : next;
+          });
           setLoaded(true);
           setError("");
         }
       } catch (e) {
         if (!disposed) setError((e as Error).message);
       } finally {
+        pending = false;
         if (!disposed) timer = setTimeout(refresh, 15000);
       }
     }
     void refresh();
+    document.addEventListener("visibilitychange", refresh);
     return () => {
       disposed = true;
+      controller.abort();
       clearTimeout(timer);
+      document.removeEventListener("visibilitychange", refresh);
     };
   }, [campaignId, attempt]);
   // Keep this player's latest saved values ahead of the roster poll.

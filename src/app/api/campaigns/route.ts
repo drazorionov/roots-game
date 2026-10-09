@@ -3,6 +3,7 @@ import { randomBytes, randomUUID } from "node:crypto";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { getUser, rateLimit, sameOrigin } from "@/lib/auth";
+import { joinedCampaigns } from "@/lib/workspace-data";
 export async function GET() {
   try {
     const user = await getUser();
@@ -11,8 +12,7 @@ export async function GET() {
         { error: "Sign in to view campaigns." },
         { status: 401 },
       );
-    const campaigns =
-      await db()`SELECT c.*, u.name AS master_name, (SELECT count(*)::int FROM memberships m WHERE m.campaign_id = c.id) as members FROM campaigns c JOIN users u ON u.id = c.owner_id JOIN memberships m ON c.id = m.campaign_id WHERE m.user_id = ${user.id} ORDER BY c.created_at`;
+    const campaigns = await joinedCampaigns(user.id);
     return NextResponse.json({ campaigns });
   } catch {
     return NextResponse.json(

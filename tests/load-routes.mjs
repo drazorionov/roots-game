@@ -25,7 +25,7 @@ export function loadRoutes(sql, mailFetch = globalThis.fetch) {
           return { cookies: async () => jars.getStore() };
         if (id === "@/lib/db" || id === "./db") return { db: () => sql };
         if (id.startsWith("@/lib/")) return load(`src/lib/${id.slice(6)}.ts`);
-        if (id === "./admin" || id === "./auth")
+        if (id === "./admin" || id === "./auth" || id === "./sheet")
           return load(`src/lib/${id.slice(2)}.ts`);
         return require(id);
       },

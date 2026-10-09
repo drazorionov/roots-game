@@ -104,6 +104,34 @@ test(
       );
       assert.equal(created.status, 200);
       const campaignId = created.data.id;
+      const bootstrap = await request(
+        "auth?bootstrap=1",
+        "GET",
+        undefined,
+        owner.cookie,
+      );
+      assert.equal(bootstrap.status, 200);
+      assert.equal(bootstrap.data.user.id, owner.data.user.id);
+      assert.deepEqual(
+        bootstrap.data.heroes.map((h) => h.id),
+        [hero.id],
+      );
+      assert.deepEqual(
+        bootstrap.data.campaigns.map((c) => c.id),
+        [campaignId],
+      );
+      const guestBootstrap = await request(
+        "auth?bootstrap=1",
+        "GET",
+        undefined,
+        guest.cookie,
+      );
+      assert.deepEqual(guestBootstrap.data.heroes, []);
+      assert.deepEqual(guestBootstrap.data.campaigns, []);
+      const anonymousBootstrap = await request("auth?bootstrap=1");
+      assert.equal(anonymousBootstrap.data.user, null);
+      assert.deepEqual(anonymousBootstrap.data.heroes, []);
+      assert.deepEqual(anonymousBootstrap.data.campaigns, []);
       assert.equal(
         (await request("presence", "POST", { campaignId })).status,
         401,
@@ -331,8 +359,9 @@ test(
         fullPage: true,
       });
       await creation
-        .getByLabel("Species", { exact: true })
-        .selectOption("Otter");
+        .getByRole("group", { name: "Species", exact: true })
+        .getByRole("button", { name: "Otter", exact: true })
+        .click();
       await creation
         .getByRole("button", { name: "Vagrant", exact: true })
         .click();
@@ -384,7 +413,7 @@ test(
         .getByRole("button", { name: "Save character", exact: true })
         .click();
       await expect(
-        page.getByRole("heading", { name: "Willow Browser", exact: true }),
+        page.locator(".character-tile").filter({ hasText: "Willow Browser" }),
       ).toBeVisible();
       let saved = (
         await request("heroes", "GET", undefined, owner.cookie)
@@ -397,6 +426,79 @@ test(
       assert.equal(saved.sheet.background.home, "Moss Clearing");
       assert.equal(saved.sheet.moveIds.length, 3);
       assert.equal(saved.sheet.weaponSkillIds[0], "Harry a Group");
+      await page
+        .locator(".character-tile")
+        .filter({ hasText: "Willow Browser" })
+        .click();
+      await expect(page).toHaveURL(/\/characters\/edit/);
+      await expect(creation).toBeVisible();
+      await creation.locator(".creation-back").click();
+      await expect(dialog).toHaveCount(0);
+      // With no active game, campaign selection comes before character selection.
+      await page.getByRole("button", { name: /^(Home|Exit to main)$/ }).click();
+      await expect(page.locator(".home-actions > button")).toHaveCount(3);
+      for (const [device, width, height] of [
+        ["iphone", 390, 844],
+        ["ipad", 820, 1180],
+      ]) {
+        await page.setViewportSize({ width, height });
+        await waitForScene(page);
+        await page.screenshot({
+          path: `test-results/home-${device}.png`,
+          fullPage: true,
+        });
+      }
+      await page.setViewportSize({ width: 390, height: 844 });
+      await page.getByRole("button", { name: /Start \/ join a game/ }).click();
+      await expect(
+        page.getByRole("heading", {
+          name: "My campaigns",
+          exact: true,
+        }),
+      ).toBeVisible();
+      await page
+        .getByRole("button", { name: "Create campaign", exact: true })
+        .click();
+      await expect(page).toHaveURL(/\/campaigns\/new\?from=play$/);
+      await page.reload();
+      await expect(creation).toBeVisible();
+      await expect(dialog).toHaveCount(0);
+      await creation
+        .getByLabel("Campaign name", { exact: true })
+        .fill("Willow’s campaign");
+      await page.screenshot({
+        path: "test-results/campaign-creation-page.png",
+        fullPage: true,
+      });
+      await creation
+        .getByRole("button", { name: "Create campaign", exact: true })
+        .click();
+      await expect(
+        page.getByRole("heading", { name: "My characters", exact: true }),
+      ).toBeVisible();
+      await page
+        .locator(".character-tile")
+        .filter({ hasText: "Willow Browser" })
+        .click();
+      await expect(
+        page.getByRole("heading", {
+          name: "Willow Browser",
+          exact: true,
+          level: 2,
+        }),
+      ).toBeVisible();
+      await expect(page.locator(".campaign-heading h1")).toBeVisible();
+      const uiCampaign = (
+        await request("campaigns", "GET", undefined, owner.cookie)
+      ).data.campaigns.find((c) => c.name === "Willow’s campaign");
+      const baseSaved = saved;
+      saved = (
+        await request("heroes", "GET", undefined, owner.cookie)
+      ).data.heroes.find(
+        (h) =>
+          h.source_hero_id === baseSaved.id && h.campaign_id === uiCampaign.id,
+      );
+      assert.notEqual(saved.id, baseSaved.id);
       async function mutate(click) {
         const [response] = await Promise.all([
           page.waitForResponse(
@@ -509,78 +611,14 @@ test(
         1,
       );
 
-      await page
-        .getByRole("button", { name: "Edit character", exact: true })
-        .click();
-      await expect(page).toHaveURL(/\/characters\/edit/);
-      await expect(creation).toBeVisible();
-      await creation.locator(".creation-back").click();
-      await expect(dialog).toHaveCount(0);
-      // With no active game, campaign selection comes before character selection.
-      await page.getByRole("button", { name: /^(Home|Exit to main)$/ }).click();
-      await expect(page.locator(".home-actions > button")).toHaveCount(3);
-      for (const [device, width, height] of [
-        ["iphone", 390, 844],
-        ["ipad", 820, 1180],
-      ]) {
-        await page.setViewportSize({ width, height });
-        await waitForScene(page);
-        await page.screenshot({
-          path: `test-results/home-${device}.png`,
-          fullPage: true,
-        });
-      }
-      await page.setViewportSize({ width: 390, height: 844 });
-      await page.getByRole("button", { name: /Start \/ join a game/ }).click();
-      await expect(
-        page.getByRole("heading", {
-          name: "My campaigns",
-          exact: true,
-        }),
-      ).toBeVisible();
-      await page
-        .getByRole("button", { name: "Create campaign", exact: true })
-        .click();
-      await expect(page).toHaveURL(/\/campaigns\/new\?from=play$/);
-      await page.reload();
-      await expect(creation).toBeVisible();
-      await expect(dialog).toHaveCount(0);
-      await creation
-        .getByLabel("Campaign name", { exact: true })
-        .fill("Willow’s campaign");
-      await page.screenshot({
-        path: "test-results/campaign-creation-page.png",
-        fullPage: true,
-      });
-      await creation
-        .getByRole("button", { name: "Create campaign", exact: true })
-        .click();
-      await expect(
-        page.getByRole("heading", { name: "My characters", exact: true }),
-      ).toBeVisible();
-      await page
-        .locator(".character-tile")
-        .filter({ hasText: "Willow Browser" })
-        .click();
-      await expect(
-        page.getByRole("heading", { name: "Willow Browser", exact: true }),
-      ).toBeVisible();
-      await expect(page.locator(".campaign-heading h1")).toBeVisible();
-      const uiCampaign = (
-        await request("campaigns", "GET", undefined, owner.cookie)
-      ).data.campaigns.find((c) => c.name === "Willow’s campaign");
-      const baseSaved = saved;
-      saved = (
-        await request("heroes", "GET", undefined, owner.cookie)
-      ).data.heroes.find(
-        (h) =>
-          h.source_hero_id === baseSaved.id && h.campaign_id === uiCampaign.id,
-      );
-      assert.notEqual(saved.id, baseSaved.id);
       await page.reload();
       await page.getByRole("button", { name: /Continue game/ }).click();
       await expect(
-        page.getByRole("heading", { name: "Willow Browser", exact: true }),
+        page.getByRole("heading", {
+          name: "Willow Browser",
+          exact: true,
+          level: 2,
+        }),
       ).toBeVisible();
       // Management screens remain accessible, and Continue returns to this hero.
       await page.getByRole("button", { name: /^(Home|Exit to main)$/ }).click();
@@ -654,7 +692,11 @@ test(
         .getByRole("button", { name: "Continue", exact: true })
         .click();
       await expect(
-        page.getByRole("heading", { name: "Willow Browser", exact: true }),
+        page.getByRole("heading", {
+          name: "Willow Browser",
+          exact: true,
+          level: 2,
+        }),
       ).toBeVisible();
       saved = (
         await request("heroes", "GET", undefined, owner.cookie)
@@ -728,7 +770,11 @@ test(
         .getByRole("button", { name: "Save & join campaign", exact: true })
         .click();
       await expect(
-        guestPage.getByRole("heading", { name: "Guest Vagabond", exact: true }),
+        guestPage.getByRole("heading", {
+          name: "Guest Vagabond",
+          exact: true,
+          level: 2,
+        }),
       ).toBeVisible();
       await expect(guestPage.locator(".campaign-heading h1")).toHaveText(
         "Willow’s campaign",
@@ -780,7 +826,7 @@ test(
         .getByRole("button", { name: "Save character", exact: true })
         .click();
       await expect(
-        basePage.getByRole("heading", { name: "Willow Base", exact: true }),
+        basePage.locator(".character-tile").filter({ hasText: "Willow Base" }),
       ).toBeVisible();
       assert.equal(
         (

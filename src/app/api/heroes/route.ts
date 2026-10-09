@@ -4,6 +4,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { getUser, sameOrigin } from "@/lib/auth";
 import { sheetSchema, sameCharacterSetup } from "@/lib/sheet";
+import { ownedHeroes } from "@/lib/workspace-data";
 export async function GET(req: Request) {
   try {
     const user = await getUser();
@@ -13,7 +14,7 @@ export async function GET(req: Request) {
     const sql = db();
     const heroes = campaign
       ? await sql`SELECT h.*, u.name AS player FROM heroes h JOIN users u ON u.id = h.owner_id JOIN memberships m ON m.campaign_id = h.campaign_id AND m.user_id = ${user.id} WHERE h.campaign_id = ${z.string().uuid().parse(campaign)} ORDER BY h.updated_at`
-      : await sql`SELECT h.*, u.name AS player FROM heroes h JOIN users u ON u.id = h.owner_id WHERE h.owner_id = ${user.id} ORDER BY h.updated_at`;
+      : await ownedHeroes(user.id);
     return NextResponse.json({
       heroes: heroes.map((h) => ({ ...h, sheet: sheetSchema.parse(h.sheet) })),
     });

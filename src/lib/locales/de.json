@@ -907,5 +907,13 @@
   "Join": "Beitreten",
   "Switch campaign?": "Kampagne wechseln?",
   "Switch campaign": "Kampagne wechseln",
-  "Switch from {current} to {next}? Your characters and progress in both campaigns will be kept.": "Von {current} zu {next} wechseln? Deine Charaktere und Fortschritte in beiden Kampagnen bleiben erhalten."
+  "Switch from {current} to {next}? Your characters and progress in both campaigns will be kept.": "Von {current} zu {next} wechseln? Deine Charaktere und Fortschritte in beiden Kampagnen bleiben erhalten.",
+  "Your unsaved changes are kept in this tab.": "Deine ungespeicherten Änderungen bleiben in diesem Tab.",
+  "Discard unsaved changes and load the saved sheet?": "Ungespeicherte Änderungen verwerfen und den gespeicherten Bogen laden?",
+  "Reload saved sheet": "Gespeicherten Bogen laden",
+  "Discard unsaved changes": "Ungespeicherte Änderungen verwerfen",
+  "Save or reload your unsaved character changes first.": "Speichere zuerst deine Charakteränderungen oder lade den gespeicherten Bogen.",
+  "Unsaved changes for {name}.": "Ungespeicherte Änderungen für {name}.",
+  "Saving changes for {name}…": "Änderungen für {name} werden gespeichert…",
+  "Return to game": "Zurück zum Spiel"
 }

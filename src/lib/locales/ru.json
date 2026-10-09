@@ -907,5 +907,13 @@
   "Join": "Присоединиться",
   "Switch campaign?": "Сменить кампанию?",
   "Switch campaign": "Сменить кампанию",
-  "Switch from {current} to {next}? Your characters and progress in both campaigns will be kept.": "Перейти из кампании «{current}» в «{next}»? Ваши персонажи и прогресс в обеих кампаниях сохранятся."
+  "Switch from {current} to {next}? Your characters and progress in both campaigns will be kept.": "Перейти из кампании «{current}» в «{next}»? Ваши персонажи и прогресс в обеих кампаниях сохранятся.",
+  "Your unsaved changes are kept in this tab.": "Несохранённые изменения остаются в этой вкладке.",
+  "Discard unsaved changes and load the saved sheet?": "Отменить несохранённые изменения и загрузить сохранённый лист?",
+  "Reload saved sheet": "Загрузить сохранённый лист",
+  "Discard unsaved changes": "Отменить несохранённые изменения",
+  "Save or reload your unsaved character changes first.": "Сначала сохраните изменения персонажа или загрузите сохранённый лист.",
+  "Unsaved changes for {name}.": "Есть несохранённые изменения: {name}.",
+  "Saving changes for {name}…": "Сохранение изменений: {name}…",
+  "Return to game": "Вернуться к игре"
 }

@@ -1,5 +1,6 @@
 "use client";
-import { useRef, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
+import type { HeroSaveQueue } from "@/lib/hero-save-queue";
 import {
   Check,
   Edit3,
@@ -32,49 +33,43 @@ import { MovesPanel, BackgroundPanel, ReputationPanel } from "./sheet-panels";
 export default function CharacterControls({
   hero,
   edit,
-  onSaved,
   saveLocal,
+  saveQueue,
 }: {
   hero: Hero;
   edit: (step?: number) => void;
-  onSaved: (h: Hero) => void;
   saveLocal?: (sheet: Sheet) => void;
+  saveQueue?: HeroSaveQueue;
 }) {
   const { t } = useTranslation();
-  const [busy, setBusy] = useState(false),
-    [error, setError] = useState(""),
+  const [error, setError] = useState(""),
     [saved, setSaved] = useState(false);
-  const locked = useRef(false);
+  const [recovering, setRecovering] = useState(false);
+  const state = useSyncExternalStore(
+    saveQueue?.subscribe ?? subscribeLocal,
+    saveQueue?.getSnapshot ?? localSnapshot,
+    saveQueue?.getSnapshot ?? localSnapshot,
+  );
+  useEffect(() => {
+    saveQueue?.receive(hero);
+  }, [saveQueue, hero]);
+  const busy = recovering || (state?.conflict ?? false);
   const setupLocked = !!hero.campaign_id;
   const [roll, setRoll] = useState<AttributeRoll | null>(null);
-  const sheet = hero.sheet,
+  const sheet = state?.hero.sheet ?? hero.sheet,
     attributes = effectiveStats(sheet);
   async function update(patch: Partial<Sheet>) {
-    if (locked.current) return false;
-    locked.current = true;
-    setBusy(true);
+    if (saveQueue) return saveQueue.update(patch);
     setError("");
     setSaved(false);
     try {
-      if (saveLocal) {
-        saveLocal({ ...sheet, ...patch });
-      } else {
-        const data = await api("heroes", "POST", {
-          id: hero.id,
-          campaignId: hero.campaign_id,
-          version: hero.version,
-          sheet: { ...sheet, ...patch },
-        });
-        onSaved(data.hero);
-      }
+      if (!saveLocal) return false;
+      saveLocal({ ...sheet, ...patch });
       setSaved(true);
       return true;
     } catch (e) {
       setError((e as Error).message);
       return false;
-    } finally {
-      locked.current = false;
-      setBusy(false);
     }
   }
   async function rollAttribute(
@@ -82,11 +77,16 @@ export default function CharacterControls({
     action?: string,
     bonus = 0,
   ) {
-    if (locked.current) return;
+    if (busy) return;
+    const currentSheet = saveQueue?.getSnapshot().hero.sheet ?? sheet;
     const returnFocus = document.activeElement as HTMLElement | null;
     const attribute = stat ? attributes[stat] : bonus;
-    const modifier = attribute + sheet.forward + sheet.ongoing;
-    if (sheet.forward && !(await update({ forward: 0 }))) return;
+    const modifier = attribute + currentSheet.forward + currentSheet.ongoing;
+    if (currentSheet.forward) {
+      if (saveQueue) {
+        if (!saveQueue.update({ forward: 0 })) return;
+      } else if (!(await update({ forward: 0 }))) return;
+    }
     const d6 = () => {
       const bytes = new Uint8Array(1);
       do {
@@ -101,8 +101,8 @@ export default function CharacterControls({
       action,
       dice,
       attribute,
-      forward: sheet.forward,
-      ongoing: sheet.ongoing,
+      forward: currentSheet.forward,
+      ongoing: currentSheet.ongoing,
       modifier,
       total: dice[0] + dice[1] + modifier,
     });
@@ -346,9 +346,9 @@ export default function CharacterControls({
       </div>
       {roll && <DiceDialog roll={roll} close={() => setRoll(null)} />}
       <div className="quick-save-status" role="status">
-        {busy ? (
+        {state?.saving ? (
           t("Saving…")
-        ) : saved ? (
+        ) : (state?.saved ?? saved) ? (
           <>
             <Check size={15} />
             {t(
@@ -359,11 +359,72 @@ export default function CharacterControls({
           </>
         ) : null}
       </div>
-      {error && (
+      {(error || state?.error) && (
         <p className="error" role="alert">
-          {t(error)}
+          {t(error || state?.error || "")}
+          {state?.error && (
+            <>
+              {" "}
+              {t("Your unsaved changes are kept in this tab.")}{" "}
+              {!state.conflict && (
+                <button
+                  className="btn small"
+                  disabled={recovering}
+                  onClick={() => {
+                    setError("");
+                    saveQueue?.retry();
+                  }}
+                >
+                  {t("Retry")}
+                </button>
+              )}
+              <button
+                className="btn small"
+                disabled={recovering}
+                onClick={async () => {
+                  if (
+                    !window.confirm(
+                      t("Discard unsaved changes and load the saved sheet?"),
+                    )
+                  )
+                    return;
+                  setRecovering(true);
+                  try {
+                    const data = await api("heroes");
+                    const latest = data.heroes.find(
+                      (h: Hero) => h.id === hero.id,
+                    );
+                    if (!latest) throw new Error("Could not load characters.");
+                    saveQueue?.discardAndReload(latest);
+                    setError("");
+                  } catch (e) {
+                    setError((e as Error).message);
+                  } finally {
+                    setRecovering(false);
+                  }
+                }}
+              >
+                {t("Reload saved sheet")}
+              </button>
+              <button
+                className="text-link"
+                disabled={recovering}
+                onClick={() => {
+                  if (window.confirm(t("Discard unsaved changes"))) {
+                    saveQueue?.discard();
+                    setError("");
+                  }
+                }}
+              >
+                {t("Discard unsaved changes")}
+              </button>
+            </>
+          )}
         </p>
       )}
     </div>
   );
 }
+
+const subscribeLocal = () => () => {};
+const localSnapshot = () => null;

@@ -167,7 +167,7 @@ test(
       await page
         .locator(".campaign-card")
         .filter({ hasText: "Copy test 1" })
-        .getByRole("button", { name: "My characters", exact: true })
+        .getByRole("button", { name: "Continue", exact: true })
         .click();
       await page
         .locator(".character-tile")

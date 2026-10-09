@@ -4,6 +4,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { isAdminEmail, MAX_USERS } from "@/lib/admin";
 import { verifyRecoveryCode } from "@/lib/password-recovery";
+import { ownedHeroes, joinedCampaigns } from "@/lib/workspace-data";
 import {
   digest,
   getUser,
@@ -13,9 +14,19 @@ import {
   startSession,
   verifyPassword,
 } from "@/lib/auth";
-export async function GET() {
+export async function GET(req?: Request) {
   try {
-    return NextResponse.json({ user: await getUser() });
+    const user = await getUser();
+    const bootstrap =
+      req && new URL(req.url).searchParams.get("bootstrap") === "1";
+    const [heroes, campaigns] =
+      user && bootstrap
+        ? await Promise.all([ownedHeroes(user.id), joinedCampaigns(user.id)])
+        : [[], []];
+    return NextResponse.json(
+      { user, ...(bootstrap ? { heroes, campaigns } : {}) },
+      { headers: { "Cache-Control": "no-store" } },
+    );
   } catch {
     return NextResponse.json(
       { error: "Unable to connect. Please try again." },
