@@ -936,5 +936,20 @@
   "Updated {item}": "Aktualisiert: {item}",
   "Updated": "Aktualisiert",
   "Fulfilled drives": "Erfüllte Antriebe",
-  "Character setup": "Charaktererstellung"
+  "Character setup": "Charaktererstellung",
+  "Player sheets": "Charakterbögen der Spieler",
+  "As campaign master, you can edit every campaign sheet. Personal base characters stay unchanged.": "Als Spielleitung kannst du alle Charakterbögen der Kampagne bearbeiten. Persönliche Basischaraktere bleiben unverändert.",
+  "Character": "Charakter",
+  "No characters in this campaign yet.": "In dieser Kampagne gibt es noch keine Charaktere.",
+  "Campaign options for {name}": "Kampagnenoptionen für {name}",
+  "Transfer campaign": "Kampagne übertragen",
+  "New campaign master": "Neue Spielleitung",
+  "Choose a player": "Spieler auswählen",
+  "Invite another player before transferring this campaign.": "Lade einen weiteren Spieler ein, bevor du die Kampagne überträgst.",
+  "The selected player will become the campaign owner and can edit all player sheets, manage players, and delete the campaign. You will remain a regular member.": "Der ausgewählte Spieler wird Eigentümer der Kampagne und kann alle Charakterbögen bearbeiten, Spieler verwalten und die Kampagne löschen. Du bleibst als reguläres Mitglied dabei.",
+  "Confirm transfer": "Übertragung bestätigen",
+  "Campaign transferred. You remain a member.": "Kampagne übertragen. Du bleibst Mitglied.",
+  "Only the campaign owner can transfer it to another active member.": "Nur der Eigentümer kann die Kampagne an ein anderes aktives Mitglied übertragen.",
+  "Only the campaign owner can remove another member.": "Nur der Eigentümer der Kampagne kann ein anderes Mitglied entfernen.",
+  "Only the campaign owner can delete it.": "Nur der Eigentümer kann die Kampagne löschen."
 }

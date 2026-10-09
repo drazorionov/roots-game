@@ -36,11 +36,13 @@ export default function CharacterControls({
   edit,
   saveLocal,
   saveQueue,
+  management = false,
 }: {
   hero: Hero;
   edit: (step?: number) => void;
   saveLocal?: (sheet: Sheet) => void;
   saveQueue?: HeroSaveQueue;
+  management?: boolean;
 }) {
   const { t } = useTranslation();
   const activity = useGameActivity();
@@ -56,7 +58,7 @@ export default function CharacterControls({
     saveQueue?.receive(hero);
   }, [saveQueue, hero]);
   const busy = recovering || (state?.conflict ?? false);
-  const setupLocked = !!hero.campaign_id;
+  const setupLocked = !!hero.campaign_id && !management;
   const [roll, setRoll] = useState<AttributeRoll | null>(null);
   const sheet = state?.hero.sheet ?? hero.sheet,
     attributes = effectiveStats(sheet);
@@ -82,7 +84,7 @@ export default function CharacterControls({
     bonus = 0,
     source?: string,
   ) {
-    if (busy || roll) return;
+    if (busy || roll || management) return;
     const currentSheet = saveQueue?.getSnapshot().hero.sheet ?? sheet;
     const returnFocus = document.activeElement as HTMLElement | null;
     const attribute = stat ? attributes[stat] : bonus;
@@ -220,34 +222,49 @@ export default function CharacterControls({
       <section className="attribute-section" aria-labelledby="attribute-title">
         <div className="field-section-heading">
           <div>
-            <span className="eyebrow">{t("Take a chance")}</span>
-            <h3 id="attribute-title">{t("Roll an attribute")}</h3>
+            <span className="eyebrow">
+              {t(management ? "Campaign master" : "Take a chance")}
+            </span>
+            <h3 id="attribute-title">
+              {t(management ? "Attributes" : "Roll an attribute")}
+            </h3>
           </div>
-          <div className="roll-heading-note">
-            <NotebookDoodle kind="dice" />
-            <p>{t("2d6 + attribute + modifiers")}</p>
-          </div>
+          {!management && (
+            <div className="roll-heading-note">
+              <NotebookDoodle kind="dice" />
+              <p>{t("2d6 + attribute + modifiers")}</p>
+            </div>
+          )}
         </div>
         <div className="attribute-rolls">
           {stats.map((stat) => (
             <div className="attribute-roll" key={stat}>
               <AttributeIcon stat={stat} />
               <RuleHelp name={stat} />
-              <button
-                type="button"
-                className="attribute-roll-action"
-                aria-label={t("Roll {stat}", { stat: t(stat) })}
-                disabled={busy}
-                onClick={() => void rollAttribute(stat)}
-              >
-                <strong>
-                  {attributes[stat] >= 0 ? "+" : ""}
-                  {attributes[stat]}
-                </strong>
-                <span className="attribute-dice">
-                  <DiceIcon />
-                </span>
-              </button>
+              {management ? (
+                <div className="attribute-roll-action">
+                  <strong>
+                    {attributes[stat] >= 0 ? "+" : ""}
+                    {attributes[stat]}
+                  </strong>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  className="attribute-roll-action"
+                  aria-label={t("Roll {stat}", { stat: t(stat) })}
+                  disabled={busy || management}
+                  onClick={() => void rollAttribute(stat)}
+                >
+                  <strong>
+                    {attributes[stat] >= 0 ? "+" : ""}
+                    {attributes[stat]}
+                  </strong>
+                  <span className="attribute-dice">
+                    <DiceIcon />
+                  </span>
+                </button>
+              )}
             </div>
           ))}
         </div>
@@ -267,11 +284,16 @@ export default function CharacterControls({
           sheet={sheet}
           busy={busy}
           update={update}
-          roll={(stat, source) =>
-            void rollAttribute(stat, undefined, 0, source)
+          roll={
+            management
+              ? undefined
+              : (stat, source) => void rollAttribute(stat, undefined, 0, source)
           }
-          rollSkill={(stat, action, bonus, source) =>
-            void rollAttribute(stat, action, bonus, source)
+          rollSkill={
+            management
+              ? undefined
+              : (stat, action, bonus, source) =>
+                  void rollAttribute(stat, action, bonus, source)
           }
         />
       </section>
@@ -337,9 +359,16 @@ export default function CharacterControls({
             setupLocked={setupLocked}
             sheet={sheet}
             busy={busy}
-            roll={(stat, action) => void rollAttribute(stat, action)}
-            rollSkill={(stat, action, bonus) =>
-              void rollAttribute(stat, action, bonus)
+            roll={
+              management
+                ? undefined
+                : (stat, action) => void rollAttribute(stat, action)
+            }
+            rollSkill={
+              management
+                ? undefined
+                : (stat, action, bonus) =>
+                    void rollAttribute(stat, action, bonus)
             }
           />
         </details>
@@ -403,7 +432,11 @@ export default function CharacterControls({
                     return;
                   setRecovering(true);
                   try {
-                    const data = await api("heroes");
+                    const data = await api(
+                      management
+                        ? `heroes?campaign=${encodeURIComponent(hero.campaign_id!)}`
+                        : "heroes",
+                    );
                     const latest = data.heroes.find(
                       (h: Hero) => h.id === hero.id,
                     );

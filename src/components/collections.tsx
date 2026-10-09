@@ -64,6 +64,8 @@ export function CampaignCollection({
   remove,
   leave,
   managePlayers,
+  playerSheets,
+  transfer,
 }: {
   campaigns: Campaign[];
   userId?: string;
@@ -77,6 +79,8 @@ export function CampaignCollection({
   remove: (campaign: Campaign) => void;
   leave: (campaign: Campaign) => void;
   managePlayers: (campaign: Campaign) => void;
+  playerSheets: (campaign: Campaign) => void;
+  transfer: (campaign: Campaign) => void;
 }) {
   const { t, players } = useTranslation();
   return (
@@ -142,6 +146,34 @@ export function CampaignCollection({
               <span className="campaign-role">
                 {t(c.owner_id === userId ? "Your campaign" : "Joined campaign")}
               </span>
+              {c.owner_id === userId && (
+                <details
+                  className="game-menu campaign-options"
+                  onKeyDown={(e) => {
+                    if (e.key === "Escape") e.currentTarget.open = false;
+                  }}
+                  onBlur={(e) => {
+                    if (!e.currentTarget.contains(e.relatedTarget))
+                      e.currentTarget.open = false;
+                  }}
+                >
+                  <summary
+                    aria-label={t("Campaign options for {name}", {
+                      name: c.name,
+                    })}
+                  >
+                    …
+                  </summary>
+                  <div className="game-menu-items">
+                    <button disabled={busy} onClick={() => playerSheets(c)}>
+                      {t("Player sheets")}
+                    </button>
+                    <button disabled={busy} onClick={() => transfer(c)}>
+                      {t("Transfer campaign")}
+                    </button>
+                  </div>
+                </details>
+              )}
             </div>
             <h2>{c.name}</h2>
             <div className="campaign-facts">

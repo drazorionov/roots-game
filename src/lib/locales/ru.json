@@ -936,5 +936,20 @@
   "Updated {item}": "Изменено: {item}",
   "Updated": "Изменено",
   "Fulfilled drives": "Выполненные стремления",
-  "Character setup": "Создание персонажа"
+  "Character setup": "Создание персонажа",
+  "Player sheets": "Листы игроков",
+  "As campaign master, you can edit every campaign sheet. Personal base characters stay unchanged.": "Как ведущий, вы можете редактировать все листы персонажей кампании. Личные исходные персонажи не меняются.",
+  "Character": "Персонаж",
+  "No characters in this campaign yet.": "В этой кампании пока нет персонажей.",
+  "Campaign options for {name}": "Действия кампании «{name}»",
+  "Transfer campaign": "Передать кампанию",
+  "New campaign master": "Новый ведущий кампании",
+  "Choose a player": "Выберите игрока",
+  "Invite another player before transferring this campaign.": "Пригласите другого игрока, чтобы передать кампанию.",
+  "The selected player will become the campaign owner and can edit all player sheets, manage players, and delete the campaign. You will remain a regular member.": "Выбранный игрок станет владельцем кампании и сможет редактировать листы всех игроков, управлять участниками и удалить кампанию. Вы останетесь обычным участником.",
+  "Confirm transfer": "Подтвердить передачу",
+  "Campaign transferred. You remain a member.": "Кампания передана. Вы остаётесь участником.",
+  "Only the campaign owner can transfer it to another active member.": "Только владелец кампании может передать её другому активному участнику.",
+  "Only the campaign owner can remove another member.": "Только владелец кампании может удалить другого участника.",
+  "Only the campaign owner can delete it.": "Удалить кампанию может только её владелец."
 }

@@ -88,10 +88,14 @@ test(
       const second = (await save(original, original.sheet, campaigns[1])).hero;
       assert.notEqual(second.id, copy.id);
       assert.deepEqual(second.sheet, original.sheet);
-      assert.equal(
-        (await save(copy, { ...copy.sheet, name: "Forbidden" })).status,
-        403,
-      );
+      const originalCopySheet = structuredClone(copy.sheet);
+      const ownerEdit = await save(copy, {
+        ...copy.sheet,
+        name: "Master correction",
+      });
+      assert.equal(ownerEdit.status, 200);
+      assert.deepEqual((await latest(original.id)).sheet, original.sheet);
+      copy = (await save(ownerEdit.hero, originalCopySheet)).hero;
       assert.equal((await save(copy, copy.sheet, campaigns[1])).status, 403);
       assert.equal((await save(copy, copy.sheet, null)).status, 403);
       assert.equal(

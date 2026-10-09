@@ -50,6 +50,11 @@ export async function POST(req: Request) {
           userId: z.string().uuid(),
         }),
         z.object({
+          action: z.literal("transfer"),
+          id: z.string().uuid(),
+          userId: z.string().uuid(),
+        }),
+        z.object({
           action: z.literal("join"),
           code: z
             .string()
@@ -60,24 +65,42 @@ export async function POST(req: Request) {
       ])
       .parse(await req.json());
     const sql = db();
+    if (data.action === "transfer") {
+      // Lock memberships before the campaign, as saves and departures do.
+      const [, transferred] = await sql.transaction([
+        sql`SELECT campaign_id FROM memberships WHERE campaign_id = ${data.id} AND user_id IN (${user.id}, ${data.userId}) ORDER BY user_id FOR UPDATE`,
+        sql`UPDATE campaigns c SET owner_id = ${data.userId} WHERE c.id = ${data.id} AND c.owner_id = ${user.id} AND c.owner_id <> ${data.userId} AND EXISTS (SELECT 1 FROM memberships m JOIN users u ON u.id = m.user_id WHERE m.campaign_id = c.id AND m.user_id = ${data.userId} AND u.banned_at IS NULL) AND EXISTS (SELECT 1 FROM memberships m WHERE m.campaign_id = c.id AND m.user_id = ${user.id}) RETURNING c.id, c.owner_id`,
+      ]);
+      if (!transferred.length)
+        return NextResponse.json(
+          {
+            error:
+              "Only the campaign owner can transfer it to another active member.",
+          },
+          { status: 403 },
+        );
+      return NextResponse.json({ id: data.id, ownerId: data.userId });
+    }
     if (data.action === "removeMember") {
       // Share the assignment lock so concurrent saves cannot strand campaign heroes.
-      const [, , removed] = await sql.transaction([
+      const [, , , removed] = await sql.transaction([
         sql`SELECT m.campaign_id FROM memberships m JOIN campaigns c ON c.id = m.campaign_id WHERE m.campaign_id = ${data.id} AND m.user_id = ${data.userId} AND c.owner_id = ${user.id} AND m.user_id <> c.owner_id FOR UPDATE OF m`,
+        sql`SELECT id FROM campaigns WHERE id = ${data.id} FOR UPDATE`,
         sql`UPDATE heroes SET campaign_id = NULL, version = version + 1, updated_at = now() WHERE campaign_id = ${data.id} AND owner_id = ${data.userId} AND EXISTS (SELECT 1 FROM memberships m JOIN campaigns c ON c.id = m.campaign_id WHERE m.campaign_id = ${data.id} AND m.user_id = ${data.userId} AND c.owner_id = ${user.id} AND m.user_id <> c.owner_id)`,
         sql`DELETE FROM memberships m USING campaigns c WHERE m.campaign_id = c.id AND m.campaign_id = ${data.id} AND m.user_id = ${data.userId} AND c.owner_id = ${user.id} AND m.user_id <> c.owner_id RETURNING m.user_id`,
       ]);
       if (!removed.length)
         return NextResponse.json(
-          { error: "Only the campaign creator can remove another member." },
+          { error: "Only the campaign owner can remove another member." },
           { status: 403 },
         );
       return NextResponse.json({ id: data.id, userId: data.userId });
     }
     if (data.action === "leave") {
       // Hero assignment shares this membership lock so it cannot race leaving.
-      const [, heroes, left] = await sql.transaction([
+      const [, , heroes, left] = await sql.transaction([
         sql`SELECT m.campaign_id FROM memberships m JOIN campaigns c ON c.id = m.campaign_id WHERE m.campaign_id = ${data.id} AND m.user_id = ${user.id} AND c.owner_id <> ${user.id} FOR UPDATE OF m`,
+        sql`SELECT id FROM campaigns WHERE id = ${data.id} FOR UPDATE`,
         sql`UPDATE heroes SET campaign_id = NULL, version = version + 1, updated_at = now() WHERE campaign_id = ${data.id} AND owner_id = ${user.id} AND EXISTS (SELECT 1 FROM memberships m JOIN campaigns c ON c.id = m.campaign_id WHERE m.campaign_id = ${data.id} AND m.user_id = ${user.id} AND c.owner_id <> ${user.id}) RETURNING *`,
         sql`DELETE FROM memberships m USING campaigns c WHERE m.campaign_id = c.id AND m.campaign_id = ${data.id} AND m.user_id = ${user.id} AND c.owner_id <> ${user.id} RETURNING m.campaign_id`,
       ]);
@@ -138,7 +161,7 @@ export async function DELETE(req: Request) {
     ]);
     if (!deleted.length)
       return NextResponse.json(
-        { error: "Only the campaign creator can delete it." },
+        { error: "Only the campaign owner can delete it." },
         { status: 403 },
       );
     return NextResponse.json({ id });

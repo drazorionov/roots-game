@@ -2011,6 +2011,36 @@ form .inline-check {
 .game-menu {
   position: relative;
 }
+.campaign-options {
+  margin-left: auto;
+}
+.campaign-options > summary {
+  color: var(--ink);
+  font-size: 24px;
+}
+.campaign-options[open] > summary {
+  color: #fff6df;
+}
+.campaign-sheets-dialog {
+  width: min(1200px, calc(100vw - 24px));
+  max-width: none;
+  max-height: 92dvh;
+  overflow-y: auto;
+}
+.campaign-sheet-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 12px;
+  margin: 18px 0;
+}
+.campaign-sheet-toolbar label {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+.campaign-sheets-dialog .wizard-shell {
+  min-width: 0;
+}
 .game-menu > summary {
   display: flex;
   align-items: center;

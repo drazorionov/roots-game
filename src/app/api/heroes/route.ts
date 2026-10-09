@@ -41,9 +41,12 @@ export async function POST(req: Request) {
       .parse(await req.json());
     const sql = db();
     let copying = false;
+    let setupUnchanged = true;
+    let sheetOwnerId = user.id;
+    let sheetPlayer = user.name;
     if (data.id) {
       const existing =
-        await sql`SELECT sheet, campaign_id FROM heroes WHERE id = ${data.id} AND owner_id = ${user.id} AND version = ${data.version ?? 0}`;
+        await sql`SELECT h.sheet, h.campaign_id, h.owner_id, p.name AS player, c.owner_id AS campaign_owner_id FROM heroes h JOIN users p ON p.id = h.owner_id LEFT JOIN campaigns c ON c.id = h.campaign_id WHERE h.id = ${data.id} AND h.version = ${data.version ?? 0} AND (h.owner_id = ${user.id} OR c.owner_id = ${user.id})`;
       if (!existing[0])
         return NextResponse.json(
           {
@@ -53,10 +56,16 @@ export async function POST(req: Request) {
           { status: 409 },
         );
       copying = !existing[0].campaign_id && !!data.campaignId;
+      sheetOwnerId = existing[0].owner_id;
+      sheetPlayer = existing[0].player;
+      setupUnchanged = sameCharacterSetup(
+        sheetSchema.parse(existing[0].sheet),
+        data.sheet,
+      );
       if (
         existing[0].campaign_id &&
         (data.campaignId !== existing[0].campaign_id ||
-          !sameCharacterSetup(sheetSchema.parse(existing[0].sheet), data.sheet))
+          (!setupUnchanged && existing[0].campaign_owner_id !== user.id))
       )
         return NextResponse.json(
           {
@@ -71,19 +80,20 @@ export async function POST(req: Request) {
     const save = copying
       ? sql`INSERT INTO heroes (campaign_id, owner_id, sheet, source_hero_id) SELECT ${data.campaignId}, owner_id, sheet, id FROM heroes WHERE id = ${data.id} AND owner_id = ${user.id} AND campaign_id IS NULL AND version = ${data.version ?? 0} AND EXISTS (SELECT 1 FROM memberships WHERE campaign_id = ${data.campaignId} AND user_id = ${user.id}) ON CONFLICT (campaign_id, source_hero_id) DO UPDATE SET source_hero_id = EXCLUDED.source_hero_id RETURNING *`
       : data.id
-        ? sql`UPDATE heroes SET sheet = ${JSON.stringify(data.sheet)}::jsonb, version = version + 1, updated_at = now() WHERE id = ${data.id} AND owner_id = ${user.id} AND version = ${data.version ?? 0} AND campaign_id IS NOT DISTINCT FROM ${data.campaignId}::uuid AND (${data.campaignId}::uuid IS NULL OR EXISTS (SELECT 1 FROM memberships WHERE campaign_id = ${data.campaignId} AND user_id = ${user.id})) RETURNING *`
+        ? sql`UPDATE heroes h SET sheet = ${JSON.stringify(data.sheet)}::jsonb, version = version + 1, updated_at = now() WHERE h.id = ${data.id} AND h.version = ${data.version ?? 0} AND h.campaign_id IS NOT DISTINCT FROM ${data.campaignId}::uuid AND (h.owner_id = ${user.id} OR EXISTS (SELECT 1 FROM campaigns c WHERE c.id = h.campaign_id AND c.owner_id = ${user.id})) AND (h.campaign_id IS NULL OR EXISTS (SELECT 1 FROM memberships WHERE campaign_id = h.campaign_id AND user_id = ${user.id})) AND (h.campaign_id IS NULL OR ${setupUnchanged} OR EXISTS (SELECT 1 FROM campaigns c WHERE c.id = h.campaign_id AND c.owner_id = ${user.id})) RETURNING h.*`
         : baseId
           ? sql`WITH base AS (INSERT INTO heroes (id, owner_id, sheet) SELECT ${baseId}, ${user.id}, ${JSON.stringify(data.sheet)}::jsonb WHERE EXISTS (SELECT 1 FROM memberships WHERE campaign_id = ${data.campaignId} AND user_id = ${user.id}) RETURNING *) INSERT INTO heroes (campaign_id, owner_id, sheet, source_hero_id) SELECT ${data.campaignId}, owner_id, sheet, id FROM base RETURNING *`
           : sql`INSERT INTO heroes (owner_id, sheet) VALUES (${user.id}, ${JSON.stringify(data.sheet)}::jsonb) RETURNING *`;
     // Serialize campaign saves with departure; creating a base and copy is atomic.
     const results = data.campaignId
       ? await sql.transaction([
-          sql`SELECT campaign_id FROM memberships WHERE campaign_id = ${data.campaignId} AND user_id = ${user.id} FOR KEY SHARE`,
+          sql`SELECT campaign_id FROM memberships WHERE campaign_id = ${data.campaignId} AND user_id IN (${user.id}, ${sheetOwnerId}) ORDER BY user_id FOR KEY SHARE`,
+          sql`SELECT id FROM campaigns WHERE id = ${data.campaignId} FOR UPDATE`,
           save,
           sql`SELECT * FROM heroes WHERE id = ${baseId} AND owner_id = ${user.id}`,
         ])
       : null;
-    const rows = results ? results[1] : await save;
+    const rows = results ? results[2] : await save;
     if (!rows[0])
       return NextResponse.json(
         {
@@ -93,9 +103,13 @@ export async function POST(req: Request) {
         { status: 409 },
       );
     return NextResponse.json({
-      hero: { ...rows[0], player: user.name },
-      ...(results?.[2][0]
-        ? { baseHero: { ...results[2][0], player: user.name } }
+      hero: {
+        ...rows[0],
+        sheet: sheetSchema.parse(rows[0].sheet),
+        player: sheetPlayer,
+      },
+      ...(results?.[3][0]
+        ? { baseHero: { ...results[3][0], player: user.name } }
         : {}),
     });
   } catch (error) {

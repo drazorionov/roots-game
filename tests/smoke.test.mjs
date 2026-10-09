@@ -197,12 +197,13 @@ test(
       );
       assert.equal(a.status, 200);
       hero = a.data.hero;
+      const originalSetup = structuredClone(hero.sheet);
       for (const patch of [
-        { name: "Forbidden rename" },
+        { name: "Owner correction" },
         { stats: { ...hero.sheet.stats, Might: 3 } },
         { moveIds: ["Hardy"] },
       ]) {
-        const blocked = await request(
+        const ownerEdit = await request(
           "heroes",
           "POST",
           {
@@ -213,8 +214,22 @@ test(
           },
           owner.cookie,
         );
-        assert.equal(blocked.status, 403, JSON.stringify(blocked.data));
+        assert.equal(ownerEdit.status, 200, JSON.stringify(ownerEdit.data));
+        hero = ownerEdit.data.hero;
       }
+      const restoredSetup = await request(
+        "heroes",
+        "POST",
+        {
+          id: hero.id,
+          version: hero.version,
+          campaignId,
+          sheet: originalSetup,
+        },
+        owner.cookie,
+      );
+      assert.equal(restoredSetup.status, 200);
+      hero = restoredSetup.data.hero;
       assert.equal(
         (
           await request(

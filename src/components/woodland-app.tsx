@@ -42,6 +42,7 @@ import CharacterEditor from "./character-editor";
 import { CampaignCollection, CharacterCollection } from "./collections";
 const AdminPanel = dynamic(() => import("./admin-panel"));
 const PasswordRecovery = dynamic(() => import("./password-recovery"));
+const CampaignSheets = dynamic(() => import("./campaign-sheets"));
 function Modal({
   title,
   children,
@@ -145,6 +146,9 @@ function WoodlandWorkspace() {
   const gameMenu = useRef<HTMLDetailsElement>(null);
   const [leaveTarget, setLeaveTarget] = useState<Campaign | null>(null);
   const [managedCampaignId, setManagedCampaignId] = useState("");
+  const [sheetCampaignId, setSheetCampaignId] = useState("");
+  const [transferCampaignId, setTransferCampaignId] = useState("");
+  const [transferUserId, setTransferUserId] = useState("");
   const [memberTarget, setMemberTarget] = useState<{
     id: string;
     name: string;
@@ -194,6 +198,12 @@ function WoodlandWorkspace() {
     (c) => c.id === managedCampaignId && c.owner_id === user?.id,
   );
   const campaignHeroes = heroes.filter((h) => h.campaign_id === gameCampaignId);
+  const sheetCampaign = campaigns.find(
+    (c) => c.id === sheetCampaignId && c.owner_id === user?.id,
+  );
+  const transferCampaign = campaigns.find(
+    (c) => c.id === transferCampaignId && c.owner_id === user?.id,
+  );
   const selectableHeroes = [
     ...campaignHeroes,
     ...heroes.filter(
@@ -343,6 +353,60 @@ function WoodlandWorkspace() {
     setError("");
     setLeaveTarget(c);
     if (gameMenu.current) gameMenu.current.open = false;
+  }
+  function openPlayerSheets(c: Campaign) {
+    if (pendingSaves.length) {
+      setError("Save or reload your unsaved character changes first.");
+      return;
+    }
+    setError("");
+    setSheetCampaignId(c.id);
+    if (gameMenu.current) gameMenu.current.open = false;
+  }
+  function openTransfer(c: Campaign) {
+    setError("");
+    setTransferUserId("");
+    setTransferCampaignId(c.id);
+    if (gameMenu.current) gameMenu.current.open = false;
+  }
+  async function transferOwnership() {
+    if (!transferCampaign || !transferUserId || busy) return;
+    if (pendingSaves.length) {
+      setError("Save or reload your unsaved character changes first.");
+      return;
+    }
+    const next = transferCampaign.member_list?.find(
+      (m) => m.id === transferUserId && m.id !== user?.id,
+    );
+    if (!next) return;
+    setBusy(true);
+    setError("");
+    try {
+      await api("campaigns", "POST", {
+        action: "transfer",
+        id: transferCampaign.id,
+        userId: next.id,
+      });
+      setCampaigns((current) =>
+        current.map((c) =>
+          c.id === transferCampaign.id
+            ? {
+                ...c,
+                owner_id: next.id,
+                master_name: next.name,
+                member_list: null,
+              }
+            : c,
+        ),
+      );
+      setTransferCampaignId("");
+      setTransferUserId("");
+      setNotice("Campaign transferred. You remain a member.");
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
   }
   async function removeMember() {
     if (!managedCampaign || !memberTarget || busy) return;
@@ -919,6 +983,24 @@ function WoodlandWorkspace() {
                 {activeGame && (
                   <>
                     {!quickMode &&
+                      campaign?.owner_id === user?.id &&
+                      campaign && (
+                        <>
+                          <button
+                            disabled={busy}
+                            onClick={() => openPlayerSheets(campaign)}
+                          >
+                            {t("Player sheets")}
+                          </button>
+                          <button
+                            disabled={busy}
+                            onClick={() => openTransfer(campaign)}
+                          >
+                            {t("Transfer campaign")}
+                          </button>
+                        </>
+                      )}
+                    {!quickMode &&
                       campaign &&
                       campaign.owner_id !== user?.id && (
                         <button
@@ -1268,6 +1350,8 @@ function WoodlandWorkspace() {
         ) : tab === "campaigns" ||
           (tab === "play" && (gameStep === "campaign" || !gameCampaign)) ? (
           <CampaignCollection
+            playerSheets={openPlayerSheets}
+            transfer={openTransfer}
             managePlayers={(c) => {
               setError("");
               setMemberTarget(null);
@@ -1355,6 +1439,81 @@ function WoodlandWorkspace() {
               {t("Switch campaign")}
             </button>
           </div>
+        </Modal>
+      )}
+      {sheetCampaign && (
+        <CampaignSheets
+          campaign={sheetCampaign}
+          close={() => setSheetCampaignId("")}
+          onSaved={(saved) => {
+            if (saved.owner_id === user?.id) updated(saved);
+          }}
+        />
+      )}
+      {transferCampaign && (
+        <Modal
+          title={t("Transfer campaign")}
+          close={() => {
+            if (!busy) {
+              setTransferCampaignId("");
+              setError("");
+            }
+          }}
+        >
+          <p className="delete-explanation">{transferCampaign.name}</p>
+          <label>
+            {t("New campaign master")}
+            <select
+              aria-label={t("New campaign master")}
+              value={transferUserId}
+              disabled={busy}
+              onChange={(e) => setTransferUserId(e.target.value)}
+            >
+              <option value="">{t("Choose a player")}</option>
+              {(transferCampaign.member_list || [])
+                .filter((m) => m.id !== user?.id)
+                .map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.name}
+                  </option>
+                ))}
+            </select>
+          </label>
+          {(transferCampaign.member_list || []).filter((m) => m.id !== user?.id)
+            .length === 0 && (
+            <p className="field-hint">
+              {t("Invite another player before transferring this campaign.")}
+            </p>
+          )}
+          <p className="delete-explanation">
+            {t(
+              "The selected player will become the campaign owner and can edit all player sheets, manage players, and delete the campaign. You will remain a regular member.",
+            )}
+          </p>
+          <div className="form-actions">
+            <button
+              className="btn"
+              disabled={busy}
+              onClick={() => {
+                setTransferCampaignId("");
+                setError("");
+              }}
+            >
+              {t("Cancel")}
+            </button>
+            <button
+              className="btn primary"
+              disabled={busy || !transferUserId}
+              onClick={() => void transferOwnership()}
+            >
+              {t(busy ? "Saving…" : "Confirm transfer")}
+            </button>
+          </div>
+          {error && (
+            <p className="error" role="alert">
+              {t(error)}
+            </p>
+          )}
         </Modal>
       )}
       {managedCampaign && (
