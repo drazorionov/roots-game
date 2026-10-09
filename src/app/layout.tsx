@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import "./game-sheet.css";
 const description =
   "Create and save Root RPG characters, join campaigns, and track injury, exhaustion, depletion, and gear.";
 export const metadata: Metadata = {

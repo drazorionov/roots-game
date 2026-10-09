@@ -445,7 +445,6 @@ test(
         [2, 3, 1, 2],
       );
       assert.equal(saved.sheet.coin, 7);
-      await page.locator(".session-resources > summary").click();
       await mutate(() =>
         page
           .getByRole("button", { name: "Increase Forward", exact: true })
@@ -453,11 +452,14 @@ test(
       );
       await mutate(() =>
         page
-          .locator(".play-stats")
+          .locator(".attribute-rolls")
           .getByRole("button", { name: "Roll Charm", exact: true })
           .click(),
       );
-      await expect(page.locator(".roll-result")).toContainText("Charm");
+      await expect(page.locator(".dice-dialog")).toContainText("Charm");
+      await page
+        .getByRole("button", { name: "Close dialog", exact: true })
+        .click();
       assert.equal(
         (
           await request("heroes", "GET", undefined, owner.cookie)
@@ -465,8 +467,8 @@ test(
         0,
       );
       await page
-        .locator(".sheet-tabs")
-        .getByRole("button", { name: "Moves", exact: true })
+        .locator(".sheet-subsection > summary")
+        .filter({ hasText: "Character info & moves" })
         .click();
       await page
         .locator(".move-reminder")
@@ -477,8 +479,8 @@ test(
         "Flatter",
       );
       await page
-        .locator(".sheet-tabs")
-        .getByRole("button", { name: "Background", exact: true })
+        .locator(".sheet-subsection > summary")
+        .filter({ hasText: "Background" })
         .click();
       await mutate(() =>
         page.locator(".drive-check").filter({ hasText: "Chaos" }).click(),
@@ -486,10 +488,7 @@ test(
       await expect(
         page.locator(".drive-check").filter({ hasText: "Chaos" }),
       ).toBeDisabled();
-      await page
-        .locator(".sheet-tabs")
-        .getByRole("button", { name: "Reputation", exact: true })
-        .click();
+
       await page
         .locator(".faction-card")
         .filter({ hasText: "Denizens" })
@@ -509,10 +508,7 @@ test(
         saved.sheet.reputation.find((x) => x.faction === "Denizens").prestige,
         1,
       );
-      await page
-        .locator(".sheet-tabs")
-        .getByRole("button", { name: "Equipment", exact: true })
-        .click();
+
       await page
         .getByRole("button", { name: "Edit character", exact: true })
         .click();

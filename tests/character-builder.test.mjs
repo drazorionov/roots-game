@@ -109,14 +109,19 @@ test(
           .notoriety,
         1,
       );
-      await expect(page.locator(".live-action-grid .gear-panel")).toBeVisible();
       await expect(
-        page.locator(".live-action-grid .move-reminder"),
+        page.locator(".equipment-section .gear-panel"),
+      ).toBeVisible();
+      await expect(
+        page.locator(".sheet-subsection .move-reminder"),
       ).toHaveCount(3);
       await page
         .getByRole("button", { name: "Melee · Might", exact: true })
         .click();
-      await expect(page.locator(".roll-result")).toContainText("Might");
+      await expect(page.locator(".dice-dialog")).toContainText("Might");
+      await page
+        .getByRole("button", { name: "Close dialog", exact: true })
+        .click();
       await page.getByRole("button", { name: "injury 2", exact: true }).click();
       await page
         .getByRole("button", { name: "Edit character", exact: true })

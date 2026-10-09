@@ -34,6 +34,7 @@ import { api } from "@/lib/client-api";
 import { prepareQuickOffline } from "@/lib/quick-offline";
 import CharacterEditor from "./character-editor";
 import CharacterControls from "./character-controls";
+import ActiveGame from "./active-game";
 import CampaignPresence from "./campaign-presence";
 import { CampaignCollection, CharacterCollection } from "./collections";
 function Modal({
@@ -961,13 +962,20 @@ function WoodlandWorkspace() {
                 </button>
               </div>
             )}
-            <CharacterControls
+            <ActiveGame
+              enabled={activeGame}
               key={hero!.id}
               hero={hero!}
-              edit={(step = 0) => editCharacter(hero!, step)}
-              onSaved={updated}
-              saveLocal={quickMode ? saveQuick : undefined}
-            />
+              campaign={activeGame ? campaign : undefined}
+            >
+              <CharacterControls
+                key={hero!.id}
+                hero={hero!}
+                edit={(step = 0) => editCharacter(hero!, step)}
+                onSaved={updated}
+                saveLocal={quickMode ? saveQuick : undefined}
+              />
+            </ActiveGame>
           </>
         ) : quickMode ? (
           <section className="journey-picker">
