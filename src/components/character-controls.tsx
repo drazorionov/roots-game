@@ -103,23 +103,21 @@ export default function CharacterControls({
     <div className="play-sheet field-sheet">
       <div className="character-command">
         <section className="character-portrait-card">
-          <div className="portrait-caption">
-            <span>{t(sheet.playbook)}</span>
-            <span>{t("Character sheet")}</span>
-          </div>
           <div className="hero-art">
             <Portrait
               species={sheet.species}
               playbook={sheet.playbook}
-              sizes="(max-width: 600px) 280px, 380px"
+              sizes="(max-width: 600px) 140px, 340px"
             />
           </div>
           <div className="hero-caption">
             <h2>{sheet.name}</h2>
             <p>
-              {t(sheet.species)}
-              {sheet.pronouns && ` · ${sheet.pronouns}`}
+              {t(sheet.playbook)} · {t(sheet.species)}
             </p>
+            {sheet.pronouns && (
+              <small className="hero-pronouns">{sheet.pronouns}</small>
+            )}
             {!setupLocked && (
               <button
                 className="text-link"

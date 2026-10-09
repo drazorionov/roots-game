@@ -971,27 +971,7 @@ function WoodlandWorkspace() {
           </section>
         ) : activeGame || (tab === "characters" && hero) ? (
           <>
-            {activeGame ? (
-              <header className="game-heading">
-                <div className="campaign-heading">
-                  <h1>{quickMode ? t("Quick game") : campaign?.name}</h1>
-                  {quickMode ? (
-                    <p className="quick-game-note">
-                      {t(
-                        "No account. No campaign. Saved only in this browser tab.",
-                      )}
-                      {quickOfflineReady && (
-                        <span className="offline-ready">
-                          {t("Ready for offline play.")}
-                        </span>
-                      )}
-                    </p>
-                  ) : (
-                    <CampaignPresence campaignId={gameCampaignId} />
-                  )}
-                </div>
-              </header>
-            ) : (
+            {!activeGame && (
               <div className="character-toolbar">
                 <button className="text-link" onClick={() => setSelected("")}>
                   <ArrowLeft size={16} />
@@ -1008,6 +988,29 @@ function WoodlandWorkspace() {
               key={hero!.id}
               hero={hero!}
               campaign={activeGame ? campaign : undefined}
+              heading={
+                activeGame ? (
+                  <header className="game-heading">
+                    <div className="campaign-heading">
+                      <h1>{quickMode ? t("Quick game") : campaign?.name}</h1>
+                      {quickMode ? (
+                        <p className="quick-game-note">
+                          {t(
+                            "No account. No campaign. Saved only in this browser tab.",
+                          )}
+                          {quickOfflineReady && (
+                            <span className="offline-ready">
+                              {t("Ready for offline play.")}
+                            </span>
+                          )}
+                        </p>
+                      ) : (
+                        <CampaignPresence campaignId={gameCampaignId} />
+                      )}
+                    </div>
+                  </header>
+                ) : undefined
+              }
             >
               <CharacterControls
                 key={hero!.id}

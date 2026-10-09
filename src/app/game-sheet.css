@@ -1,4 +1,33 @@
 /* Field journal: active character and campaign roster. */
+.game-heading-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+  margin-bottom: 20px;
+}
+.game-heading-row .game-heading {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+}
+.game-heading-row .game-views {
+  flex-shrink: 0;
+  margin: 0;
+}
+@media (max-width: 760px) {
+  .game-heading-row {
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+  .game-heading-row .game-heading {
+    flex-basis: 100%;
+  }
+  .game-heading-row .game-views {
+    width: 100%;
+  }
+}
 .game-views {
   display: flex;
   gap: 8px;
@@ -42,11 +71,12 @@
 }
 .character-command {
   display: grid;
-  grid-template-columns: minmax(230px, 0.8fr) minmax(0, 1.2fr);
+  grid-template-columns: minmax(210px, 0.65fr) minmax(0, 1.35fr);
   padding: 26px;
   gap: 30px;
 }
 .character-portrait-card {
+  align-self: start;
   display: flex;
   flex-direction: column;
   min-width: 0;
@@ -56,20 +86,9 @@
   overflow: hidden;
   box-shadow: 0 3px 10px #463c2010;
 }
-.portrait-caption {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 12px 16px;
-  background: #3f5140;
-  color: #f6e7c4;
-  font-size: 10px;
-  letter-spacing: 1.3px;
-  text-transform: uppercase;
-}
 .hero-art {
   min-height: 180px;
-  flex: 1;
+  aspect-ratio: 6 / 5;
   position: relative;
   background: radial-gradient(ellipse at center, #faf1d7, #cfc6a4);
 }
@@ -82,12 +101,12 @@
 }
 .hero-caption {
   position: relative;
-  padding: 18px 20px;
+  padding: 16px 18px;
   background: #f1e5c9;
   border-top: 1px solid #c6b896;
 }
 .hero-caption h2 {
-  font-size: clamp(26px, 3vw, 38px);
+  font-size: clamp(24px, 2.8vw, 32px);
   line-height: 1.15;
   overflow-wrap: anywhere;
 }
@@ -95,6 +114,12 @@
   font-size: 13px;
   color: var(--muted);
   margin-top: 7px;
+}
+.hero-pronouns {
+  display: block;
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--muted);
 }
 .hero-caption .text-link {
   margin-top: 10px;
@@ -662,12 +687,12 @@
 }
 @media (min-width: 1200px) {
   .character-command {
-    grid-template-columns: minmax(270px, 0.8fr) minmax(0, 1.2fr);
+    grid-template-columns: minmax(250px, 0.65fr) minmax(0, 1.35fr);
     gap: 40px;
     padding: 32px;
   }
   .hero-art {
-    min-height: 260px;
+    min-height: 220px;
   }
   .condition-track {
     grid-template-columns: 130px minmax(0, 1fr);
@@ -748,13 +773,9 @@
     display: grid;
     grid-template-columns: 42% minmax(0, 1fr);
   }
-  .portrait-caption {
-    grid-column: 1/-1;
-    padding: 10px 12px;
-    font-size: 9px;
-  }
   .hero-art {
-    min-height: 165px;
+    min-height: 140px;
+    aspect-ratio: auto;
   }
   .hero-caption {
     display: flex;
@@ -766,6 +787,12 @@
   }
   .hero-caption h2 {
     font-size: 26px;
+  }
+  .hero-pronouns {
+    display: block;
+    margin-top: 6px;
+    font-size: 11px;
+    color: var(--muted);
   }
   .hero-caption .text-link {
     font-size: 11px;
@@ -860,9 +887,6 @@
   }
   .condition-label {
     flex-direction: row;
-  }
-  .portrait-caption {
-    letter-spacing: 0.5px;
   }
   .modifier-counters {
     gap: 5px;

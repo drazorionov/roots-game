@@ -18,34 +18,39 @@ export default function ActiveGame({
   campaign,
   hero,
   children,
+  heading,
   enabled = true,
 }: {
   enabled?: boolean;
   campaign?: Campaign;
   hero: Hero;
   children: ReactNode;
+  heading?: ReactNode;
 }) {
   const { t } = useTranslation();
   const [view, setView] = useState("character");
   if (!enabled) return children;
   return (
     <div className="active-game">
-      <nav className="game-views" aria-label={t("Game views")}>
-        <button
-          aria-current={view === "campaign" ? "page" : undefined}
-          onClick={() => setView("campaign")}
-        >
-          <Users size={18} />
-          {t("Campaign overview")}
-        </button>
-        <button
-          aria-current={view === "character" ? "page" : undefined}
-          onClick={() => setView("character")}
-        >
-          <UserRound size={18} />
-          {t("My character")}
-        </button>
-      </nav>
+      <div className="game-heading-row">
+        {heading}
+        <nav className="game-views" aria-label={t("Game views")}>
+          <button
+            aria-current={view === "campaign" ? "page" : undefined}
+            onClick={() => setView("campaign")}
+          >
+            <Users size={18} />
+            {t("Campaign overview")}
+          </button>
+          <button
+            aria-current={view === "character" ? "page" : undefined}
+            onClick={() => setView("character")}
+          >
+            <UserRound size={18} />
+            {t("My character")}
+          </button>
+        </nav>
+      </div>
       {view === "campaign" && (
         <CampaignOverview
           key={campaign?.id || "quick"}
