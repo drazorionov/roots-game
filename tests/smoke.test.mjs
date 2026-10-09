@@ -651,14 +651,7 @@ test(
       await page
         .locator(".campaign-card")
         .filter({ hasText: "Willow’s campaign" })
-        .getByRole("button", { name: "Choose campaign", exact: true })
-        .click();
-      await expect(
-        page.getByRole("heading", { name: "My characters", exact: true }),
-      ).toBeVisible();
-      await page
-        .locator(".character-tile")
-        .filter({ hasText: "Willow Browser" })
+        .getByRole("button", { name: "Continue", exact: true })
         .click();
       await expect(
         page.getByRole("heading", { name: "Willow Browser", exact: true }),

@@ -901,5 +901,11 @@
   "The recovery session has expired. Request a new code.": "Die Wiederherstellungssitzung ist abgelaufen. Fordern Sie einen neuen Code an.",
   "Could not recover password. Check your details and try again.": "Das Passwort konnte nicht wiederhergestellt werden. Prüfen Sie Ihre Angaben und versuchen Sie es erneut.",
   "Password recovery email is not configured. Please contact the administrator.": "Der E-Mail-Versand zur Wiederherstellung ist nicht eingerichtet. Bitte kontaktieren Sie den Administrator.",
-  "Recovery email could not be sent. Please try again later.": "Die Wiederherstellungs-E-Mail konnte nicht gesendet werden. Versuchen Sie es später erneut."
+  "Recovery email could not be sent. Please try again later.": "Die Wiederherstellungs-E-Mail konnte nicht gesendet werden. Versuchen Sie es später erneut.",
+  "Continue": "Fortsetzen",
+  "Start": "Starten",
+  "Join": "Beitreten",
+  "Switch campaign?": "Kampagne wechseln?",
+  "Switch campaign": "Kampagne wechseln",
+  "Switch from {current} to {next}? Your characters and progress in both campaigns will be kept.": "Von {current} zu {next} wechseln? Deine Charaktere und Fortschritte in beiden Kampagnen bleiben erhalten."
 }

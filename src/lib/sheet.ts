@@ -170,6 +170,7 @@ export type Hero = {
   version: number;
 };
 export type Campaign = {
+  started_at?: string | null;
   master_name?: string;
   id: string;
   name: string;

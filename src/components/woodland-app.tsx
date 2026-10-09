@@ -142,6 +142,11 @@ function WoodlandWorkspace() {
   } | null>(null);
   const gameMenu = useRef<HTMLDetailsElement>(null);
   const [leaveTarget, setLeaveTarget] = useState<Campaign | null>(null);
+  const [switchTarget, setSwitchTarget] = useState<{
+    id: string;
+    name: string;
+    resume: boolean;
+  } | null>(null);
   const [resumeId, setResumeId] = useState("");
   const [gameStep, setGameStep] = useState<"campaign" | "character" | "sheet">(
     searchParams.get("campaign") ? "character" : "campaign",
@@ -226,8 +231,7 @@ function WoodlandWorkspace() {
     setError("");
     if (tab === "play" && !quickMode) {
       if (activeGame) {
-        setGameStep("character");
-        setSelected("");
+        exitToMain();
         return;
       }
       if (gameStep === "character" && gameCampaign) {
@@ -376,11 +380,30 @@ function WoodlandWorkspace() {
     setTab("play");
     setError("");
   }
-  function chooseCampaign(id: string) {
+  function enterCampaign(id: string, resume: boolean) {
+    const saved = heroes.filter((h) => h.campaign_id === id);
+    const previous = resume
+      ? saved.find((h) => h.id === resumeId) ||
+        (saved.length === 1 ? saved[0] : undefined)
+      : undefined;
     setGameCampaignId(id);
-    setGameStep("character");
-    setSelected("");
+    setGameStep(previous ? "sheet" : "character");
+    setSelected(previous?.id || "");
+    setTab("play");
+    setQuickMode(false);
+    if (previous) remember(previous.id);
     setError("");
+  }
+  function chooseCampaign(
+    id: string,
+    resume = false,
+    name = campaigns.find((c) => c.id === id)?.name || "",
+  ) {
+    if (resumable?.campaign_id && resumable.campaign_id !== id) {
+      setSwitchTarget({ id, name, resume });
+      return;
+    }
+    enterCampaign(id, resume);
   }
   async function pickCharacter(h: Hero) {
     if (tab !== "play") {
@@ -524,6 +547,14 @@ function WoodlandWorkspace() {
     setModal(next);
   }
   function updated(h: Hero) {
+    if (h.campaign_id)
+      setCampaigns((current) =>
+        current.map((c) =>
+          c.id === h.campaign_id && !c.started_at
+            ? { ...c, started_at: new Date().toISOString() }
+            : c,
+        ),
+      );
     setHeroes((current) =>
       current.some((x) => x.id === h.id)
         ? current.map((x) => (x.id === h.id ? h : x))
@@ -721,7 +752,12 @@ function WoodlandWorkspace() {
         modal === "join" ? "You joined the party." : "Campaign created.",
       );
       setCampaignFilter(data.id);
-      if (tab === "play") chooseCampaign(data.id);
+      if (tab === "play")
+        chooseCampaign(
+          data.id,
+          false,
+          campaigns.campaigns.find((c: Campaign) => c.id === data.id)?.name,
+        );
       finishCreation();
     } catch (e) {
       setError((e as Error).message);
@@ -1112,18 +1148,12 @@ function WoodlandWorkspace() {
             leave={askToLeave}
             campaigns={campaigns}
             userId={user?.id}
+            currentCampaignId={resumable?.campaign_id || undefined}
             choosing={tab === "play"}
             busy={busy}
             create={() => needsAccount("campaign")}
             join={() => needsAccount("join")}
-            select={(c) => {
-              if (tab === "play") chooseCampaign(c.id);
-              else {
-                setSelected("");
-                setCampaignFilter(c.id);
-                setTab("characters");
-              }
-            }}
+            select={(c) => chooseCampaign(c.id, true, c.name)}
             copy={async (c) => {
               try {
                 await navigator.clipboard.writeText(c.invite_code);
@@ -1166,6 +1196,38 @@ function WoodlandWorkspace() {
           <Check size={18} />
           {t(notice)}
         </div>
+      )}
+      {switchTarget && (
+        <Modal
+          title={t("Switch campaign?")}
+          close={() => setSwitchTarget(null)}
+        >
+          <p className="delete-explanation">
+            {t(
+              "Switch from {current} to {next}? Your characters and progress in both campaigns will be kept.",
+              {
+                current:
+                  campaigns.find((c) => c.id === resumable?.campaign_id)
+                    ?.name || "",
+                next: switchTarget.name,
+              },
+            )}
+          </p>
+          <div className="form-actions">
+            <button className="btn" onClick={() => setSwitchTarget(null)}>
+              {t("Cancel")}
+            </button>
+            <button
+              className="btn primary"
+              onClick={() => {
+                enterCampaign(switchTarget.id, switchTarget.resume);
+                setSwitchTarget(null);
+              }}
+            >
+              {t("Switch campaign")}
+            </button>
+          </div>
+        </Modal>
       )}
       {leaveTarget && (
         <Modal

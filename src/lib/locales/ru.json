@@ -901,5 +901,11 @@
   "The recovery session has expired. Request a new code.": "Сеанс восстановления истёк. Запросите новый код.",
   "Could not recover password. Check your details and try again.": "Не удалось восстановить пароль. Проверьте данные и повторите попытку.",
   "Password recovery email is not configured. Please contact the administrator.": "Отправка писем для восстановления не настроена. Обратитесь к администратору.",
-  "Recovery email could not be sent. Please try again later.": "Не удалось отправить письмо для восстановления. Попробуйте позже."
+  "Recovery email could not be sent. Please try again later.": "Не удалось отправить письмо для восстановления. Попробуйте позже.",
+  "Continue": "Продолжить",
+  "Start": "Начать",
+  "Join": "Присоединиться",
+  "Switch campaign?": "Сменить кампанию?",
+  "Switch campaign": "Сменить кампанию",
+  "Switch from {current} to {next}? Your characters and progress in both campaigns will be kept.": "Перейти из кампании «{current}» в «{next}»? Ваши персонажи и прогресс в обеих кампаниях сохранятся."
 }

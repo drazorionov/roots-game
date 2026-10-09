@@ -54,6 +54,7 @@ function EmptyCollectionCard({
 export function CampaignCollection({
   campaigns,
   userId,
+  currentCampaignId,
   choosing = false,
   busy,
   create,
@@ -65,6 +66,7 @@ export function CampaignCollection({
 }: {
   campaigns: Campaign[];
   userId?: string;
+  currentCampaignId?: string;
   choosing?: boolean;
   busy: boolean;
   create: () => void;
@@ -178,7 +180,13 @@ export function CampaignCollection({
                 disabled={busy}
                 onClick={() => select(c)}
               >
-                {t(choosing ? "Choose campaign" : "My characters")}
+                {t(
+                  c.id === currentCampaignId || c.started_at
+                    ? "Continue"
+                    : c.owner_id === userId
+                      ? "Start"
+                      : "Join",
+                )}
                 <ChevronRight size={16} />
               </button>
               {c.owner_id !== userId && (

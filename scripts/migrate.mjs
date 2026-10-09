@@ -10,6 +10,7 @@ await sql.transaction([
   sql`CREATE TABLE IF NOT EXISTS password_recoveries (user_id uuid PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE, code_hash text UNIQUE, reset_token_hash text UNIQUE, expires_at timestamptz NOT NULL)`,
   sql`CREATE TABLE IF NOT EXISTS sessions (token_hash text PRIMARY KEY, user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE, expires_at timestamptz NOT NULL)`,
   sql`CREATE TABLE IF NOT EXISTS campaigns (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), owner_id uuid NOT NULL REFERENCES users(id), name text NOT NULL, description text NOT NULL DEFAULT '', clearing text NOT NULL DEFAULT '', invite_code text UNIQUE NOT NULL, created_at timestamptz NOT NULL DEFAULT now())`,
+  sql`ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS started_at timestamptz`,
   sql`CREATE TABLE IF NOT EXISTS memberships (campaign_id uuid NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE, user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE, PRIMARY KEY(campaign_id, user_id))`,
   sql`CREATE TABLE IF NOT EXISTS campaign_presence (campaign_id uuid NOT NULL, user_id uuid NOT NULL, last_seen timestamptz NOT NULL DEFAULT now(), PRIMARY KEY(campaign_id, user_id), FOREIGN KEY(campaign_id, user_id) REFERENCES memberships(campaign_id, user_id) ON DELETE CASCADE)`,
   sql`CREATE TABLE IF NOT EXISTS heroes (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), campaign_id uuid NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE, owner_id uuid NOT NULL REFERENCES users(id), sheet jsonb NOT NULL, version integer NOT NULL DEFAULT 1, updated_at timestamptz NOT NULL DEFAULT now())`,
@@ -33,6 +34,17 @@ await sql.transaction([
       END IF;
     END $$`,
   sql`CREATE UNIQUE INDEX IF NOT EXISTS heroes_campaign_source_idx ON heroes(campaign_id, source_hero_id)`,
+  // A campaign stays started even when its last character is removed or leaves.
+  sql`UPDATE campaigns c SET started_at = (SELECT min(h.updated_at) FROM heroes h WHERE h.campaign_id = c.id) WHERE c.started_at IS NULL AND EXISTS (SELECT 1 FROM heroes h WHERE h.campaign_id = c.id)`,
+  sql`CREATE OR REPLACE FUNCTION mark_campaign_started() RETURNS trigger LANGUAGE plpgsql AS $$
+    BEGIN
+      IF NEW.campaign_id IS NOT NULL THEN
+        UPDATE campaigns SET started_at = now() WHERE id = NEW.campaign_id AND started_at IS NULL;
+      END IF;
+      RETURN NEW;
+    END $$`,
+  sql`DROP TRIGGER IF EXISTS heroes_mark_campaign_started ON heroes`,
+  sql`CREATE TRIGGER heroes_mark_campaign_started AFTER INSERT OR UPDATE OF campaign_id, sheet ON heroes FOR EACH ROW EXECUTE FUNCTION mark_campaign_started()`,
   sql`CREATE INDEX IF NOT EXISTS heroes_campaign_idx ON heroes(campaign_id)`,
   sql`CREATE INDEX IF NOT EXISTS memberships_user_idx ON memberships(user_id)`,
   sql`CREATE TABLE IF NOT EXISTS rate_limits (key text PRIMARY KEY, attempts integer NOT NULL, reset_at timestamptz NOT NULL)`,
