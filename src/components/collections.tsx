@@ -155,6 +155,23 @@ export function CampaignCollection({
             {c.description && (
               <p className="campaign-description">{c.description}</p>
             )}
+            <div className="campaign-invite">
+              <span className="campaign-invite-label">
+                {t("Campaign invite code")}
+              </span>
+              <div className="campaign-invite-code">
+                <code>{c.invite_code}</code>
+                <button
+                  className="icon-btn"
+                  type="button"
+                  aria-label={t("Copy invite code")}
+                  title={t("Copy invite code")}
+                  onClick={() => copy(c)}
+                >
+                  <Copy size={19} />
+                </button>
+              </div>
+            </div>
             <div className="campaign-card-actions">
               <button
                 className={`btn ${choosing ? "primary campaign-choice" : ""}`}
@@ -176,25 +193,14 @@ export function CampaignCollection({
                   <LogOut size={19} />
                 </button>
               )}
-              {!choosing && (
-                <>
-                  <button
-                    className="icon-btn"
-                    aria-label={t("Copy invite code")}
-                    onClick={() => copy(c)}
-                  >
-                    <Copy size={19} />
-                  </button>
-                  {c.owner_id === userId && (
-                    <button
-                      className="icon-btn delete-control"
-                      aria-label={t("Delete {name}", { name: c.name })}
-                      onClick={() => remove(c)}
-                    >
-                      <Trash2 size={17} />
-                    </button>
-                  )}
-                </>
+              {!choosing && c.owner_id === userId && (
+                <button
+                  className="icon-btn delete-control"
+                  aria-label={t("Delete {name}", { name: c.name })}
+                  onClick={() => remove(c)}
+                >
+                  <Trash2 size={17} />
+                </button>
               )}
             </div>
           </article>

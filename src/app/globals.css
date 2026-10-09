@@ -2171,6 +2171,28 @@ form .inline-check {
   overflow: hidden;
   overflow-wrap: anywhere;
 }
+.campaign-invite {
+  margin-top: 12px;
+  margin-bottom: 16px;
+}
+.campaign-invite-label {
+  color: var(--muted);
+  font-size: 12px;
+}
+.campaign-invite-code {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.campaign-invite-code code {
+  min-width: 0;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+  user-select: all;
+}
+.campaign-invite-code .icon-btn {
+  flex-shrink: 0;
+}
 .collection-page .campaign-card-actions {
   border-top: 1px solid #c5b895;
   padding-top: 16px;
