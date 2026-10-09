@@ -4,7 +4,13 @@ import ru from "./locales/ru.json";
 import de from "./locales/de.json";
 export type Locale = "en" | "ru" | "de";
 const dictionaries: Record<Locale, Record<string, string>> = {
-  en: { "player.one": "player", "player.other": "players" },
+  en: {
+    "player.one": "player",
+    "player.other": "players",
+    injury: "Injury",
+    exhaustion: "Exhaustion",
+    depletion: "Depletion",
+  },
   ru,
   de,
 };

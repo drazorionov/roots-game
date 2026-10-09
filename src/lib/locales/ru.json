@@ -678,5 +678,11 @@
   "A weapon’s range and tags determine which attacks it supports. Check the move before rolling.": "Дистанция и теги оружия определяют доступные атаки. Перед броском проверьте ход.",
   "Armor can absorb injury as wear when its tags allow it. Check its tags for limits and special protection.": "Броня может поглощать травмы износом, если это допускают её теги. Проверьте ограничения и особую защиту в тегах.",
   "Valuable equipment has its own load, value, tags, and wear. Record its special features in the item’s details.": "У ценного снаряжения есть нагрузка, стоимость, теги и износ. Запишите особые свойства в описании предмета.",
-  "Mark {drive} fulfilled": "Отметить выполнение: {drive}"
+  "Mark {drive} fulfilled": "Отметить выполнение: {drive}",
+  "Your playbook describes your kind of vagabond and provides starting attributes, moves, natures, drives, feats, and weapon skills.": "Буклет описывает тип вашего бродяги и задаёт начальные характеристики, ходы, натуры, стремления, плутовские приёмы и оружейные навыки.",
+  "Your species describes what kind of animal you are and how other denizens may see you. It does not automatically change attributes or grant optional species moves on this sheet.": "Вид определяет, каким животным вы являетесь и как вас могут воспринимать другие жители. На этом листе он не меняет характеристики автоматически и не даёт необязательные видовые ходы.",
+  "Attributes describe your strengths and weaknesses. Add +1 to one starting attribute, without exceeding +2 during creation. Move bonuses are applied separately.": "Характеристики отражают ваши сильные и слабые стороны. Добавьте +1 к одной начальной характеристике, не превышая +2 при создании. Бонусы ходов учитываются отдельно.",
+  "Playbook moves are your special abilities. Read the trigger, cost, and result before using one. Most playbooks begin with three moves, including any required moves.": "Ходы буклета — ваши особые способности. Перед использованием прочитайте условие, затраты и результат. Большинство буклетов начинают с трёх ходов, включая обязательные.",
+  "Tags describe an item’s special properties, benefits, and flaws. Weapon move tags identify supported skills; record their effects here and apply them when the relevant move triggers.": "Теги описывают особые свойства, преимущества и недостатки предмета. Теги оружейных ходов указывают поддерживаемые навыки; запишите их эффекты здесь и применяйте при срабатывании соответствующего хода.",
+  "About {name}": "О разделе «{name}»"
 }

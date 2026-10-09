@@ -44,12 +44,10 @@ test(
       await steps.getByRole("button", { name: /Nature & drives/ }).click();
       const book = rules.playbookData.Tinker;
       await page
-        .getByRole("button", { name: new RegExp(`^${book.natures[0]} `) })
+        .getByRole("checkbox", { name: book.natures[0], exact: true })
         .click();
       for (const drive of book.drives.slice(0, 2))
-        await page
-          .getByRole("button", { name: new RegExp(`^${drive} `) })
-          .click();
+        await page.getByRole("checkbox", { name: drive, exact: true }).click();
       await steps.getByRole("button", { name: /Abilities/ }).click();
       for (const name of book.requiredMoves) {
         await expect(
@@ -120,7 +118,7 @@ test(
       await page
         .getByRole("button", { name: "Close dialog", exact: true })
         .click();
-      await page.getByRole("button", { name: "injury 2", exact: true }).click();
+      await page.getByRole("button", { name: "Injury 2", exact: true }).click();
       await page
         .getByRole("button", { name: "Edit character", exact: true })
         .click();
@@ -140,7 +138,7 @@ test(
         }),
       ).toBeVisible();
       await expect(
-        page.getByRole("button", { name: "injury 2", exact: true }),
+        page.getByRole("button", { name: "Injury 2", exact: true }),
       ).toHaveAttribute("aria-pressed", "true");
       for (const locale of ["en", "ru", "de"]) {
         const dict =

@@ -69,13 +69,13 @@ test(
         harm.x > portrait.x + portrait.width,
         "Harm sits beside the portrait",
       );
-      await page.getByRole("button", { name: "injury 3", exact: true }).click();
+      await page.getByRole("button", { name: "Injury 3", exact: true }).click();
       await expect(
-        page.getByRole("button", { name: "injury 3", exact: true }),
+        page.getByRole("button", { name: "Injury 3", exact: true }),
       ).toHaveAttribute("aria-pressed", "true");
-      await page.getByRole("button", { name: "injury 3", exact: true }).click();
+      await page.getByRole("button", { name: "Injury 3", exact: true }).click();
       await expect(
-        page.getByRole("button", { name: "injury 3", exact: true }),
+        page.getByRole("button", { name: "Injury 3", exact: true }),
       ).toHaveAttribute("aria-pressed", "false");
       await mkdir("test-results", { recursive: true });
       await page.screenshot({
@@ -143,7 +143,7 @@ test(
         .click();
       await page.reload();
       await expect(
-        page.getByRole("button", { name: "injury 2", exact: true }),
+        page.getByRole("button", { name: "Injury 2", exact: true }),
       ).toHaveAttribute("aria-pressed", "true");
       assert.equal(
         await page.evaluate(

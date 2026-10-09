@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
+import RuleHelp from "./rule-help";
 import { Portrait } from "./art";
 import PortraitPicker from "./portrait-picker";
 import AttributeIcon from "./attribute-icon";
@@ -220,7 +221,7 @@ export default function CharacterEditor({
           <p>{t("Save at any step. You can finish your choices later.")}</p>
           <div>
             <Backpack size={17} />
-            {t("Coin")}: {sheet.coin} · {t("Load")}:{" "}
+            <RuleHelp name="Coin" />: {sheet.coin} · <RuleHelp name="Load" />:{" "}
             {sheet.equipment.reduce((sum, item) => sum + item.load, 0)}
           </div>
         </div>
@@ -277,7 +278,9 @@ export default function CharacterEditor({
                   />
                 </label>
               </div>
-              <h3 className="form-section">{t("Attributes")}</h3>
+              <h3 className="form-section">
+                <RuleHelp name="Attributes" />
+              </h3>
               {sheet.presetApplied && (
                 <label className="bonus-field">
                   {t("Choose your +1 attribute")}
@@ -313,7 +316,7 @@ export default function CharacterEditor({
                 {stats.map((stat) => (
                   <div key={stat}>
                     <AttributeIcon stat={stat} />
-                    <span>{t(stat)}</span>
+                    <RuleHelp name={stat} />
                     <strong>
                       {totals[stat] > 0 ? "+" : ""}
                       {totals[stat]}
@@ -325,8 +328,8 @@ export default function CharacterEditor({
                 <summary>{t("Custom attributes")}</summary>{" "}
                 <div className="attribute-inputs">
                   {stats.map((stat) => (
-                    <label key={stat}>
-                      {t(stat)}
+                    <div className="rule-field" key={stat}>
+                      <RuleHelp name={stat} />
                       <select
                         aria-label={t(stat)}
                         value={sheet.stats[stat]}
@@ -355,7 +358,7 @@ export default function CharacterEditor({
                           {t("With moves: {value}", { value: totals[stat] })}
                         </small>
                       )}
-                    </label>
+                    </div>
                   ))}
                 </div>
               </details>
@@ -411,7 +414,9 @@ export default function CharacterEditor({
                 </label>
               ))}
 
-              <h3>{t("Starting reputation")}</h3>
+              <h3>
+                <RuleHelp name="Starting reputation" />
+              </h3>
               {!editing ? (
                 <div className="form-grid">
                   <label>
@@ -467,24 +472,34 @@ export default function CharacterEditor({
           )}
           {step === 2 && (
             <>
-              <h3>{t("Nature")}</h3>
+              <h3>
+                <RuleHelp name="Nature" />
+              </h3>
               <p className="field-hint">
                 {t("Choose how you clear exhaustion.")}
               </p>
               <div className="choice-list">
                 {(book?.natures || []).map((name) => (
-                  <button
-                    type="button"
-                    className="choice-card"
-                    key={name}
-                    aria-pressed={sheet.nature === name}
-                    onClick={() =>
-                      patch({ nature: sheet.nature === name ? "" : name })
-                    }
-                  >
-                    <strong>{t(name)}</strong>
-                    <span>{t(natureHints[name])}</span>
-                  </button>
+                  <article className="choice-card" key={name}>
+                    <div className="rule-choice">
+                      <input
+                        type="checkbox"
+                        aria-label={t(name)}
+                        checked={sheet.nature === name}
+                        onChange={() =>
+                          patch({ nature: sheet.nature === name ? "" : name })
+                        }
+                      />
+                      <strong>
+                        <RuleHelp
+                          name={name}
+                          summary={natureHints[name]}
+                          page="105–107"
+                        />
+                      </strong>
+                    </div>
+                    <p>{t(natureHints[name])}</p>
+                  </article>
                 ))}
               </div>
               <details className="optional-details">
@@ -497,7 +512,8 @@ export default function CharacterEditor({
                 />
               </details>
               <h3>
-                {t("Drives")} <small>{sheet.driveIds.length}/2</small>
+                <RuleHelp name="Drives" />{" "}
+                <small>{sheet.driveIds.length}/2</small>
               </h3>
               <p className="field-hint">
                 {t(
@@ -506,20 +522,28 @@ export default function CharacterEditor({
               </p>
               <div className="choice-list">
                 {(book?.drives || []).map((name) => (
-                  <button
-                    type="button"
-                    className="choice-card"
-                    key={name}
-                    aria-pressed={sheet.driveIds.includes(name)}
-                    disabled={
-                      !sheet.driveIds.includes(name) &&
-                      sheet.driveIds.length >= 2
-                    }
-                    onClick={() => toggle("driveIds", name, 2)}
-                  >
-                    <strong>{t(name)}</strong>
-                    <span>{t(driveHints[name])}</span>
-                  </button>
+                  <article className="choice-card" key={name}>
+                    <div className="rule-choice">
+                      <input
+                        type="checkbox"
+                        aria-label={t(name)}
+                        checked={sheet.driveIds.includes(name)}
+                        disabled={
+                          !sheet.driveIds.includes(name) &&
+                          sheet.driveIds.length >= 2
+                        }
+                        onChange={() => toggle("driveIds", name, 2)}
+                      />
+                      <strong>
+                        <RuleHelp
+                          name={name}
+                          summary={driveHints[name]}
+                          page={108}
+                        />
+                      </strong>
+                    </div>
+                    <p>{t(driveHints[name])}</p>
+                  </article>
                 ))}
               </div>
             </>
@@ -528,7 +552,8 @@ export default function CharacterEditor({
             <>
               {" "}
               <h3>
-                {t("Playbook moves")} <small>{sheet.moveIds.length}/3</small>
+                <RuleHelp name="Playbook moves" />{" "}
+                <small>{sheet.moveIds.length}/3</small>
               </h3>
               <p className="field-hint">
                 {t(
@@ -540,9 +565,10 @@ export default function CharacterEditor({
               <div className="move-picker">
                 {book?.moves.map((move) => (
                   <div className="move-choice" key={move.name}>
-                    <label>
+                    <div className="choice-heading">
                       <input
                         type="checkbox"
+                        aria-label={t(move.name)}
                         checked={sheet.moveIds.includes(move.name)}
                         disabled={
                           book.requiredMoves.includes(move.name) ||
@@ -554,22 +580,23 @@ export default function CharacterEditor({
                         }
                       />
                       <span>
-                        {t(move.name)}
+                        <RuleHelp
+                          name={move.name}
+                          summary={move.summary}
+                          page={book.page + 2}
+                        />
                         {book.requiredMoves.includes(move.name) && (
                           <small>{t("Included")}</small>
                         )}
                       </span>
-                    </label>
-                    <details>
-                      <summary>{t("Move details")}</summary>
-                      <p>{t(move.summary)}</p>
-                    </details>
+                    </div>
+                    <p>{t(move.summary)}</p>
                   </div>
                 ))}
               </div>
               <details className="optional-details" open={!!book?.chooseFeats}>
                 <summary>
-                  {t("Roguish feats")} · {sheet.featIds.length}/
+                  <RuleHelp name="Roguish feats" /> · {sheet.featIds.length}/
                   {(book?.feats.length || 0) + (book?.chooseFeats || 0)}
                 </summary>
                 <p className="field-hint">
@@ -581,9 +608,10 @@ export default function CharacterEditor({
                 </p>
                 <div className="skill-picker">
                   {feats.map((name) => (
-                    <label key={name}>
+                    <div className="rule-choice" key={name}>
                       <input
                         type="checkbox"
+                        aria-label={t(name)}
                         checked={sheet.featIds.includes(name)}
                         disabled={
                           !editing &&
@@ -604,13 +632,15 @@ export default function CharacterEditor({
                           )
                         }
                       />
-                      {t(name)}
-                    </label>
+                      <RuleHelp name={name} />
+                    </div>
                   ))}
                 </div>
               </details>
               <details className="optional-details" open>
-                <summary>{t("Weapon skills")}</summary>
+                <summary>
+                  <RuleHelp name="Weapon skills" />
+                </summary>
                 <p className="field-hint">
                   {t(
                     "Choose one starting skill. Dirty Fighter grants two additional choices.",
@@ -634,9 +664,10 @@ export default function CharacterEditor({
                         ]),
                       ]
                   ).map((name) => (
-                    <label key={name}>
+                    <div className="rule-choice" key={name}>
                       <input
                         type="checkbox"
+                        aria-label={t(name)}
                         checked={sheet.weaponSkillIds.includes(name)}
                         disabled={
                           !editing &&
@@ -656,8 +687,8 @@ export default function CharacterEditor({
                           )
                         }
                       />
-                      {t(name)}
-                    </label>
+                      <RuleHelp name={name} />
+                    </div>
                   ))}
                 </div>
               </details>
@@ -690,8 +721,8 @@ export default function CharacterEditor({
                 </p>
                 <div className="form-grid">
                   {harmTracks.map((track) => (
-                    <label key={track}>
-                      {t(track)}
+                    <div className="rule-field" key={track}>
+                      <RuleHelp name={track} />
                       <select
                         aria-label={t("{track} base boxes", {
                           track: t(track),
@@ -719,7 +750,7 @@ export default function CharacterEditor({
                           </option>
                         ))}
                       </select>
-                    </label>
+                    </div>
                   ))}
                 </div>
               </details>
@@ -753,7 +784,7 @@ export default function CharacterEditor({
                 {stats.map((stat) => (
                   <div key={stat}>
                     <AttributeIcon stat={stat} />
-                    <span>{t(stat)}</span>
+                    <RuleHelp name={stat} />
                     <strong>
                       {totals[stat] > 0 ? "+" : ""}
                       {totals[stat]}
@@ -763,21 +794,43 @@ export default function CharacterEditor({
               </div>
               <div className="review-choices">
                 <div>
-                  <h3>{t("Nature")}</h3>
-                  <p>{t(sheet.nature || "Choose later")}</p>
-                </div>
-                <div>
-                  <h3>{t("Drives")}</h3>
+                  <h3>
+                    <RuleHelp name="Nature" />
+                  </h3>
                   <p>
-                    {sheet.driveIds.map((name) => t(name)).join(" · ") ||
-                      t("Choose later")}
+                    <RuleHelp name={sheet.nature || "Choose later"} />
                   </p>
                 </div>
                 <div>
-                  <h3>{t("Playbook moves")}</h3>
+                  <h3>
+                    <RuleHelp name="Drives" />
+                  </h3>
                   <p>
-                    {sheet.moveIds.map((name) => t(name)).join(" · ") ||
-                      t("Choose later")}
+                    {sheet.driveIds.length ? (
+                      <span className="review-rule-list">
+                        {sheet.driveIds.map((name) => (
+                          <RuleHelp key={name} name={name} />
+                        ))}
+                      </span>
+                    ) : (
+                      t("Choose later")
+                    )}
+                  </p>
+                </div>
+                <div>
+                  <h3>
+                    <RuleHelp name="Playbook moves" />
+                  </h3>
+                  <p>
+                    {sheet.moveIds.length ? (
+                      <span className="review-rule-list">
+                        {sheet.moveIds.map((name) => (
+                          <RuleHelp key={name} name={name} />
+                        ))}
+                      </span>
+                    ) : (
+                      t("Choose later")
+                    )}
                   </p>
                 </div>
                 <div>
@@ -793,9 +846,10 @@ export default function CharacterEditor({
                   "Introduce your character to the table, then write your connections together.",
                 )}
               </p>
-              <label>
-                {t("Connections")}
+              <div className="rule-field">
+                <RuleHelp name="Connections" />
                 <textarea
+                  aria-label={t("Connections")}
                   rows={2}
                   maxLength={6000}
                   value={sheet.bonds}
@@ -804,7 +858,7 @@ export default function CharacterEditor({
                   )}
                   onChange={(e) => patch({ bonds: e.target.value })}
                 />
-              </label>
+              </div>
               <label>
                 {t("Notes")}
                 <textarea

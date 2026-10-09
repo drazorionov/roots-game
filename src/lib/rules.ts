@@ -317,3 +317,37 @@ export const rules: Record<string, { summary: string; page: number }> = {
     page: 149,
   },
 };
+
+Object.assign(rules, {
+  Playbook: {
+    summary:
+      "Your playbook describes your kind of vagabond and provides starting attributes, moves, natures, drives, feats, and weapon skills.",
+    page: 149,
+  },
+  Species: {
+    summary:
+      "Your species describes what kind of animal you are and how other denizens may see you. It does not automatically change attributes or grant optional species moves on this sheet.",
+    page: 149,
+  },
+  Attributes: {
+    summary:
+      "Attributes describe your strengths and weaknesses. Add +1 to one starting attribute, without exceeding +2 during creation. Move bonuses are applied separately.",
+    page: 149,
+  },
+  "Playbook moves": {
+    summary:
+      "Playbook moves are your special abilities. Read the trigger, cost, and result before using one. Most playbooks begin with three moves, including any required moves.",
+    page: 149,
+  },
+  "Details & tags": {
+    summary:
+      "Tags describe an item’s special properties, benefits, and flaws. Weapon move tags identify supported skills; record their effects here and apply them when the relevant move triggers.",
+    page: 131,
+  },
+});
+rules["Wear boxes"] = rules.Wear;
+rules["Starting reputation"] = {
+  page: 149,
+  summary:
+    "For a new character: mark 2 prestige with the faction you served most, and 1 notoriety with your enemy.",
+};

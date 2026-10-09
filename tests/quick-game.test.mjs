@@ -47,9 +47,9 @@ test(
         "RU",
         "DE",
       ]);
-      await page.getByRole("button", { name: "injury 2", exact: true }).click();
+      await page.getByRole("button", { name: "Injury 2", exact: true }).click();
       await expect(
-        page.getByRole("button", { name: "injury 2", exact: true }),
+        page.getByRole("button", { name: "Injury 2", exact: true }),
       ).toHaveAttribute("aria-pressed", "true");
       if (process.env.TEST_OFFLINE_RELOAD)
         await expect(page.locator(".offline-ready")).toBeVisible({
@@ -64,12 +64,12 @@ test(
         }),
       ).toBeVisible();
       await expect(
-        page.getByRole("button", { name: "injury 2", exact: true }),
+        page.getByRole("button", { name: "Injury 2", exact: true }),
       ).toHaveAttribute("aria-pressed", "true");
       await context.setOffline(true);
       if (process.env.TEST_OFFLINE_RELOAD) await page.reload();
       await page
-        .getByRole("button", { name: "exhaustion 3", exact: true })
+        .getByRole("button", { name: "Exhaustion 3", exact: true })
         .click();
       await page
         .getByRole("button", { name: "Add equipment", exact: true })

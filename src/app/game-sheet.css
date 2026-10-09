@@ -209,7 +209,7 @@
   justify-content: space-between;
   background: #f9f2df;
 }
-.modifier-counters .sheet-counter button {
+.modifier-counters .sheet-counter > div > button {
   min-width: 32px;
   width: 32px;
 }
@@ -546,7 +546,7 @@
     width: 48px;
     height: 48px;
   }
-  .modifier-counters .sheet-counter button {
+  .modifier-counters .sheet-counter > div > button {
     min-width: 44px;
   }
   .attribute-section,
@@ -574,7 +574,7 @@
   .modifier-counters {
     gap: 5px;
   }
-  .modifier-counters .sheet-counter button {
+  .modifier-counters .sheet-counter > div > button {
     width: 28px;
     min-width: 28px;
   }
@@ -648,7 +648,7 @@
   .modifier-counters {
     gap: 10px;
   }
-  .modifier-counters .sheet-counter button {
+  .modifier-counters .sheet-counter > div > button {
     min-width: 26px;
     width: 26px;
   }
@@ -1210,11 +1210,15 @@
   font: inherit;
   font-weight: inherit;
   text-align: inherit;
+  width: auto;
+  min-width: 0;
+  height: auto;
   background: none;
   text-decoration: underline dotted #8f815d;
   text-underline-offset: 4px;
   cursor: pointer;
-  overflow-wrap: anywhere;
+  overflow-wrap: normal;
+  word-break: normal;
 }
 .rule-name:hover {
   color: var(--green);
@@ -1456,7 +1460,7 @@
   .coin-tile .sheet-counter > div {
     gap: 4px;
   }
-  .coin-tile .sheet-counter button {
+  .coin-tile .sheet-counter > div > button {
     width: 32px;
     height: 38px;
   }
@@ -1492,4 +1496,132 @@
 }
 .campaign-footer .setup-checklist summary {
   cursor: pointer;
+}
+
+/* Rule dialogs never inherit the typography or sizing of their trigger. */
+.rule-dialog {
+  font-family: var(--body-font);
+  font-size: 16px;
+  font-weight: 400;
+  text-align: left;
+  color: var(--ink);
+  line-height: 1.6;
+}
+.rule-dialog .rule-title {
+  font-family: var(--heading-font);
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 12px 0 18px;
+  overflow-wrap: break-word;
+}
+.rule-dialog .rule-description {
+  font-family: var(--body-font);
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.65;
+  padding: 0;
+  margin: 0;
+  color: var(--ink);
+}
+.rule-dialog .rule-source {
+  font-family: var(--body-font);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+  margin: 20px 0 0;
+  color: var(--muted);
+}
+.sheet-counter > span {
+  overflow-wrap: normal;
+}
+.modifier-counters .sheet-counter > span {
+  min-width: 0;
+}
+.rule-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  margin-bottom: 18px;
+  font-size: 14px;
+  font-weight: 550;
+}
+.rule-field > .rule-name {
+  align-self: flex-start;
+}
+.rule-field input,
+.rule-field select,
+.rule-field textarea {
+  width: 100%;
+}
+.rule-choice,
+.choice-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  font-size: 14px;
+}
+.rule-choice > .rule-name,
+.choice-heading > .rule-name {
+  text-align: left;
+}
+.rule-choice input {
+  flex-shrink: 0;
+}
+.choice-card:has(input:checked) {
+  border-color: var(--green);
+  background: #e5e3c9;
+}
+.choice-card > p {
+  font-size: 13px;
+  line-height: 1.6;
+  margin: 6px 0 0;
+  color: var(--muted);
+}
+.choice-heading small {
+  font-size: 11px;
+  color: var(--muted);
+}
+.builder-stats .rule-name {
+  font-size: 12px;
+}
+.review-rule-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+}
+.portrait-rule-option {
+  position: relative;
+  min-width: 0;
+}
+.portrait-rule-option > .portrait-choice {
+  width: 100%;
+  height: 100%;
+}
+.portrait-rule-option > .rule-name {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  padding: 8px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  display: flex;
+}
+.character-builder .skill-picker {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.rule-choice,
+.choice-heading {
+  min-width: 0;
+}
+.choice-heading > span {
+  min-width: 0;
+}
+@media (max-width: 600px) {
+  .character-builder .skill-picker {
+    grid-template-columns: 1fr;
+  }
 }

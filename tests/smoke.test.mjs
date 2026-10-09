@@ -346,9 +346,15 @@ test(
         .locator(".wizard-steps")
         .getByRole("button", { name: /Nature & drives/ })
         .click();
-      await creation.getByRole("button", { name: /^Glutton/ }).click();
-      await creation.getByRole("button", { name: /^Chaos/ }).click();
-      await creation.getByRole("button", { name: /^Thrills/ }).click();
+      await creation
+        .getByRole("checkbox", { name: "Glutton", exact: true })
+        .click();
+      await creation
+        .getByRole("checkbox", { name: "Chaos", exact: true })
+        .click();
+      await creation
+        .getByRole("checkbox", { name: "Thrills", exact: true })
+        .click();
       await creation
         .locator(".wizard-steps")
         .getByRole("button", { name: /Abilities/ })
@@ -406,13 +412,13 @@ test(
         );
       }
       await mutate(() =>
-        page.getByRole("button", { name: "injury 2", exact: true }).click(),
+        page.getByRole("button", { name: "Injury 2", exact: true }).click(),
       );
       await mutate(() =>
-        page.getByRole("button", { name: "exhaustion 3", exact: true }).click(),
+        page.getByRole("button", { name: "Exhaustion 3", exact: true }).click(),
       );
       await mutate(() =>
-        page.getByRole("button", { name: "depletion 1", exact: true }).click(),
+        page.getByRole("button", { name: "Depletion 1", exact: true }).click(),
       );
       await page
         .getByRole("button", { name: "Add equipment", exact: true })

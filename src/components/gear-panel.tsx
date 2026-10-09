@@ -283,25 +283,27 @@ export default function GearPanel({
             </label>
             {kind === "weapon" && (
               <div className="form-grid">
-                <label>
-                  {t("Range")}
+                <div className="rule-field">
+                  <RuleHelp name="Range" />
                   <input
+                    aria-label={t("Range")}
                     name="range"
                     maxLength={80}
                     defaultValue={item?.range || ""}
                     placeholder={t("Close, far, or another range")}
                   />
-                </label>
-                <label>
-                  {t("Weapon harm")}
+                </div>
+                <div className="rule-field">
+                  <RuleHelp name="Weapon harm" />
                   <input
+                    aria-label={t("Weapon harm")}
                     name="harm"
                     type="number"
                     min={0}
                     max={4}
                     defaultValue={item?.harm ?? 1}
                   />
-                </label>
+                </div>
               </div>
             )}
             <label>
@@ -313,18 +315,20 @@ export default function GearPanel({
                 defaultValue={item?.name || ""}
               />
             </label>
-            <label>
-              {t("Details & tags")}
+            <div className="rule-field">
+              <RuleHelp name="Details & tags" />
               <input
+                aria-label={t("Details & tags")}
                 name="details"
                 maxLength={500}
                 defaultValue={item?.details || ""}
               />
-            </label>
+            </div>
             <div className="gear-form-numbers">
-              <label>
-                {t("Load")}
+              <div className="rule-field">
+                <RuleHelp name="Load" />
                 <input
+                  aria-label={t("Load")}
                   name="load"
                   type="number"
                   min={0}
@@ -332,10 +336,11 @@ export default function GearPanel({
                   defaultValue={item?.load ?? 1}
                   required
                 />
-              </label>
-              <label>
-                {t("Value")}
+              </div>
+              <div className="rule-field">
+                <RuleHelp name="Value" />
                 <input
+                  aria-label={t("Value")}
                   name="value"
                   type="number"
                   min={0}
@@ -343,10 +348,11 @@ export default function GearPanel({
                   defaultValue={item?.value ?? 0}
                   required
                 />
-              </label>
-              <label>
-                {t("Wear boxes")}
+              </div>
+              <div className="rule-field">
+                <RuleHelp name="Wear boxes" />
                 <input
+                  aria-label={t("Wear boxes")}
                   name="maxWear"
                   type="number"
                   min={0}
@@ -354,7 +360,7 @@ export default function GearPanel({
                   defaultValue={item?.maxWear ?? 4}
                   required
                 />
-              </label>
+              </div>
             </div>
             {!item && (
               <label className="inline-check">
