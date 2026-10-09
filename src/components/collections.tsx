@@ -8,12 +8,47 @@ import {
   Plus,
   Trash2,
   Users,
+  UserRound,
 } from "lucide-react";
 import { type Campaign, type Hero, stats } from "@/lib/sheet";
 import { effectiveStats } from "@/lib/playbooks";
 import { useTranslation } from "@/lib/i18n";
 import { Portrait } from "./art";
 import AttributeIcon from "./attribute-icon";
+
+function EmptyCollectionCard({
+  kind,
+  label,
+  hint,
+  busy,
+  create,
+}: {
+  kind: "character" | "campaign";
+  label: string;
+  hint: string;
+  busy: boolean;
+  create: () => void;
+}) {
+  const Icon = kind === "character" ? UserRound : Compass;
+  return (
+    <button
+      type="button"
+      className={`empty-collection-card empty-${kind}-card`}
+      disabled={busy}
+      onClick={create}
+      aria-label={label}
+    >
+      <span className="empty-collection-icon" aria-hidden="true">
+        <Icon size={48} strokeWidth={1.4} />
+        <span>
+          <Plus size={20} />
+        </span>
+      </span>
+      <strong>{label}</strong>
+      <span className="empty-collection-hint">{hint}</span>
+    </button>
+  );
+}
 
 export function CampaignCollection({
   campaigns,
@@ -57,18 +92,40 @@ export function CampaignCollection({
             )}
           </p>
         </div>
-        <div className="campaign-actions">
-          <button className="btn primary" disabled={busy} onClick={join}>
-            <Users size={18} />
-            {t("Join a campaign")}
-          </button>
-          <button className="btn" disabled={busy} onClick={create}>
-            <Plus size={18} />
-            {t("Create campaign")}
-          </button>
-        </div>
+        {campaigns.length > 0 && (
+          <div className="campaign-actions">
+            <button className="btn primary" disabled={busy} onClick={join}>
+              <Users size={18} />
+              {t("Join a campaign")}
+            </button>
+            <button className="btn" disabled={busy} onClick={create}>
+              <Plus size={18} />
+              {t("Create campaign")}
+            </button>
+          </div>
+        )}
       </div>
       <div className="campaign-list">
+        {!campaigns.length && (
+          <div className="empty-collection-slot">
+            <EmptyCollectionCard
+              kind="campaign"
+              label={t("Create campaign")}
+              hint={t("No campaigns yet")}
+              busy={busy}
+              create={create}
+            />
+            <button
+              type="button"
+              className="text-link empty-collection-join"
+              disabled={busy}
+              onClick={join}
+            >
+              <Users size={16} />
+              {t("Join a campaign")}
+            </button>
+          </div>
+        )}
         {campaigns.map((c) => (
           <article className="campaign-card" key={c.id}>
             <div className="campaign-card-top">
@@ -128,9 +185,6 @@ export function CampaignCollection({
           </article>
         ))}
       </div>
-      {!campaigns.length && (
-        <p className="empty-note">{t("No campaigns yet")}</p>
-      )}
     </section>
   );
 }
@@ -184,10 +238,12 @@ export function CharacterCollection({
             )}
           </p>
         </div>
-        <button className="btn primary" disabled={busy} onClick={create}>
-          <Plus size={18} />
-          {t("Create a character")}
-        </button>
+        {heroes.length > 0 && (
+          <button className="btn primary" disabled={busy} onClick={create}>
+            <Plus size={18} />
+            {t("Create a character")}
+          </button>
+        )}
       </div>
       {choosing && (
         <p className="assignment-note">
@@ -206,6 +262,15 @@ export function CharacterCollection({
         </div>
       )}
       <div className="character-list">
+        {!heroes.length && (
+          <EmptyCollectionCard
+            kind="character"
+            label={t("Create a character")}
+            hint={t("Your first character starts here.")}
+            busy={busy}
+            create={create}
+          />
+        )}
         {heroes.map((h) => (
           <div className="character-row" key={h.id}>
             <button
@@ -276,9 +341,6 @@ export function CharacterCollection({
           </div>
         ))}
       </div>
-      {!heroes.length && (
-        <p className="empty-note">{t("Your first character starts here.")}</p>
-      )}
     </section>
   );
 }

@@ -2341,13 +2341,6 @@ form .inline-check {
     border-radius: 6px;
     padding: 6px 16px;
   }
-  .collection-page .empty-note {
-    padding: 60px 24px;
-    background: var(--panel) url("/art/paper-grain.svg");
-    border: 1px dashed #b4a582;
-    border-radius: 8px;
-    text-align: center;
-  }
 }
 @media (min-width: 1180px) {
   .collection-page .character-list,
@@ -3145,5 +3138,85 @@ form .inline-check {
   }
   .builder-sidebar {
     padding: 14px;
+  }
+}
+
+/* Empty collections reserve one normal card slot for their primary action. */
+.empty-collection-slot {
+  min-width: 0;
+}
+.empty-collection-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  width: 100%;
+  min-height: 220px;
+  padding: 28px 22px;
+  color: var(--ink);
+  background: var(--panel) url("/art/paper-grain.svg");
+  border: 2px dashed #ad9e7c;
+  border-radius: 8px 12px 7px 10px;
+  text-align: center;
+  box-shadow: 0 5px 18px #10271e22;
+}
+.empty-collection-card:hover:not(:disabled) {
+  border-color: var(--green);
+  background-color: #fff8e7;
+}
+.empty-collection-card:focus-visible {
+  outline: 3px solid var(--green);
+  outline-offset: 4px;
+}
+.empty-collection-icon {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 86px;
+  height: 86px;
+  color: var(--green);
+  background: #e5dec1;
+  border-radius: 50%;
+}
+.empty-collection-icon > span {
+  position: absolute;
+  right: -3px;
+  bottom: -1px;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--green);
+  color: #fff9e8;
+}
+.empty-collection-card > strong {
+  font-family: var(--heading-font);
+  font-size: 25px;
+  line-height: 1.2;
+}
+.empty-collection-hint {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.empty-collection-join {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  margin: 12px auto 0;
+}
+@media (min-width: 768px) {
+  .empty-character-card {
+    min-height: 340px;
+  }
+  .empty-campaign-card {
+    min-height: 295px;
+  }
+  .empty-collection-join {
+    color: #fff6df;
   }
 }
